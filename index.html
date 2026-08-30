@@ -1,129 +1,199 @@
+
 <!doctype html>
 <html lang="fr">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
   <title>Noa Digit Trade</title>
+
   <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
 
 <header>
-  <div class="brand">NOA <span>DIGIT TRADE</span></div>
-  <button id="login">Se connecter</button>
+  <div class="brand">
+    NOA <span>DIGIT TRADE</span>
+  </div>
+
+  <button id="login" type="button">
+    Se connecter
+  </button>
 </header>
+
 
 <main>
 
-<section class="hero">
-  <div>
-    <small>ÉCHANGE DIGITAL SIMPLE</small>
+  <!-- SECTION PRINCIPALE -->
+  <section class="hero">
 
-    <h1>
-      Achetez ou vendez vos USDT facilement.
-    </h1>
+    <div>
+      <small>ÉCHANGE DIGITAL SIMPLE</small>
 
-    <p>
-      Une interface simple pour envoyer une demande
-      d'achat ou de vente d'USDT.
-    </p>
+      <h1>
+        Achetez ou vendez vos USDT facilement.
+      </h1>
 
-    <button class="primary" id="start">
-      Commencer
+      <p>
+        Une interface simple et rapide pour envoyer
+        vos demandes d'achat ou de vente d'USDT.
+      </p>
+
+      <button class="primary" id="start" type="button">
+        Commencer
+      </button>
+    </div>
+
+
+    <div class="card">
+      <i></i>
+      <b>Noa Digit Trade</b>
+      <span>Service d'échange</span>
+    </div>
+
+  </section>
+
+
+  <!-- FORMULAIRE DE COMMANDE -->
+  <section id="order" class="panel">
+
+    <h2>Nouvelle demande</h2>
+
+    <div class="tabs">
+
+      <button
+        class="tab active"
+        data-type="buy"
+        type="button">
+        Acheter USDT
+      </button>
+
+      <button
+        class="tab"
+        data-type="sell"
+        type="button">
+        Vendre USDT
+      </button>
+
+    </div>
+
+
+    <label for="network">
+      Réseau
+    </label>
+
+    <select id="network">
+
+      <option value="BEP20">
+        BEP20
+      </option>
+
+      <option value="TRC20">
+        TRC20
+      </option>
+
+      <option value="ERC20">
+        ERC20
+      </option>
+
+    </select>
+
+
+    <label for="amount">
+      Montant (USDT)
+    </label>
+
+    <input
+      id="amount"
+      type="number"
+      min="1"
+      step="0.01"
+      placeholder="Ex. 100"
+      autocomplete="off"
+    >
+
+
+    <label for="wallet">
+      Adresse du portefeuille
+    </label>
+
+    <input
+      id="wallet"
+      type="text"
+      placeholder="Adresse USDT"
+      autocomplete="off"
+    >
+
+
+    <button
+      class="primary full"
+      id="submit"
+      type="button">
+      Envoyer la demande
     </button>
-  </div>
-
-  <div class="card">
-    <i></i>
-    <b>Noa Digit Trade</b>
-    <span>Service d'échange</span>
-  </div>
-</section>
 
 
-<section id="order" class="panel">
+    <p id="msg" role="status"></p>
 
-  <h2>Nouvelle demande</h2>
-
-  <div class="tabs">
-    <button class="tab active" data-type="buy">
-      Acheter USDT
-    </button>
-
-    <button class="tab" data-type="sell">
-      Vendre USDT
-    </button>
-  </div>
-
-  <label>Réseau</label>
-
-  <select id="network">
-    <option>BEP20</option>
-    <option>TRC20</option>
-    <option>ERC20</option>
-  </select>
-
-  <label>Montant (USDT)</label>
-
-  <input
-    id="amount"
-    type="number"
-    min="1"
-    step=".01"
-    placeholder="Ex. 100"
-  >
-
-  <label>Adresse du portefeuille</label>
-
-  <input
-    id="wallet"
-    placeholder="Adresse USDT"
-  >
-
-  <button class="primary full" id="submit">
-    Envoyer la demande
-  </button>
-
-  <p id="msg"></p>
-
-</section>
+  </section>
 
 
-<section class="features">
+  <!-- FONCTIONNEMENT -->
+  <section class="features">
 
-  <div>
-    <b>01</b>
-    <h3>Connexion</h3>
-    <p>
-      Espace personnel pour chaque client.
-    </p>
-  </div>
+    <div>
+      <b>01</b>
 
-  <div>
-    <b>02</b>
-    <h3>Demande</h3>
-    <p>
-      Achat ou vente avec le réseau choisi.
-    </p>
-  </div>
+      <h3>
+        Connexion
+      </h3>
 
-  <div>
-    <b>03</b>
-    <h3>Validation</h3>
-    <p>
-      Traitement depuis l'espace administrateur.
-    </p>
-  </div>
+      <p>
+        Espace personnel pour chaque client.
+      </p>
+    </div>
 
-</section>
+
+    <div>
+      <b>02</b>
+
+      <h3>
+        Demande
+      </h3>
+
+      <p>
+        Achat ou vente avec le réseau choisi.
+      </p>
+    </div>
+
+
+    <div>
+      <b>03</b>
+
+      <h3>
+        Validation
+      </h3>
+
+      <p>
+        Traitement depuis l'espace administrateur.
+      </p>
+    </div>
+
+  </section>
 
 </main>
+
 
 <footer>
   © 2026 Noa Digit Trade
 </footer>
 
+
+<!-- SUPABASE -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- APPLICATION NOA DIGIT TRADE -->
 <script src="app.js"></script>
 
 </body>
