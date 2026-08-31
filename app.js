@@ -19,6 +19,12 @@ const SUPABASE_KEY =
 // INITIALISATION SUPABASE
 // ==========================================
 
+if (!window.supabase) {
+  console.error('Supabase JS n’a pas été chargé.');
+} else {
+  console.log('Supabase JS chargé.');
+}
+
 const supabaseClient =
   window.supabase.createClient(
     SUPABASE_URL,
@@ -40,6 +46,8 @@ let type = 'buy';
 document.addEventListener(
   'DOMContentLoaded',
   async () => {
+
+    console.log('Noa Digit Trade démarré.');
 
     setupTabs();
 
@@ -91,7 +99,7 @@ async function checkSession() {
   } catch (error) {
 
     console.error(
-      'Erreur :',
+      'Erreur vérification session :',
       error
     );
 
@@ -103,7 +111,7 @@ async function checkSession() {
 
 
 // ==========================================
-// SURVEILLER LA CONNEXION
+// SURVEILLER LES CHANGEMENTS DE SESSION
 // ==========================================
 
 supabaseClient.auth.onAuthStateChange(
@@ -130,10 +138,16 @@ function updateLoginButton(session) {
   }
 
 
+  // Retirer les anciens événements
+  // ajoutés par addEventListener dans setupAuth
+  login.onclick = null;
+
+
   if (session) {
 
     login.textContent =
       'Mon compte';
+
 
     login.onclick = () => {
 
@@ -147,6 +161,7 @@ function updateLoginButton(session) {
 
     login.textContent =
       'Se connecter';
+
 
     login.onclick = () => {
 
@@ -191,6 +206,12 @@ function setupTabs() {
 
         type =
           button.dataset.type;
+
+
+        console.log(
+          'Type sélectionné :',
+          type
+        );
 
       }
     );
@@ -242,7 +263,7 @@ function setupStartButton() {
 
 
 // ==========================================
-// FENÊTRE AUTHENTIFICATION
+// OUVRIR FENÊTRE AUTH
 // ==========================================
 
 function showAuthModal() {
@@ -260,7 +281,13 @@ function showAuthModal() {
 
 
   if (!modal) {
+
+    console.error(
+      'Fenêtre authModal introuvable.'
+    );
+
     return;
+
   }
 
 
@@ -275,12 +302,18 @@ function showAuthModal() {
 
 
   if (loginForm) {
-    loginForm.hidden = false;
+
+    loginForm.hidden =
+      false;
+
   }
 
 
   if (signupForm) {
-    signupForm.hidden = true;
+
+    signupForm.hidden =
+      true;
+
   }
 
 
@@ -297,19 +330,25 @@ function showAuthModal() {
 
 
   if (loginMessage) {
-    loginMessage.textContent = '';
+
+    loginMessage.textContent =
+      '';
+
   }
 
 
   if (signupMessage) {
-    signupMessage.textContent = '';
+
+    signupMessage.textContent =
+      '';
+
   }
 
 }
 
 
 // ==========================================
-// FERMER AUTH
+// FERMER FENÊTRE AUTH
 // ==========================================
 
 function closeAuthModal() {
@@ -336,7 +375,7 @@ function closeAuthModal() {
 
 
 // ==========================================
-// CONFIGURATION AUTH
+// CONFIGURATION AUTHENTIFICATION
 // ==========================================
 
 function setupAuth() {
@@ -404,7 +443,7 @@ function setupAuth() {
 
 
   // --------------------------------------
-  // AFFICHER INSCRIPTION
+  // PASSER À L'INSCRIPTION
   // --------------------------------------
 
   if (showSignup) {
@@ -426,18 +465,47 @@ function setupAuth() {
 
 
         if (loginForm) {
-          loginForm.hidden = true;
+
+          loginForm.hidden =
+            true;
+
         }
 
 
         if (signupForm) {
-          signupForm.hidden = false;
+
+          signupForm.hidden =
+            false;
+
         }
 
 
-        document.getElementById(
-          'loginMessage'
-        ).textContent = '';
+        const loginMessage =
+          document.getElementById(
+            'loginMessage'
+          );
+
+
+        const signupMessage =
+          document.getElementById(
+            'signupMessage'
+          );
+
+
+        if (loginMessage) {
+
+          loginMessage.textContent =
+            '';
+
+        }
+
+
+        if (signupMessage) {
+
+          signupMessage.textContent =
+            '';
+
+        }
 
       }
     );
@@ -446,7 +514,7 @@ function setupAuth() {
 
 
   // --------------------------------------
-  // AFFICHER CONNEXION
+  // PASSER À LA CONNEXION
   // --------------------------------------
 
   if (showLogin) {
@@ -468,18 +536,47 @@ function setupAuth() {
 
 
         if (signupForm) {
-          signupForm.hidden = true;
+
+          signupForm.hidden =
+            true;
+
         }
 
 
         if (loginForm) {
-          loginForm.hidden = false;
+
+          loginForm.hidden =
+            false;
+
         }
 
 
-        document.getElementById(
-          'signupMessage'
-        ).textContent = '';
+        const loginMessage =
+          document.getElementById(
+            'loginMessage'
+          );
+
+
+        const signupMessage =
+          document.getElementById(
+            'signupMessage'
+          );
+
+
+        if (loginMessage) {
+
+          loginMessage.textContent =
+            '';
+
+        }
+
+
+        if (signupMessage) {
+
+          signupMessage.textContent =
+            '';
+
+        }
 
       }
     );
@@ -523,16 +620,16 @@ function setupAuth() {
 
 async function loginUser() {
 
-  const email =
+  const emailInput =
     document.getElementById(
       'loginEmail'
-    ).value.trim();
+    );
 
 
-  const password =
+  const passwordInput =
     document.getElementById(
       'loginPassword'
-    ).value;
+    );
 
 
   const message =
@@ -547,7 +644,32 @@ async function loginUser() {
     );
 
 
-  message.textContent = '';
+  if (
+    !emailInput ||
+    !passwordInput ||
+    !message ||
+    !button
+  ) {
+
+    console.error(
+      'Éléments de connexion manquants.'
+    );
+
+    return;
+
+  }
+
+
+  const email =
+    emailInput.value.trim();
+
+
+  const password =
+    passwordInput.value;
+
+
+  message.textContent =
+    '';
 
 
   if (!email || !password) {
@@ -560,7 +682,9 @@ async function loginUser() {
   }
 
 
-  button.disabled = true;
+  button.disabled =
+    true;
+
 
   button.textContent =
     'Connexion...';
@@ -574,9 +698,11 @@ async function loginUser() {
     } =
       await supabaseClient.auth.signInWithPassword({
 
-        email: email,
+        email:
+          email,
 
-        password: password
+        password:
+          password
 
       });
 
@@ -622,7 +748,9 @@ async function loginUser() {
 
   } finally {
 
-    button.disabled = false;
+    button.disabled =
+      false;
+
 
     button.textContent =
       'Se connecter';
@@ -638,22 +766,22 @@ async function loginUser() {
 
 async function signupUser() {
 
-  const email =
+  const emailInput =
     document.getElementById(
       'signupEmail'
-    ).value.trim();
+    );
 
 
-  const password =
+  const passwordInput =
     document.getElementById(
       'signupPassword'
-    ).value;
+    );
 
 
-  const confirmPassword =
+  const confirmInput =
     document.getElementById(
       'signupPasswordConfirm'
-    ).value;
+    );
 
 
   const message =
@@ -668,8 +796,42 @@ async function signupUser() {
     );
 
 
-  message.textContent = '';
+  if (
+    !emailInput ||
+    !passwordInput ||
+    !confirmInput ||
+    !message ||
+    !button
+  ) {
 
+    console.error(
+      'Éléments inscription manquants.'
+    );
+
+    return;
+
+  }
+
+
+  const email =
+    emailInput.value.trim();
+
+
+  const password =
+    passwordInput.value;
+
+
+  const confirmPassword =
+    confirmInput.value;
+
+
+  message.textContent =
+    '';
+
+
+  // --------------------------------------
+  // VALIDATION
+  // --------------------------------------
 
   if (
     !email ||
@@ -705,7 +867,9 @@ async function signupUser() {
   }
 
 
-  button.disabled = true;
+  button.disabled =
+    true;
+
 
   button.textContent =
     'Création...';
@@ -713,15 +877,21 @@ async function signupUser() {
 
   try {
 
+    // ------------------------------------
+    // CRÉER LE COMPTE SUPABASE AUTH
+    // ------------------------------------
+
     const {
       data,
       error
     } =
       await supabaseClient.auth.signUp({
 
-        email: email,
+        email:
+          email,
 
-        password: password
+        password:
+          password
 
       });
 
@@ -734,24 +904,70 @@ async function signupUser() {
 
 
     console.log(
-      'Compte créé :',
+      'Compte Auth créé :',
       data
     );
 
 
-    message.textContent =
-      'Compte créé avec succès. Vérifiez votre email pour confirmer votre compte.';
+    // ------------------------------------
+    // SI SUPABASE DEMANDE UNE CONFIRMATION
+    // ------------------------------------
+
+    if (
+      data.user &&
+      !data.session
+    ) {
+
+      message.textContent =
+        'Compte créé. Vérifiez votre email pour confirmer votre compte.';
+
+      return;
+
+    }
 
 
-    document.getElementById(
-      'signupPassword'
-    ).value = '';
+    // ------------------------------------
+    // SI L'UTILISATEUR EST CONNECTÉ
+    // ------------------------------------
+
+    if (data.user) {
+
+      try {
+
+        await createUserProfile(
+          data.user
+        );
+
+      } catch (profileError) {
+
+        console.error(
+          'Erreur création profil :',
+          profileError
+        );
+
+        message.textContent =
+          'Compte créé, mais le profil utilisateur n’a pas pu être créé.';
+
+        return;
+
+      }
 
 
-    document.getElementById(
-      'signupPasswordConfirm'
-    ).value = '';
+      message.textContent =
+        'Compte créé avec succès.';
 
+    }
+
+
+    // ------------------------------------
+    // NETTOYAGE
+    // ------------------------------------
+
+    passwordInput.value =
+      '';
+
+    confirmInput.value =
+      '';
 
   } catch (error) {
 
@@ -767,12 +983,116 @@ async function signupUser() {
 
   } finally {
 
-    button.disabled = false;
+    button.disabled =
+      false;
+
 
     button.textContent =
       'Créer mon compte';
 
   }
+
+}
+
+
+// ==========================================
+// CRÉER LE PROFIL DANS "Users"
+// ==========================================
+
+async function createUserProfile(user) {
+
+  if (!user || !user.id) {
+
+    throw new Error(
+      'Utilisateur Supabase invalide.'
+    );
+
+  }
+
+
+  // Vérifier si le profil existe déjà
+
+  const {
+    data: existingUsers,
+    error: searchError
+  } =
+    await supabaseClient
+      .from('Users')
+      .select('id')
+      .eq('auth_id', user.id)
+      .limit(1);
+
+
+  if (searchError) {
+
+    console.error(
+      'Erreur recherche profil :',
+      searchError
+    );
+
+    throw searchError;
+
+  }
+
+
+  // Profil déjà existant
+
+  if (
+    existingUsers &&
+    existingUsers.length > 0
+  ) {
+
+    console.log(
+      'Profil utilisateur déjà existant.'
+    );
+
+    return existingUsers[0];
+
+  }
+
+
+  // --------------------------------------
+  // CRÉER LE PROFIL
+  // --------------------------------------
+
+  const {
+    data: newUser,
+    error: insertError
+  } =
+    await supabaseClient
+      .from('Users')
+      .insert({
+
+        auth_id:
+          user.id,
+
+        email:
+          user.email || ''
+
+      })
+      .select()
+      .single();
+
+
+  if (insertError) {
+
+    console.error(
+      'Erreur création profil :',
+      insertError
+    );
+
+    throw insertError;
+
+  }
+
+
+  console.log(
+    'Profil créé :',
+    newUser
+  );
+
+
+  return newUser;
 
 }
 
@@ -790,7 +1110,9 @@ function showAccountModal(user) {
 
 
   if (oldModal) {
+
     oldModal.remove();
+
   }
 
 
@@ -820,6 +1142,7 @@ function showAccountModal(user) {
       width:100%;
       max-width:420px;
       background:white;
+      color:#101828;
       border-radius:20px;
       padding:28px;
       box-shadow:0 20px 50px rgba(0,0,0,.25);
@@ -851,11 +1174,15 @@ function showAccountModal(user) {
           border:1px solid #d0d5dd;
           border-radius:10px;
           background:white;
+          cursor:pointer;
         ">
         Fermer
       </button>
 
-      <p id="accountMessage"></p>
+      <p
+        id="accountMessage"
+        style="line-height:1.5;">
+      </p>
 
     </div>
 
@@ -866,6 +1193,8 @@ function showAccountModal(user) {
     modal
   );
 
+
+  // Fermer
 
   document
     .getElementById(
@@ -881,6 +1210,26 @@ function showAccountModal(user) {
     );
 
 
+  // Fermer en cliquant à l'extérieur
+
+  modal.addEventListener(
+    'click',
+    event => {
+
+      if (
+        event.target === modal
+      ) {
+
+        modal.remove();
+
+      }
+
+    }
+  );
+
+
+  // Déconnexion
+
   document
     .getElementById(
       'logoutButton'
@@ -888,6 +1237,20 @@ function showAccountModal(user) {
     .addEventListener(
       'click',
       async () => {
+
+        const button =
+          document.getElementById(
+            'logoutButton'
+          );
+
+
+        button.disabled =
+          true;
+
+
+        button.textContent =
+          'Déconnexion...';
+
 
         const {
           error
@@ -897,11 +1260,34 @@ function showAccountModal(user) {
 
         if (error) {
 
-          document.getElementById(
-            'accountMessage'
-          ).textContent =
-            'Erreur : ' +
-            error.message;
+          console.error(
+            'Erreur déconnexion :',
+            error
+          );
+
+
+          const accountMessage =
+            document.getElementById(
+              'accountMessage'
+            );
+
+
+          if (accountMessage) {
+
+            accountMessage.textContent =
+              'Erreur : ' +
+              error.message;
+
+          }
+
+
+          button.disabled =
+            false;
+
+
+          button.textContent =
+            'Se déconnecter';
+
 
           return;
 
@@ -917,23 +1303,43 @@ function showAccountModal(user) {
 
 
 // ==========================================
-// PROTECTION AFFICHAGE EMAIL
+// PROTECTION HTML
 // ==========================================
 
 function escapeHtml(value) {
 
   return String(value)
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;');
+
+    .replaceAll(
+      '&',
+      '&amp;'
+    )
+
+    .replaceAll(
+      '<',
+      '&lt;'
+    )
+
+    .replaceAll(
+      '>',
+      '&gt;'
+    )
+
+    .replaceAll(
+      '"',
+      '&quot;'
+    )
+
+    .replaceAll(
+      "'",
+      '&#039;'
+    );
 
 }
 
 
 // ==========================================
-// ENVOYER UNE COMMANDE
+// CONFIGURATION BOUTON COMMANDE
 // ==========================================
 
 function setupSubmitButton() {
@@ -945,7 +1351,13 @@ function setupSubmitButton() {
 
 
   if (!submit) {
+
+    console.error(
+      'Bouton submit introuvable.'
+    );
+
     return;
+
   }
 
 
@@ -958,27 +1370,27 @@ function setupSubmitButton() {
 
 
 // ==========================================
-// ENVOI COMMANDE
+// ENVOYER UNE COMMANDE
 // ==========================================
 
 async function sendOrder() {
 
-  const amount =
+  const amountInput =
     document.getElementById(
       'amount'
-    ).value.trim();
+    );
 
 
-  const wallet =
+  const walletInput =
     document.getElementById(
       'wallet'
-    ).value.trim();
+    );
 
 
-  const network =
+  const networkInput =
     document.getElementById(
       'network'
-    ).value;
+    );
 
 
   const message =
@@ -993,7 +1405,37 @@ async function sendOrder() {
     );
 
 
-  message.textContent = '';
+  if (
+    !amountInput ||
+    !walletInput ||
+    !networkInput ||
+    !message ||
+    !submit
+  ) {
+
+    console.error(
+      'Éléments de commande manquants.'
+    );
+
+    return;
+
+  }
+
+
+  const amount =
+    amountInput.value.trim();
+
+
+  const wallet =
+    walletInput.value.trim();
+
+
+  const network =
+    networkInput.value;
+
+
+  message.textContent =
+    '';
 
 
   // --------------------------------------
@@ -1010,7 +1452,14 @@ async function sendOrder() {
   }
 
 
-  if (Number(amount) <= 0) {
+  const numericAmount =
+    Number(amount);
+
+
+  if (
+    !Number.isFinite(numericAmount) ||
+    numericAmount <= 0
+  ) {
 
     message.textContent =
       'Le montant doit être supérieur à 0.';
@@ -1024,33 +1473,59 @@ async function sendOrder() {
   // UTILISATEUR CONNECTÉ
   // --------------------------------------
 
-  const {
-    data,
-    error
-  } =
-    await supabaseClient.auth.getUser();
+  let user;
 
 
-  if (
-    error ||
-    !data.user
-  ) {
+  try {
+
+    const {
+      data,
+      error
+    } =
+      await supabaseClient.auth.getUser();
+
+
+    if (
+      error ||
+      !data.user
+    ) {
+
+      message.textContent =
+        'Veuillez vous connecter avant d’envoyer une demande.';
+
+      showAuthModal();
+
+      return;
+
+    }
+
+
+    user =
+      data.user;
+
+  } catch (error) {
+
+    console.error(
+      'Erreur récupération utilisateur :',
+      error
+    );
+
 
     message.textContent =
-      'Veuillez vous connecter avant d’envoyer une demande.';
-
-    showAuthModal();
+      'Impossible de vérifier votre connexion.';
 
     return;
 
   }
 
 
-  const user =
-    data.user;
+  // --------------------------------------
+  // DÉSACTIVER BOUTON
+  // --------------------------------------
 
+  submit.disabled =
+    true;
 
-  submit.disabled = true;
 
   submit.textContent =
     'Envoi en cours...';
@@ -1059,9 +1534,11 @@ async function sendOrder() {
   try {
 
     // ------------------------------------
-    // CHERCHER L'UTILISATEUR DANS
-    // LA TABLE "Users"
+    // RÉCUPÉRER / CRÉER LE PROFIL
     // ------------------------------------
+
+    let userId;
+
 
     const {
       data: users,
@@ -1081,28 +1558,37 @@ async function sendOrder() {
         userError
       );
 
-
       throw new Error(
-        'Impossible de retrouver votre profil utilisateur.'
+        userError.message
       );
 
     }
 
 
     if (
-      !users ||
-      users.length === 0
+      users &&
+      users.length > 0
     ) {
 
-      throw new Error(
-        'Votre profil utilisateur n’existe pas encore.'
-      );
+      userId =
+        users[0].id;
+
+    } else {
+
+      // ----------------------------------
+      // CRÉER PROFIL SI ABSENT
+      // ----------------------------------
+
+      const newProfile =
+        await createUserProfile(
+          user
+        );
+
+
+      userId =
+        newProfile.id;
 
     }
-
-
-    const userId =
-      users[0].id;
 
 
     // ------------------------------------
@@ -1124,7 +1610,7 @@ async function sendOrder() {
             type,
 
           crypto_amount:
-            Number(amount),
+            numericAmount,
 
           network:
             network,
@@ -1170,17 +1656,15 @@ async function sendOrder() {
         type === 'buy'
           ? 'd’achat'
           : 'de vente'
-      } envoyée avec succès : ${amount} USDT (${network}).`;
+      } envoyée avec succès : ${numericAmount} USDT (${network}).`;
 
 
-    document.getElementById(
-      'amount'
-    ).value = '';
+    amountInput.value =
+      '';
 
 
-    document.getElementById(
-      'wallet'
-    ).value = '';
+    walletInput.value =
+      '';
 
 
   } catch (error) {
@@ -1197,7 +1681,9 @@ async function sendOrder() {
 
   } finally {
 
-    submit.disabled = false;
+    submit.disabled =
+      false;
+
 
     submit.textContent =
       'Envoyer la demande';
