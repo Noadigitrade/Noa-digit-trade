@@ -338,6 +338,7 @@ function updateCalculationMode() {
   const rateText =
     document.getElementById('rateText');
 
+
   if (!amountInput) {
     return;
   }
@@ -380,7 +381,11 @@ function updateCalculationMode() {
 
       calculation.innerHTML = `
         <span>Vous recevrez</span>
-        <strong id="resultAmount">0 USDT</strong>
+
+        <strong id="resultAmount">
+          0 USDT
+        </strong>
+
         <small id="resultDetail">
           1 USDT = ${BUY_RATE.toLocaleString('fr-FR')} FCFA
         </small>
@@ -425,7 +430,11 @@ function updateCalculationMode() {
 
       calculation.innerHTML = `
         <span>Vous recevrez</span>
-        <strong id="resultAmount">0 FCFA</strong>
+
+        <strong id="resultAmount">
+          0 FCFA
+        </strong>
+
         <small id="resultDetail">
           1 USDT = ${SELL_RATE.toLocaleString('fr-FR')} FCFA
         </small>
@@ -484,6 +493,15 @@ function updateCalculation() {
       type === 'buy'
         ? '0 USDT'
         : '0 FCFA';
+
+    if (resultDetail) {
+
+      resultDetail.textContent =
+        type === 'buy'
+          ? `1 USDT = ${BUY_RATE.toLocaleString('fr-FR')} FCFA`
+          : `1 USDT = ${SELL_RATE.toLocaleString('fr-FR')} FCFA`;
+
+    }
 
     return;
 
@@ -1306,6 +1324,7 @@ function showAccountModal(user) {
     justify-content:center;
     z-index:9999;
     padding:20px;
+    overflow-y:auto;
   `;
 
 
@@ -1313,7 +1332,9 @@ function showAccountModal(user) {
 
     <div style="
       width:100%;
-      max-width:420px;
+      max-width:520px;
+      max-height:90vh;
+      overflow-y:auto;
       background:white;
       color:#101828;
       border-radius:20px;
@@ -1321,19 +1342,70 @@ function showAccountModal(user) {
       box-shadow:0 20px 50px rgba(0,0,0,.25);
     ">
 
-      <h2>Mon compte</h2>
+      <h2 style="
+        margin-top:0;
+        margin-bottom:8px;
+      ">
+        Mon compte
+      </h2>
 
-      <p>
+
+      <p style="
+        margin-top:0;
+        margin-bottom:20px;
+        color:#475467;
+      ">
         <strong>Email :</strong><br>
         ${escapeHtml(user.email || '')}
       </p>
 
+
+      <!-- ============================== -->
+      <!-- MES DEMANDES -->
+      <!-- ============================== -->
+
+      <div style="
+        border-top:1px solid #eaecf0;
+        padding-top:20px;
+        margin-top:10px;
+      ">
+
+        <h3 style="
+          margin:0 0 14px 0;
+        ">
+          Mes demandes
+        </h3>
+
+
+        <div id="ordersContainer">
+
+          <p style="
+            color:#667085;
+            text-align:center;
+            padding:15px 0;
+          ">
+            Chargement de vos demandes...
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <!-- ============================== -->
+      <!-- BOUTONS -->
+      <!-- ============================== -->
+
       <button
         id="logoutButton"
         type="button"
-        class="primary full">
+        class="primary full"
+        style="
+          margin-top:20px;
+        ">
         Se déconnecter
       </button>
+
 
       <button
         id="closeAccountButton"
@@ -1350,7 +1422,14 @@ function showAccountModal(user) {
         Fermer
       </button>
 
-      <p id="accountMessage"></p>
+
+      <p
+        id="accountMessage"
+        style="
+          line-height:1.5;
+          margin-bottom:0;
+        ">
+      </p>
 
     </div>
 
@@ -1362,15 +1441,42 @@ function showAccountModal(user) {
   );
 
 
-  document
-    .getElementById(
+  // ======================================
+  // CHARGER LES COMMANDES
+  // ======================================
+
+  loadUserOrders(
+    user
+  );
+
+
+  // ======================================
+  // FERMER
+  // ======================================
+
+  const closeButton =
+    document.getElementById(
       'closeAccountButton'
-    )
-    .addEventListener(
-      'click',
-      () => modal.remove()
     );
 
+
+  if (closeButton) {
+
+    closeButton.addEventListener(
+      'click',
+      () => {
+
+        modal.remove();
+
+      }
+    );
+
+  }
+
+
+  // ======================================
+  // FERMER EN CLIQUANT À L'EXTÉRIEUR
+  // ======================================
 
   modal.addEventListener(
     'click',
@@ -1388,25 +1494,27 @@ function showAccountModal(user) {
   );
 
 
-  document
-    .getElementById(
+  // ======================================
+  // DÉCONNEXION
+  // ======================================
+
+  const logoutButton =
+    document.getElementById(
       'logoutButton'
-    )
-    .addEventListener(
+    );
+
+
+  if (logoutButton) {
+
+    logoutButton.addEventListener(
       'click',
       async () => {
 
-        const button =
-          document.getElementById(
-            'logoutButton'
-          );
-
-
-        button.disabled =
+        logoutButton.disabled =
           true;
 
 
-        button.textContent =
+        logoutButton.textContent =
           'Déconnexion...';
 
 
@@ -1417,6 +1525,12 @@ function showAccountModal(user) {
 
 
         if (error) {
+
+          console.error(
+            'Erreur déconnexion :',
+            error
+          );
+
 
           const accountMessage =
             document.getElementById(
@@ -1433,11 +1547,11 @@ function showAccountModal(user) {
           }
 
 
-          button.disabled =
+          logoutButton.disabled =
             false;
 
 
-          button.textContent =
+          logoutButton.textContent =
             'Se déconnecter';
 
 
@@ -1451,6 +1565,583 @@ function showAccountModal(user) {
       }
     );
 
+  }
+
+}
+
+
+// ==========================================
+// CHARGER LES DEMANDES DE L'UTILISATEUR
+// ==========================================
+
+async function loadUserOrders(user) {
+
+  const container =
+    document.getElementById(
+      'ordersContainer'
+    );
+
+
+  if (!container) {
+    return;
+  }
+
+
+  container.innerHTML = `
+
+    <p style="
+      color:#667085;
+      text-align:center;
+      padding:15px 0;
+    ">
+      Chargement de vos demandes...
+    </p>
+
+  `;
+
+
+  try {
+
+    // ======================================
+    // RÉCUPÉRER LE PROFIL USERS
+    // ======================================
+
+    const {
+      data: users,
+      error: userError
+    } =
+      await supabaseClient
+        .from('Users')
+        .select('id')
+        .eq('auth_id', user.id)
+        .limit(1);
+
+
+    if (userError) {
+
+      throw userError;
+
+    }
+
+
+    if (
+      !users ||
+      users.length === 0
+    ) {
+
+      container.innerHTML = `
+
+        <div style="
+          text-align:center;
+          padding:20px;
+          color:#667085;
+          background:#f9fafb;
+          border-radius:12px;
+        ">
+          Aucune demande trouvée.
+        </div>
+
+      `;
+
+      return;
+
+    }
+
+
+    const userId =
+      users[0].id;
+
+
+    // ======================================
+    // RÉCUPÉRER LES COMMANDES
+    // ======================================
+
+    const {
+      data: orders,
+      error: ordersError
+    } =
+      await supabaseClient
+        .from('orders')
+        .select(`
+          id,
+          type,
+          crypto_amount,
+          fiat_amount,
+          rate,
+          network,
+          wallet_address,
+          status,
+          created_at
+        `)
+        .eq(
+          'user_id',
+          userId
+        )
+        .order(
+          'created_at',
+          {
+            ascending:false
+          }
+        );
+
+
+    if (ordersError) {
+
+      throw ordersError;
+
+    }
+
+
+    // ======================================
+    // AUCUNE COMMANDE
+    // ======================================
+
+    if (
+      !orders ||
+      orders.length === 0
+    ) {
+
+      container.innerHTML = `
+
+        <div style="
+          text-align:center;
+          padding:20px;
+          color:#667085;
+          background:#f9fafb;
+          border-radius:12px;
+        ">
+
+          <div style="
+            font-size:28px;
+            margin-bottom:8px;
+          ">
+            📋
+          </div>
+
+          <strong>
+            Aucune demande
+          </strong>
+
+          <p style="
+            margin:6px 0 0;
+          ">
+            Vos demandes apparaîtront ici.
+          </p>
+
+        </div>
+
+      `;
+
+      return;
+
+    }
+
+
+    // ======================================
+    // AFFICHER LES COMMANDES
+    // ======================================
+
+    container.innerHTML =
+      orders.map(
+        order =>
+          createOrderCard(order)
+      ).join('');
+
+
+  } catch (error) {
+
+    console.error(
+      'Erreur chargement demandes :',
+      error
+    );
+
+
+    container.innerHTML = `
+
+      <div style="
+        padding:15px;
+        border-radius:12px;
+        background:#fef3f2;
+        color:#b42318;
+        line-height:1.5;
+      ">
+
+        Impossible de charger vos demandes.
+
+        <br>
+
+        <small>
+          ${escapeHtml(error.message || '')}
+        </small>
+
+      </div>
+
+    `;
+
+  }
+
+}
+
+
+// ==========================================
+// CRÉER UNE CARTE DE COMMANDE
+// ==========================================
+
+function createOrderCard(order) {
+
+  const isBuy =
+    order.type === 'buy';
+
+
+  const typeLabel =
+    isBuy
+      ? 'Achat USDT'
+      : 'Vente USDT';
+
+
+  const typeIcon =
+    isBuy
+      ? '🟢'
+      : '🔵';
+
+
+  const cryptoAmount =
+    formatNumber(
+      Number(order.crypto_amount || 0),
+      6
+    );
+
+
+  const fiatAmount =
+    formatNumber(
+      Number(order.fiat_amount || 0),
+      0
+    );
+
+
+  const rate =
+    formatNumber(
+      Number(order.rate || 0),
+      0
+    );
+
+
+  const network =
+    order.network ||
+    'Non précisé';
+
+
+  const wallet =
+    order.wallet_address ||
+    'Non précisée';
+
+
+  const status =
+    getStatusInfo(
+      order.status
+    );
+
+
+  const date =
+    formatDate(
+      order.created_at
+    );
+
+
+  return `
+
+    <div style="
+      border:1px solid #eaecf0;
+      border-radius:14px;
+      padding:16px;
+      margin-bottom:12px;
+      background:#ffffff;
+    ">
+
+
+      <!-- EN-TÊTE -->
+
+      <div style="
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        gap:10px;
+        margin-bottom:14px;
+      ">
+
+        <strong style="
+          font-size:16px;
+        ">
+          ${typeIcon} ${typeLabel}
+        </strong>
+
+
+        <span style="
+          display:inline-block;
+          padding:5px 9px;
+          border-radius:999px;
+          background:${status.background};
+          color:${status.color};
+          font-size:12px;
+          font-weight:600;
+          white-space:nowrap;
+        ">
+          ${status.icon} ${status.label}
+        </span>
+
+      </div>
+
+
+      <!-- MONTANTS -->
+
+      <div style="
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:10px;
+        margin-bottom:14px;
+      ">
+
+        <div style="
+          background:#f9fafb;
+          border-radius:10px;
+          padding:10px;
+        ">
+
+          <div style="
+            font-size:11px;
+            color:#667085;
+            margin-bottom:4px;
+          ">
+            Montant USDT
+          </div>
+
+          <strong>
+            ${cryptoAmount} USDT
+          </strong>
+
+        </div>
+
+
+        <div style="
+          background:#f9fafb;
+          border-radius:10px;
+          padding:10px;
+        ">
+
+          <div style="
+            font-size:11px;
+            color:#667085;
+            margin-bottom:4px;
+          ">
+            Montant FCFA
+          </div>
+
+          <strong>
+            ${fiatAmount} FCFA
+          </strong>
+
+        </div>
+
+      </div>
+
+
+      <!-- DÉTAILS -->
+
+      <div style="
+        font-size:13px;
+        line-height:1.7;
+        color:#475467;
+      ">
+
+        <div>
+          <strong>Taux :</strong>
+          1 USDT = ${rate} FCFA
+        </div>
+
+
+        <div>
+          <strong>Réseau :</strong>
+          ${escapeHtml(network)}
+        </div>
+
+
+        <div style="
+          word-break:break-all;
+        ">
+          <strong>Portefeuille :</strong>
+          ${escapeHtml(wallet)}
+        </div>
+
+
+        <div>
+          <strong>Date :</strong>
+          ${escapeHtml(date)}
+        </div>
+
+      </div>
+
+    </div>
+
+  `;
+
+}
+
+
+// ==========================================
+// STATUT DE COMMANDE
+// ==========================================
+
+function getStatusInfo(status) {
+
+  const normalizedStatus =
+    String(
+      status || 'pending'
+    ).toLowerCase();
+
+
+  switch (
+    normalizedStatus
+  ) {
+
+    case 'completed':
+
+    case 'complete':
+
+    case 'success':
+
+    case 'successful':
+
+      return {
+
+        label:
+          'Terminée',
+
+        icon:
+          '✅',
+
+        background:
+          '#ecfdf3',
+
+        color:
+          '#027a48'
+
+      };
+
+
+    case 'cancelled':
+
+    case 'canceled':
+
+    case 'rejected':
+
+    case 'failed':
+
+      return {
+
+        label:
+          'Annulée',
+
+        icon:
+          '❌',
+
+        background:
+          '#fef3f2',
+
+        color:
+          '#b42318'
+
+      };
+
+
+    case 'processing':
+
+    case 'in_progress':
+
+      return {
+
+        label:
+          'En traitement',
+
+        icon:
+          '🔄',
+
+        background:
+          '#eff8ff',
+
+        color:
+          '#175cd3'
+
+      };
+
+
+    case 'pending':
+
+    default:
+
+      return {
+
+        label:
+          'En attente',
+
+        icon:
+          '🟡',
+
+        background:
+          '#fffaeb',
+
+        color:
+          '#b54708'
+
+      };
+
+  }
+
+}
+
+
+// ==========================================
+// FORMAT DATE
+// ==========================================
+
+function formatDate(dateValue) {
+
+  if (!dateValue) {
+
+    return 'Date inconnue';
+
+  }
+
+
+  const date =
+    new Date(
+      dateValue
+    );
+
+
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
+
+    return String(
+      dateValue
+    );
+
+  }
+
+
+  return date.toLocaleString(
+    'fr-FR',
+    {
+      dateStyle:
+        'medium',
+
+      timeStyle:
+        'short'
+    }
+  );
+
 }
 
 
@@ -1462,15 +2153,30 @@ function escapeHtml(value) {
 
   return String(value)
 
-    .replaceAll('&', '&amp;')
+    .replaceAll(
+      '&',
+      '&amp;'
+    )
 
-    .replaceAll('<', '&lt;')
+    .replaceAll(
+      '<',
+      '&lt;'
+    )
 
-    .replaceAll('>', '&gt;')
+    .replaceAll(
+      '>',
+      '&gt;'
+    )
 
-    .replaceAll('"', '&quot;')
+    .replaceAll(
+      '"',
+      '&quot;'
+    )
 
-    .replaceAll("'", '&#039;');
+    .replaceAll(
+      "'",
+      '&#039;'
+    );
 
 }
 
@@ -1827,6 +2533,7 @@ async function sendOrder() {
 
 
     updateCalculation();
+
 
   } catch (error) {
 
