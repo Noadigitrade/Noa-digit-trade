@@ -3915,46 +3915,225 @@ function showOrderConfirmation(
     }
   );
 
+// ==========================================================
+// J'AI EFFECTUÉ LE PAIEMENT
+// ==========================================================
 
-  // ==========================================================
-  // J'AI EFFECTUÉ LE PAIEMENT
-  // ==========================================================
+const paymentDoneButton =
+  document.getElementById(
+    'paymentDoneButton'
+  );
 
-  const paymentDoneButton =
-    document.getElementById(
-      'paymentDoneButton'
-    );
+if (paymentDoneButton) {
 
-  if (paymentDoneButton) {
+  paymentDoneButton.addEventListener(
+    'click',
+    async () => {
 
-    paymentDoneButton.addEventListener(
-      'click',
-      () => {
+      const paymentDoneMessage =
+        document.getElementById(
+          'paymentDoneMessage'
+        );
 
-        paymentDoneButton.disabled =
-          true;
+
+      // ------------------------------------------------------
+      // VÉRIFIER QUE LA COMMANDE EXISTE
+      // ------------------------------------------------------
+
+      if (
+        !order ||
+        !order.id
+      ) {
+
+        if (paymentDoneMessage) {
+
+          paymentDoneMessage.style.color =
+            '#b42318';
+
+          paymentDoneMessage.textContent =
+            'Impossible d’identifier la commande.';
+
+        }
+
+        return;
+
+      }
+
+
+      // ------------------------------------------------------
+      // DÉSACTIVER LE BOUTON
+      // ------------------------------------------------------
+
+      paymentDoneButton.disabled =
+        true;
+
+      paymentDoneButton.textContent =
+        'Enregistrement...';
+
+
+      if (paymentDoneMessage) {
+
+        paymentDoneMessage.style.color =
+          '#667085';
+
+        paymentDoneMessage.textContent =
+          '';
+
+      }
+
+
+      try {
+
+        // ====================================================
+        // VÉRIFIER LA SESSION
+        // ====================================================
+
+        const {
+          data: sessionData,
+          error: sessionError
+        } =
+          await supabaseClient.auth.getSession();
+
+
+        if (
+          sessionError ||
+          !sessionData.session
+        ) {
+
+          throw new Error(
+            'Votre session a expiré. Veuillez vous reconnecter.'
+          );
+
+        }
+
+
+        // ====================================================
+        // DÉCLARER LE PAIEMENT
+        // ====================================================
+
+        const {
+          data: declared,
+          error: declareError
+        } =
+          await supabaseClient.rpc(
+            'declare_order_payment',
+            {
+              p_order_id:
+                order.id
+            }
+          );
+
+
+        if (declareError) {
+
+          console.error(
+            'Erreur déclaration paiement :',
+            declareError
+          );
+
+          throw new Error(
+            declareError.message
+          );
+
+        }
+
+
+        // ====================================================
+        // VÉRIFIER LE RÉSULTAT
+        // ====================================================
+
+        if (
+          declared !== true
+        ) {
+
+          throw new Error(
+            'Cette commande ne peut plus être déclarée comme payée.'
+          );
+
+        }
+
+
+        // ====================================================
+        // SUCCÈS
+        // ====================================================
 
         paymentDoneButton.textContent =
           'Paiement déclaré ✓';
 
-        const paymentDoneMessage =
-          document.getElementById(
-            'paymentDoneMessage'
-          );
+        paymentDoneButton.style.background =
+          '#027a48';
+
+        paymentDoneButton.disabled =
+          true;
+
 
         if (paymentDoneMessage) {
 
+          paymentDoneMessage.style.color =
+            '#027a48';
+
           paymentDoneMessage.textContent =
-            'Votre déclaration a été prise en compte. Votre commande reste en attente de vérification par NOA DIGIT TRADE.';
+            'Votre paiement a bien été déclaré. Votre commande est maintenant en attente de vérification par NOA DIGIT TRADE.';
+
+        }
+
+
+        // ----------------------------------------------------
+        // METTRE À JOUR L'OBJET LOCAL
+        // ----------------------------------------------------
+
+        order.status =
+          'payment_declared';
+
+
+      } catch (error) {
+
+        console.error(
+          'Erreur déclaration paiement :',
+          error
+        );
+
+
+        // ====================================================
+        // ERREUR
+        // ====================================================
+
+        paymentDoneButton.disabled =
+          false;
+
+        paymentDoneButton.textContent =
+          'J’ai effectué le paiement';
+
+
+        if (paymentDoneMessage) {
+
+          paymentDoneMessage.style.color =
+            '#b42318';
+
+          paymentDoneMessage.textContent =
+            'Erreur : ' +
+            (
+              error.message ||
+              'Impossible d’enregistrer votre déclaration.'
+            );
 
         }
 
       }
-    );
 
-  }
+    }
+  );
 
 }
+
+        
+
+      
+    
+
+  
+
+
 
 
 // ============================================================
