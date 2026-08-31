@@ -2878,3 +2878,428 @@ showOrderConfirmation(order);
   }
 
 }
+// ============================================================
+// CONFIRMATION DE COMMANDE
+// ============================================================
+
+function showOrderConfirmation(order) {
+
+  const oldModal =
+    document.getElementById(
+      'orderConfirmationModal'
+    );
+
+  if (oldModal) {
+
+    oldModal.remove();
+
+  }
+
+
+  const isBuy =
+    order.type === 'buy';
+
+  const typeText =
+    isBuy
+      ? 'Achat USDT'
+      : 'Vente USDT';
+
+
+  const cryptoAmount =
+    Number(
+      order.crypto_amount || 0
+    );
+
+  const fiatAmount =
+    Number(
+      order.fiat_amount || 0
+    );
+
+  const rate =
+    Number(
+      order.rate || 0
+    );
+
+  const fee =
+    Number(
+      order.fee || 0
+    );
+
+  const network =
+    order.network ||
+    'BEP20';
+
+  const paymentMethod =
+    order.payment_method ||
+    'Non renseigné';
+
+  const orderId =
+    order.id;
+
+
+  // ----------------------------------------------------------
+  // MODAL
+  // ----------------------------------------------------------
+
+  const modal =
+    document.createElement(
+      'div'
+    );
+
+  modal.id =
+    'orderConfirmationModal';
+
+  modal.style.cssText = `
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.65);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:10000;
+    padding:20px;
+    box-sizing:border-box;
+  `;
+
+
+  // ----------------------------------------------------------
+  // CONTENU
+  // ----------------------------------------------------------
+
+  modal.innerHTML = `
+
+    <div style="
+      width:100%;
+      max-width:520px;
+      max-height:90vh;
+      overflow-y:auto;
+      background:white;
+      color:#101828;
+      border-radius:24px;
+      padding:28px;
+      box-sizing:border-box;
+      box-shadow:0 25px 70px rgba(0,0,0,.30);
+    ">
+
+
+      <!-- SUCCÈS -->
+
+      <div style="
+        width:64px;
+        height:64px;
+        border-radius:50%;
+        background:#ecfdf3;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        margin:0 auto 18px;
+        font-size:32px;
+      ">
+        ✓
+      </div>
+
+
+      <h2 style="
+        text-align:center;
+        margin:0 0 8px;
+        font-size:27px;
+      ">
+        Commande créée
+      </h2>
+
+
+      <p style="
+        text-align:center;
+        color:#667085;
+        margin:0 0 24px;
+        line-height:1.5;
+      ">
+        Votre demande a bien été enregistrée.
+      </p>
+
+
+      <!-- NUMÉRO -->
+
+      <div style="
+        background:#f8f9fc;
+        border-radius:16px;
+        padding:16px;
+        margin-bottom:20px;
+        text-align:center;
+      ">
+
+        <div style="
+          font-size:13px;
+          color:#667085;
+          margin-bottom:6px;
+        ">
+          N° de commande
+        </div>
+
+        <div style="
+          font-size:17px;
+          font-weight:700;
+          word-break:break-all;
+        ">
+          #${escapeHtml(orderId)}
+        </div>
+
+      </div>
+
+
+      <!-- DÉTAILS -->
+
+      <div style="
+        border:1px solid #e4e7ec;
+        border-radius:18px;
+        padding:18px;
+      ">
+
+
+        <div style="
+          display:flex;
+          justify-content:space-between;
+          gap:15px;
+          padding-bottom:13px;
+          margin-bottom:13px;
+          border-bottom:1px solid #eaecf0;
+        ">
+
+          <span style="
+            color:#667085;
+          ">
+            Opération
+          </span>
+
+          <strong>
+            ${escapeHtml(typeText)}
+          </strong>
+
+        </div>
+
+
+        <div style="
+          display:flex;
+          justify-content:space-between;
+          gap:15px;
+          padding-bottom:13px;
+          margin-bottom:13px;
+          border-bottom:1px solid #eaecf0;
+        ">
+
+          <span style="
+            color:#667085;
+          ">
+            USDT
+          </span>
+
+          <strong>
+            ${formatNumber(cryptoAmount, 6)} USDT
+          </strong>
+
+        </div>
+
+
+        <div style="
+          display:flex;
+          justify-content:space-between;
+          gap:15px;
+          padding-bottom:13px;
+          margin-bottom:13px;
+          border-bottom:1px solid #eaecf0;
+        ">
+
+          <span style="
+            color:#667085;
+          ">
+            Montant
+          </span>
+
+          <strong>
+            ${formatNumber(fiatAmount, 0)} FCFA
+          </strong>
+
+        </div>
+
+
+        <div style="
+          display:flex;
+          justify-content:space-between;
+          gap:15px;
+          padding-bottom:13px;
+          margin-bottom:13px;
+          border-bottom:1px solid #eaecf0;
+        ">
+
+          <span style="
+            color:#667085;
+          ">
+            Taux
+          </span>
+
+          <strong>
+            1 USDT = ${formatNumber(rate, 0)} FCFA
+          </strong>
+
+        </div>
+
+
+        <div style="
+          display:flex;
+          justify-content:space-between;
+          gap:15px;
+          padding-bottom:13px;
+          margin-bottom:13px;
+          border-bottom:1px solid #eaecf0;
+        ">
+
+          <span style="
+            color:#667085;
+          ">
+            Réseau
+          </span>
+
+          <strong>
+            ${escapeHtml(network)}
+          </strong>
+
+        </div>
+
+
+        <div style="
+          display:flex;
+          justify-content:space-between;
+          gap:15px;
+          padding-bottom:13px;
+          margin-bottom:13px;
+          border-bottom:1px solid #eaecf0;
+        ">
+
+          <span style="
+            color:#667085;
+          ">
+            Frais
+          </span>
+
+          <strong>
+            ${formatNumber(fee, 2)} USDT
+          </strong>
+
+        </div>
+
+
+        <div style="
+          display:flex;
+          justify-content:space-between;
+          gap:15px;
+        ">
+
+          <span style="
+            color:#667085;
+          ">
+            Paiement
+          </span>
+
+          <strong>
+            ${escapeHtml(paymentMethod)}
+          </strong>
+
+        </div>
+
+
+      </div>
+
+
+      <!-- STATUT -->
+
+      <div style="
+        margin-top:18px;
+        padding:14px;
+        border-radius:14px;
+        background:#fffaeb;
+        color:#b54708;
+        text-align:center;
+        font-size:14px;
+        line-height:1.5;
+      ">
+
+        🕐 Commande en attente de traitement
+
+      </div>
+
+
+      <!-- BOUTON -->
+
+      <button
+        id="closeOrderConfirmation"
+        type="button"
+        style="
+          width:100%;
+          margin-top:22px;
+          padding:15px;
+          border:0;
+          border-radius:12px;
+          background:#101828;
+          color:white;
+          font-size:16px;
+          font-weight:600;
+          cursor:pointer;
+        "
+      >
+        Compris
+      </button>
+
+
+    </div>
+
+  `;
+
+
+  document.body.appendChild(
+    modal
+  );
+
+
+  // ----------------------------------------------------------
+  // FERMER
+  // ----------------------------------------------------------
+
+  const closeButton =
+    document.getElementById(
+      'closeOrderConfirmation'
+    );
+
+  if (closeButton) {
+
+    closeButton.addEventListener(
+      'click',
+      () => {
+
+        modal.remove();
+
+      }
+    );
+
+  }
+
+
+  // ----------------------------------------------------------
+  // CLIQUER À L'EXTÉRIEUR
+  // ----------------------------------------------------------
+
+  modal.addEventListener(
+    'click',
+    event => {
+
+      if (
+        event.target === modal
+      ) {
+
+        modal.remove();
+
+      }
+
+    }
+  );
+
+}
