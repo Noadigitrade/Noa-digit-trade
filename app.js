@@ -882,18 +882,35 @@ async function signupUser() {
     // ------------------------------------
 
     const {
-      data,
-      error
-    } =
-      await supabaseClient.auth.signUp({
+  data,
+  error
+} =
+  await supabaseClient.auth.signUp({
 
-        email:
-          email,
+    email:
+      email,
 
-        password:
-          password
+    password:
+      password,
 
-      });
+    options: {
+      emailRedirectTo:
+        'https://noadigittrade.github.io'
+    }
+
+  });
+      
+      
+    
+
+
+        
+          
+
+        
+          
+
+    
 
 
     if (error) {
