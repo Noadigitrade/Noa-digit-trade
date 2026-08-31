@@ -1,6 +1,11 @@
 // ==========================================
-// NOA DIGIT TRADE - APPLICATION
+// NOA DIGIT TRADE
 // SUPABASE AUTH + ORDERS
+// ==========================================
+
+
+// ==========================================
+// CONFIGURATION SUPABASE
 // ==========================================
 
 const SUPABASE_URL =
@@ -14,12 +19,11 @@ const SUPABASE_KEY =
 // INITIALISATION SUPABASE
 // ==========================================
 
-const { createClient } = supabase;
-
-const supabaseClient = createClient(
-  SUPABASE_URL,
-  SUPABASE_KEY
-);
+const supabaseClient =
+  window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+  );
 
 
 // ==========================================
@@ -33,18 +37,22 @@ let type = 'buy';
 // PAGE CHARGÉE
 // ==========================================
 
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener(
+  'DOMContentLoaded',
+  async () => {
 
-  // Vérifier la connexion
-  await checkSession();
+    setupTabs();
 
-  // Boutons
-  setupTabs();
-  setupStartButton();
-  setupLoginButton();
-  setupSubmitButton();
+    setupStartButton();
 
-});
+    setupAuth();
+
+    setupSubmitButton();
+
+    await checkSession();
+
+  }
+);
 
 
 // ==========================================
@@ -53,17 +61,49 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function checkSession() {
 
-  const {
-    data: { session }
-  } = await supabaseClient.auth.getSession();
+  try {
 
-  updateLoginButton(session);
+    const {
+      data,
+      error
+    } =
+      await supabaseClient.auth.getSession();
+
+
+    if (error) {
+
+      console.error(
+        'Erreur session :',
+        error
+      );
+
+      updateLoginButton(null);
+
+      return;
+
+    }
+
+
+    updateLoginButton(
+      data.session
+    );
+
+  } catch (error) {
+
+    console.error(
+      'Erreur :',
+      error
+    );
+
+    updateLoginButton(null);
+
+  }
 
 }
 
 
 // ==========================================
-// ÉCOUTER LES CHANGEMENTS DE SESSION
+// SURVEILLER LA CONNEXION
 // ==========================================
 
 supabaseClient.auth.onAuthStateChange(
@@ -76,30 +116,42 @@ supabaseClient.auth.onAuthStateChange(
 
 
 // ==========================================
-// BOUTON CONNEXION
+// BOUTON SE CONNECTER / MON COMPTE
 // ==========================================
 
 function updateLoginButton(session) {
 
-  const login = document.getElementById('login');
+  const login =
+    document.getElementById('login');
 
-  if (!login) return;
+
+  if (!login) {
+    return;
+  }
 
 
   if (session) {
 
-    login.textContent = 'Mon compte';
+    login.textContent =
+      'Mon compte';
 
     login.onclick = () => {
-      showAccountModal(session.user);
+
+      showAccountModal(
+        session.user
+      );
+
     };
 
   } else {
 
-    login.textContent = 'Se connecter';
+    login.textContent =
+      'Se connecter';
 
     login.onclick = () => {
+
       showAuthModal();
+
     };
 
   }
@@ -113,21 +165,35 @@ function updateLoginButton(session) {
 
 function setupTabs() {
 
-  document.querySelectorAll('.tab').forEach(button => {
+  const tabs =
+    document.querySelectorAll('.tab');
 
-    button.addEventListener('click', () => {
 
-      document
-        .querySelectorAll('.tab')
-        .forEach(item =>
-          item.classList.remove('active')
+  tabs.forEach(button => {
+
+    button.addEventListener(
+      'click',
+      () => {
+
+        tabs.forEach(item => {
+
+          item.classList.remove(
+            'active'
+          );
+
+        });
+
+
+        button.classList.add(
+          'active'
         );
 
-      button.classList.add('active');
 
-      type = button.dataset.type;
+        type =
+          button.dataset.type;
 
-    });
+      }
+    );
 
   });
 
@@ -143,536 +209,725 @@ function setupStartButton() {
   const start =
     document.getElementById('start');
 
-  if (!start) return;
+
+  if (!start) {
+    return;
+  }
 
 
-  start.addEventListener('click', () => {
+  start.addEventListener(
+    'click',
+    () => {
 
-    const order =
-      document.getElementById('order');
+      const order =
+        document.getElementById('order');
 
-    if (order) {
 
-      order.scrollIntoView({
-        behavior: 'smooth'
-      });
+      if (order) {
+
+        order.scrollIntoView({
+
+          behavior: 'smooth',
+
+          block: 'start'
+
+        });
+
+      }
 
     }
-
-  });
-
-}
-
-
-// ==========================================
-// BOUTON LOGIN
-// ==========================================
-
-function setupLoginButton() {
-
-  const login =
-    document.getElementById('login');
-
-  if (!login) return;
-
-  login.addEventListener('click', () => {
-    showAuthModal();
-  });
+  );
 
 }
 
 
 // ==========================================
-// FENÊTRE CONNEXION / INSCRIPTION
+// FENÊTRE AUTHENTIFICATION
 // ==========================================
 
 function showAuthModal() {
 
-  closeModal();
-
-
   const modal =
-    document.createElement('div');
-
-  modal.id = 'authModal';
-
-  modal.innerHTML = `
-
-    <div style="
-      position:fixed;
-      inset:0;
-      background:rgba(0,0,0,.55);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      z-index:9999;
-      padding:20px;
-    ">
-
-      <div style="
-        width:100%;
-        max-width:420px;
-        background:white;
-        border-radius:20px;
-        padding:28px;
-        box-shadow:0 20px 50px rgba(0,0,0,.25);
-      ">
-
-        <div style="
-          display:flex;
-          justify-content:space-between;
-          align-items:center;
-          margin-bottom:20px;
-        ">
-
-          <h2 id="authTitle" style="margin:0">
-            Se connecter
-          </h2>
-
-          <button
-            id="closeAuth"
-            type="button"
-            style="
-              border:0;
-              background:none;
-              font-size:25px;
-              cursor:pointer;
-            "
-          >
-            ×
-          </button>
-
-        </div>
-
-
-        <input
-          id="authEmail"
-          type="email"
-          placeholder="Adresse email"
-          autocomplete="email"
-          style="
-            width:100%;
-            padding:14px;
-            margin-bottom:12px;
-            border:1px solid #d0d5dd;
-            border-radius:10px;
-            font-size:16px;
-          "
-        >
-
-
-        <input
-          id="authPassword"
-          type="password"
-          placeholder="Mot de passe"
-          autocomplete="current-password"
-          style="
-            width:100%;
-            padding:14px;
-            margin-bottom:16px;
-            border:1px solid #d0d5dd;
-            border-radius:10px;
-            font-size:16px;
-          "
-        >
-
-
-        <button
-          id="authSubmit"
-          type="button"
-          style="
-            width:100%;
-            padding:14px;
-            border:0;
-            border-radius:10px;
-            background:#111827;
-            color:white;
-            font-weight:700;
-            font-size:16px;
-            cursor:pointer;
-          "
-        >
-          Se connecter
-        </button>
+    document.getElementById('authModal');
 
 
-        <p
-          id="authMessage"
-          style="
-            margin-top:15px;
-            line-height:1.5;
-          "
-        ></p>
+  const loginForm =
+    document.getElementById('loginForm');
 
 
-        <button
-          id="switchAuth"
-          type="button"
-          style="
-            width:100%;
-            margin-top:10px;
-            padding:10px;
-            border:0;
-            background:none;
-            cursor:pointer;
-            color:#344054;
-          "
-        >
-          Créer un compte
-        </button>
+  const signupForm =
+    document.getElementById('signupForm');
 
-      </div>
 
-    </div>
+  if (!modal) {
+    return;
+  }
 
-  `;
 
+  modal.style.display =
+    'flex';
 
-  document.body.appendChild(modal);
 
+  modal.setAttribute(
+    'aria-hidden',
+    'false'
+  );
 
-  let mode = 'login';
 
+  if (loginForm) {
+    loginForm.hidden = false;
+  }
 
-  const title =
-    document.getElementById('authTitle');
 
-  const submit =
-    document.getElementById('authSubmit');
+  if (signupForm) {
+    signupForm.hidden = true;
+  }
 
-  const switchButton =
-    document.getElementById('switchAuth');
 
-  const message =
-    document.getElementById('authMessage');
+  const loginMessage =
+    document.getElementById(
+      'loginMessage'
+    );
 
 
-  document
-    .getElementById('closeAuth')
-    .addEventListener('click', closeModal);
+  const signupMessage =
+    document.getElementById(
+      'signupMessage'
+    );
 
 
-  // ========================================
-  // CONNEXION / INSCRIPTION
-  // ========================================
+  if (loginMessage) {
+    loginMessage.textContent = '';
+  }
 
-  submit.addEventListener('click', async () => {
 
-    const email =
-      document
-        .getElementById('authEmail')
-        .value
-        .trim();
-
-    const password =
-      document
-        .getElementById('authPassword')
-        .value;
-
-
-    if (!email || !password) {
-
-      message.textContent =
-        'Veuillez remplir tous les champs.';
-
-      return;
-
-    }
-
-
-    if (password.length < 6) {
-
-      message.textContent =
-        'Le mot de passe doit contenir au moins 6 caractères.';
-
-      return;
-
-    }
-
-
-    submit.disabled = true;
-
-    submit.textContent =
-      'Patientez...';
-
-
-    try {
-
-      let result;
-
-
-      // -------------------------------
-      // CONNEXION
-      // -------------------------------
-
-      if (mode === 'login') {
-
-        result =
-          await supabaseClient.auth.signInWithPassword({
-            email,
-            password
-          });
-
-
-      }
-
-      // -------------------------------
-      // INSCRIPTION
-      // -------------------------------
-
-      else {
-
-        result =
-          await supabaseClient.auth.signUp({
-            email,
-            password
-          });
-
-      }
-
-
-      if (result.error) {
-
-        throw result.error;
-
-      }
-
-
-      // -------------------------------
-      // SUCCÈS CONNEXION
-      // -------------------------------
-
-      if (mode === 'login') {
-
-        message.textContent =
-          'Connexion réussie.';
-
-        setTimeout(() => {
-
-          closeModal();
-
-        }, 800);
-
-      }
-
-
-      // -------------------------------
-      // SUCCÈS INSCRIPTION
-      // -------------------------------
-
-      else {
-
-        message.textContent =
-          'Compte créé. Vérifiez votre adresse email pour confirmer votre compte.';
-
-      }
-
-
-    } catch (error) {
-
-      console.error(error);
-
-      message.textContent =
-        `Erreur : ${error.message}`;
-
-    } finally {
-
-      submit.disabled = false;
-
-      submit.textContent =
-        mode === 'login'
-          ? 'Se connecter'
-          : 'Créer mon compte';
-
-    }
-
-  });
-
-
-  // ========================================
-  // CHANGER LOGIN / INSCRIPTION
-  // ========================================
-
-  switchButton.addEventListener('click', () => {
-
-    mode =
-      mode === 'login'
-        ? 'signup'
-        : 'login';
-
-
-    if (mode === 'login') {
-
-      title.textContent =
-        'Se connecter';
-
-      submit.textContent =
-        'Se connecter';
-
-      switchButton.textContent =
-        'Créer un compte';
-
-    } else {
-
-      title.textContent =
-        'Créer un compte';
-
-      submit.textContent =
-        'Créer mon compte';
-
-      switchButton.textContent =
-        'J'ai déjà un compte';
-
-    }
-
-    message.textContent = '';
-
-  });
+  if (signupMessage) {
+    signupMessage.textContent = '';
+  }
 
 }
 
 
 // ==========================================
-// FENÊTRE MON COMPTE
+// FERMER AUTH
+// ==========================================
+
+function closeAuthModal() {
+
+  const modal =
+    document.getElementById('authModal');
+
+
+  if (!modal) {
+    return;
+  }
+
+
+  modal.style.display =
+    'none';
+
+
+  modal.setAttribute(
+    'aria-hidden',
+    'true'
+  );
+
+}
+
+
+// ==========================================
+// CONFIGURATION AUTH
+// ==========================================
+
+function setupAuth() {
+
+  const modal =
+    document.getElementById('authModal');
+
+
+  const closeAuth =
+    document.getElementById('closeAuth');
+
+
+  const showSignup =
+    document.getElementById('showSignup');
+
+
+  const showLogin =
+    document.getElementById('showLogin');
+
+
+  const loginSubmit =
+    document.getElementById('loginSubmit');
+
+
+  const signupSubmit =
+    document.getElementById('signupSubmit');
+
+
+  // --------------------------------------
+  // FERMER
+  // --------------------------------------
+
+  if (closeAuth) {
+
+    closeAuth.addEventListener(
+      'click',
+      closeAuthModal
+    );
+
+  }
+
+
+  // --------------------------------------
+  // CLIQUER À L'EXTÉRIEUR
+  // --------------------------------------
+
+  if (modal) {
+
+    modal.addEventListener(
+      'click',
+      event => {
+
+        if (
+          event.target === modal
+        ) {
+
+          closeAuthModal();
+
+        }
+
+      }
+    );
+
+  }
+
+
+  // --------------------------------------
+  // AFFICHER INSCRIPTION
+  // --------------------------------------
+
+  if (showSignup) {
+
+    showSignup.addEventListener(
+      'click',
+      () => {
+
+        const loginForm =
+          document.getElementById(
+            'loginForm'
+          );
+
+
+        const signupForm =
+          document.getElementById(
+            'signupForm'
+          );
+
+
+        if (loginForm) {
+          loginForm.hidden = true;
+        }
+
+
+        if (signupForm) {
+          signupForm.hidden = false;
+        }
+
+
+        document.getElementById(
+          'loginMessage'
+        ).textContent = '';
+
+      }
+    );
+
+  }
+
+
+  // --------------------------------------
+  // AFFICHER CONNEXION
+  // --------------------------------------
+
+  if (showLogin) {
+
+    showLogin.addEventListener(
+      'click',
+      () => {
+
+        const loginForm =
+          document.getElementById(
+            'loginForm'
+          );
+
+
+        const signupForm =
+          document.getElementById(
+            'signupForm'
+          );
+
+
+        if (signupForm) {
+          signupForm.hidden = true;
+        }
+
+
+        if (loginForm) {
+          loginForm.hidden = false;
+        }
+
+
+        document.getElementById(
+          'signupMessage'
+        ).textContent = '';
+
+      }
+    );
+
+  }
+
+
+  // --------------------------------------
+  // CONNEXION
+  // --------------------------------------
+
+  if (loginSubmit) {
+
+    loginSubmit.addEventListener(
+      'click',
+      loginUser
+    );
+
+  }
+
+
+  // --------------------------------------
+  // INSCRIPTION
+  // --------------------------------------
+
+  if (signupSubmit) {
+
+    signupSubmit.addEventListener(
+      'click',
+      signupUser
+    );
+
+  }
+
+}
+
+
+// ==========================================
+// CONNEXION UTILISATEUR
+// ==========================================
+
+async function loginUser() {
+
+  const email =
+    document.getElementById(
+      'loginEmail'
+    ).value.trim();
+
+
+  const password =
+    document.getElementById(
+      'loginPassword'
+    ).value;
+
+
+  const message =
+    document.getElementById(
+      'loginMessage'
+    );
+
+
+  const button =
+    document.getElementById(
+      'loginSubmit'
+    );
+
+
+  message.textContent = '';
+
+
+  if (!email || !password) {
+
+    message.textContent =
+      'Veuillez remplir tous les champs.';
+
+    return;
+
+  }
+
+
+  button.disabled = true;
+
+  button.textContent =
+    'Connexion...';
+
+
+  try {
+
+    const {
+      data,
+      error
+    } =
+      await supabaseClient.auth.signInWithPassword({
+
+        email: email,
+
+        password: password
+
+      });
+
+
+    if (error) {
+
+      throw error;
+
+    }
+
+
+    console.log(
+      'Connexion réussie :',
+      data.user
+    );
+
+
+    message.textContent =
+      'Connexion réussie.';
+
+
+    setTimeout(
+      () => {
+
+        closeAuthModal();
+
+      },
+      700
+    );
+
+
+  } catch (error) {
+
+    console.error(
+      'Erreur connexion :',
+      error
+    );
+
+
+    message.textContent =
+      'Erreur : ' +
+      error.message;
+
+  } finally {
+
+    button.disabled = false;
+
+    button.textContent =
+      'Se connecter';
+
+  }
+
+}
+
+
+// ==========================================
+// CRÉATION DE COMPTE
+// ==========================================
+
+async function signupUser() {
+
+  const email =
+    document.getElementById(
+      'signupEmail'
+    ).value.trim();
+
+
+  const password =
+    document.getElementById(
+      'signupPassword'
+    ).value;
+
+
+  const confirmPassword =
+    document.getElementById(
+      'signupPasswordConfirm'
+    ).value;
+
+
+  const message =
+    document.getElementById(
+      'signupMessage'
+    );
+
+
+  const button =
+    document.getElementById(
+      'signupSubmit'
+    );
+
+
+  message.textContent = '';
+
+
+  if (
+    !email ||
+    !password ||
+    !confirmPassword
+  ) {
+
+    message.textContent =
+      'Veuillez remplir tous les champs.';
+
+    return;
+
+  }
+
+
+  if (password.length < 6) {
+
+    message.textContent =
+      'Le mot de passe doit contenir au moins 6 caractères.';
+
+    return;
+
+  }
+
+
+  if (password !== confirmPassword) {
+
+    message.textContent =
+      'Les mots de passe ne correspondent pas.';
+
+    return;
+
+  }
+
+
+  button.disabled = true;
+
+  button.textContent =
+    'Création...';
+
+
+  try {
+
+    const {
+      data,
+      error
+    } =
+      await supabaseClient.auth.signUp({
+
+        email: email,
+
+        password: password
+
+      });
+
+
+    if (error) {
+
+      throw error;
+
+    }
+
+
+    console.log(
+      'Compte créé :',
+      data
+    );
+
+
+    message.textContent =
+      'Compte créé avec succès. Vérifiez votre email pour confirmer votre compte.';
+
+
+    document.getElementById(
+      'signupPassword'
+    ).value = '';
+
+
+    document.getElementById(
+      'signupPasswordConfirm'
+    ).value = '';
+
+
+  } catch (error) {
+
+    console.error(
+      'Erreur inscription :',
+      error
+    );
+
+
+    message.textContent =
+      'Erreur : ' +
+      error.message;
+
+  } finally {
+
+    button.disabled = false;
+
+    button.textContent =
+      'Créer mon compte';
+
+  }
+
+}
+
+
+// ==========================================
+// MON COMPTE
 // ==========================================
 
 function showAccountModal(user) {
 
-  closeModal();
+  const oldModal =
+    document.getElementById(
+      'accountModal'
+    );
+
+
+  if (oldModal) {
+    oldModal.remove();
+  }
 
 
   const modal =
     document.createElement('div');
 
-  modal.id = 'accountModal';
+
+  modal.id =
+    'accountModal';
+
+
+  modal.style.cssText = `
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.55);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:9999;
+    padding:20px;
+  `;
 
 
   modal.innerHTML = `
 
     <div style="
-      position:fixed;
-      inset:0;
-      background:rgba(0,0,0,.55);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      z-index:9999;
-      padding:20px;
+      width:100%;
+      max-width:420px;
+      background:white;
+      border-radius:20px;
+      padding:28px;
+      box-shadow:0 20px 50px rgba(0,0,0,.25);
     ">
 
-      <div style="
-        width:100%;
-        max-width:420px;
-        background:white;
-        border-radius:20px;
-        padding:28px;
-      ">
+      <h2>
+        Mon compte
+      </h2>
 
-        <h2>
-          Mon compte
-        </h2>
+      <p>
+        <strong>Email :</strong><br>
+        ${escapeHtml(user.email || '')}
+      </p>
 
-        <p>
-          <strong>Email :</strong><br>
-          ${user.email}
-        </p>
+      <button
+        id="logoutButton"
+        type="button"
+        class="primary full">
+        Se déconnecter
+      </button>
 
-        <button
-          id="logout"
-          type="button"
-          style="
-            width:100%;
-            padding:14px;
-            border:0;
-            border-radius:10px;
-            background:#111827;
-            color:white;
-            font-weight:700;
-            cursor:pointer;
-          "
-        >
-          Se déconnecter
-        </button>
+      <button
+        id="closeAccountButton"
+        type="button"
+        style="
+          width:100%;
+          margin-top:10px;
+          padding:12px;
+          border:1px solid #d0d5dd;
+          border-radius:10px;
+          background:white;
+        ">
+        Fermer
+      </button>
 
-        <button
-          id="closeAccount"
-          type="button"
-          style="
-            width:100%;
-            margin-top:10px;
-            padding:12px;
-            border:1px solid #d0d5dd;
-            border-radius:10px;
-            background:white;
-            cursor:pointer;
-          "
-        >
-          Fermer
-        </button>
-
-      </div>
+      <p id="accountMessage"></p>
 
     </div>
 
   `;
 
 
-  document.body.appendChild(modal);
+  document.body.appendChild(
+    modal
+  );
 
 
   document
-    .getElementById('closeAccount')
-    .addEventListener('click', closeModal);
+    .getElementById(
+      'closeAccountButton'
+    )
+    .addEventListener(
+      'click',
+      () => {
 
-
-  document
-    .getElementById('logout')
-    .addEventListener('click', async () => {
-
-      const {
-        error
-      } = await supabaseClient.auth.signOut();
-
-
-      if (error) {
-
-        alert(
-          `Erreur : ${error.message}`
-        );
-
-        return;
+        modal.remove();
 
       }
+    );
 
 
-      closeModal();
+  document
+    .getElementById(
+      'logoutButton'
+    )
+    .addEventListener(
+      'click',
+      async () => {
 
-    });
+        const {
+          error
+        } =
+          await supabaseClient.auth.signOut();
+
+
+        if (error) {
+
+          document.getElementById(
+            'accountMessage'
+          ).textContent =
+            'Erreur : ' +
+            error.message;
+
+          return;
+
+        }
+
+
+        modal.remove();
+
+      }
+    );
 
 }
 
 
 // ==========================================
-// FERMER LES FENÊTRES
+// PROTECTION AFFICHAGE EMAIL
 // ==========================================
 
-function closeModal() {
+function escapeHtml(value) {
 
-  const auth =
-    document.getElementById('authModal');
-
-  const account =
-    document.getElementById('accountModal');
-
-
-  if (auth) {
-    auth.remove();
-  }
-
-
-  if (account) {
-    account.remove();
-  }
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
 
 }
 
@@ -684,202 +939,269 @@ function closeModal() {
 function setupSubmitButton() {
 
   const submit =
-    document.getElementById('submit');
-
-  if (!submit) return;
-
-
-  submit.addEventListener('click', async () => {
-
-    const amount =
-      document
-        .getElementById('amount')
-        .value
-        .trim();
+    document.getElementById(
+      'submit'
+    );
 
 
-    const wallet =
-      document
-        .getElementById('wallet')
-        .value
-        .trim();
+  if (!submit) {
+    return;
+  }
 
 
-    const network =
-      document
-        .getElementById('network')
-        .value;
+  submit.addEventListener(
+    'click',
+    sendOrder
+  );
+
+}
 
 
-    const message =
-      document.getElementById('msg');
+// ==========================================
+// ENVOI COMMANDE
+// ==========================================
+
+async function sendOrder() {
+
+  const amount =
+    document.getElementById(
+      'amount'
+    ).value.trim();
 
 
-    // -------------------------------
-    // VALIDATION
-    // -------------------------------
-
-    if (!amount || !wallet) {
-
-      message.textContent =
-        'Veuillez remplir le montant et l’adresse du portefeuille.';
-
-      return;
-
-    }
+  const wallet =
+    document.getElementById(
+      'wallet'
+    ).value.trim();
 
 
-    if (Number(amount) <= 0) {
-
-      message.textContent =
-        'Le montant doit être supérieur à 0.';
-
-      return;
-
-    }
+  const network =
+    document.getElementById(
+      'network'
+    ).value;
 
 
-    // -------------------------------
-    // SESSION
-    // -------------------------------
+  const message =
+    document.getElementById(
+      'msg'
+    );
+
+
+  const submit =
+    document.getElementById(
+      'submit'
+    );
+
+
+  message.textContent = '';
+
+
+  // --------------------------------------
+  // VALIDATION
+  // --------------------------------------
+
+  if (!amount || !wallet) {
+
+    message.textContent =
+      'Veuillez remplir le montant et l’adresse du portefeuille.';
+
+    return;
+
+  }
+
+
+  if (Number(amount) <= 0) {
+
+    message.textContent =
+      'Le montant doit être supérieur à 0.';
+
+    return;
+
+  }
+
+
+  // --------------------------------------
+  // UTILISATEUR CONNECTÉ
+  // --------------------------------------
+
+  const {
+    data,
+    error
+  } =
+    await supabaseClient.auth.getUser();
+
+
+  if (
+    error ||
+    !data.user
+  ) {
+
+    message.textContent =
+      'Veuillez vous connecter avant d’envoyer une demande.';
+
+    showAuthModal();
+
+    return;
+
+  }
+
+
+  const user =
+    data.user;
+
+
+  submit.disabled = true;
+
+  submit.textContent =
+    'Envoi en cours...';
+
+
+  try {
+
+    // ------------------------------------
+    // CHERCHER L'UTILISATEUR DANS
+    // LA TABLE "Users"
+    // ------------------------------------
 
     const {
-      data: {
-        session
-      }
+      data: users,
+      error: userError
     } =
-      await supabaseClient.auth.getSession();
+      await supabaseClient
+        .from('Users')
+        .select('id')
+        .eq('auth_id', user.id)
+        .limit(1);
 
 
-    if (!session) {
+    if (userError) {
 
-      message.textContent =
-        'Veuillez vous connecter avant d’envoyer une demande.';
-
-      showAuthModal();
-
-      return;
-
-    }
-
-
-    submit.disabled = true;
-
-    submit.textContent =
-      'Envoi en cours...';
-
-
-    try {
-
-      // -------------------------------
-      // CRÉATION COMMANDE
-      // -------------------------------
-
-      const response =
-        await fetch(
-          `${SUPABASE_URL}/rest/v1/orders`,
-          {
-
-            method: 'POST',
-
-            headers: {
-
-              'apikey':
-                SUPABASE_KEY,
-
-              'Authorization':
-                `Bearer ${session.access_token}`,
-
-              'Content-Type':
-                'application/json',
-
-              'Prefer':
-                'return=minimal'
-
-            },
-
-
-            body: JSON.stringify({
-
-              type: type,
-
-              crypto_amount:
-                Number(amount),
-
-              network: network,
-
-              wallet_address:
-                wallet,
-
-              status:
-                'pending'
-
-            })
-
-          }
-        );
-
-
-      if (!response.ok) {
-
-        const errorText =
-          await response.text();
-
-
-        console.error(
-          'Erreur Supabase :',
-          errorText
-        );
-
-
-        throw new Error(
-          errorText ||
-          'Erreur lors de la création de la commande.'
-        );
-
-      }
-
-
-      console.log(
-        'Commande créée avec succès'
+      console.error(
+        'Erreur recherche utilisateur :',
+        userError
       );
 
 
-      message.textContent =
-        `Demande ${
-          type === 'buy'
-            ? 'd’achat'
-            : 'de vente'
-        } envoyée avec succès : ${amount} USDT (${network}).`;
-
-
-      document
-        .getElementById('amount')
-        .value = '';
-
-
-      document
-        .getElementById('wallet')
-        .value = '';
-
-
-    } catch (error) {
-
-      console.error(error);
-
-
-      message.textContent =
-        `Erreur : ${error.message}`;
-
-    } finally {
-
-      submit.disabled = false;
-
-      submit.textContent =
-        'Envoyer la demande';
+      throw new Error(
+        'Impossible de retrouver votre profil utilisateur.'
+      );
 
     }
 
-  });
+
+    if (
+      !users ||
+      users.length === 0
+    ) {
+
+      throw new Error(
+        'Votre profil utilisateur n’existe pas encore.'
+      );
+
+    }
+
+
+    const userId =
+      users[0].id;
+
+
+    // ------------------------------------
+    // CRÉER LA COMMANDE
+    // ------------------------------------
+
+    const {
+      data: order,
+      error: orderError
+    } =
+      await supabaseClient
+        .from('orders')
+        .insert({
+
+          user_id:
+            userId,
+
+          type:
+            type,
+
+          crypto_amount:
+            Number(amount),
+
+          network:
+            network,
+
+          wallet_address:
+            wallet,
+
+          status:
+            'pending'
+
+        })
+        .select()
+        .single();
+
+
+    if (orderError) {
+
+      console.error(
+        'Erreur création commande :',
+        orderError
+      );
+
+
+      throw new Error(
+        orderError.message
+      );
+
+    }
+
+
+    console.log(
+      'Commande créée :',
+      order
+    );
+
+
+    // ------------------------------------
+    // SUCCÈS
+    // ------------------------------------
+
+    message.textContent =
+      `Demande ${
+        type === 'buy'
+          ? 'd’achat'
+          : 'de vente'
+      } envoyée avec succès : ${amount} USDT (${network}).`;
+
+
+    document.getElementById(
+      'amount'
+    ).value = '';
+
+
+    document.getElementById(
+      'wallet'
+    ).value = '';
+
+
+  } catch (error) {
+
+    console.error(
+      'Erreur commande :',
+      error
+    );
+
+
+    message.textContent =
+      'Erreur : ' +
+      error.message;
+
+  } finally {
+
+    submit.disabled = false;
+
+    submit.textContent =
+      'Envoyer la demande';
+
+  }
 
 }
