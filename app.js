@@ -1,6 +1,6 @@
 // ============================================================
 // NOA DIGIT TRADE
-// APP.JS COMPLET - VERSION CORRIGÉE
+// APP.JS COMPLET - VERSION STABLE
 //
 // SUPABASE AUTH
 // PROFILES
@@ -10,7 +10,7 @@
 // ORANGE MONEY
 // LITIGES
 // RLS
-// ADMIN
+// ADMIN / ROLE
 // ============================================================
 
 
@@ -55,7 +55,7 @@ const CONFIG = {
     },
 
     // Clé interne conservée pour compatibilité
-    // Affichage utilisateur : BEP20
+    // avec la base de données
     bp20: {
       name: "USDT BEP20",
       fee: 0
@@ -95,13 +95,18 @@ let applicationInitializing = false;
 
 let authListenerReady = false;
 
+let initializationPromise = null;
+
 
 // ============================================================
 // RACCOURCI DOM
 // ============================================================
 
-const $ = (id) =>
-  document.getElementById(id);
+function $(id) {
+
+  return document.getElementById(id);
+
+}
 
 
 // ============================================================
@@ -117,11 +122,11 @@ function showMessage(message, type = "info") {
   box.textContent =
     String(message || "");
 
-  box.className = "";
+  box.className =
+    "app-message " + type;
 
-  box.id = "appMessage";
-
-  box.classList.add(type);
+  box.id =
+    "appMessage";
 
 }
 
@@ -134,9 +139,8 @@ function hideMessage() {
 
   box.textContent = "";
 
-  box.className = "";
-
-  box.id = "appMessage";
+  box.className =
+    "app-message";
 
 }
 
@@ -157,6 +161,16 @@ function formatNumber(value) {
 }
 
 
+function formatDecimal(value, decimals = 6) {
+
+  const number =
+    Number(value) || 0;
+
+  return number.toFixed(decimals);
+
+}
+
+
 function formatDate(value) {
 
   if (!value) {
@@ -171,7 +185,9 @@ function formatDate(value) {
       date.getTime()
     )
   ) {
+
     return "-";
+
   }
 
   return date.toLocaleString(
@@ -212,7 +228,9 @@ function escapeHtml(value) {
 function getSupabaseErrorMessage(error) {
 
   if (!error) {
+
     return "Erreur inconnue.";
+
   }
 
   return (
@@ -222,6 +240,16 @@ function getSupabaseErrorMessage(error) {
     error.hint ||
     "Erreur inconnue."
   );
+
+}
+
+
+function isValidUUID(value) {
+
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+    .test(
+      String(value || "")
+    );
 
 }
 
@@ -275,6 +303,7 @@ function showSubPage(pageId) {
       ".sub-page"
     );
 
+
   pages.forEach(page => {
 
     page.classList.add("hidden");
@@ -286,6 +315,7 @@ function showSubPage(pageId) {
 
   const target =
     $(pageId);
+
 
   if (target) {
 
@@ -301,9 +331,11 @@ function showSubPage(pageId) {
       ".nav-btn"
     );
 
+
   navButtons.forEach(button => {
 
     button.classList.remove("active");
+
 
     if (
       button.dataset.page === pageId
@@ -485,9 +517,7 @@ async function registerUser(event) {
   }
 
 
-  if (
-    password.length < 6
-  ) {
+  if (password.length < 6) {
 
     showMessage(
       "Le mot de passe doit contenir au moins 6 caractères.",
@@ -579,7 +609,9 @@ async function registerUser(event) {
 
 
     if (error) {
+
       throw error;
+
     }
 
 
@@ -597,7 +629,7 @@ async function registerUser(event) {
 
 
     // --------------------------------------------------------
-    // SI UNE SESSION EST DISPONIBLE
+    // SESSION DISPONIBLE
     // --------------------------------------------------------
 
     if (data.session) {
@@ -623,16 +655,18 @@ async function registerUser(event) {
         "success"
       );
 
+
       return;
 
     }
 
 
     // --------------------------------------------------------
-    // SI CONFIRMATION EMAIL REQUISE
+    // CONFIRMATION EMAIL
     // --------------------------------------------------------
 
-    currentProfile = null;
+    currentProfile =
+      null;
 
 
     showMessage(
@@ -709,21 +743,14 @@ async function registerUser(event) {
 
 // ============================================================
 // PROFIL
-//
-// TABLE SUPABASE : public.profiles
-//
-// COLONNES UTILISEES :
-// id
-// full_name
-// phone
-// country
-// role
 // ============================================================
 
 async function loadUserProfile() {
 
   if (!currentUser) {
+
     return null;
+
   }
 
 
@@ -737,7 +764,9 @@ async function loadUserProfile() {
 
 
     if (sessionError) {
+
       throw sessionError;
+
     }
 
 
@@ -747,9 +776,13 @@ async function loadUserProfile() {
 
     if (!session?.user) {
 
-      throw new Error(
-        "Aucune session Supabase active."
-      );
+      currentUser =
+        null;
+
+      currentProfile =
+        null;
+
+      return null;
 
     }
 
@@ -759,7 +792,7 @@ async function loadUserProfile() {
 
 
     // --------------------------------------------------------
-    // IMPORTANT :
+    // RECHERCHE PROFIL
     // profiles.id = auth.users.id
     // --------------------------------------------------------
 
@@ -780,7 +813,9 @@ async function loadUserProfile() {
 
 
     if (error) {
+
       throw error;
+
     }
 
 
@@ -802,8 +837,6 @@ async function loadUserProfile() {
 
     // --------------------------------------------------------
     // PROFIL ABSENT
-    //
-    // Création dans public.profiles
     // --------------------------------------------------------
 
     const metadata =
@@ -847,7 +880,55 @@ async function loadUserProfile() {
 
 
     if (insertError) {
+
+      // ------------------------------------------------------
+      // Si le profil vient d'être créé ailleurs,
+      // on tente simplement de le relire.
+      // ------------------------------------------------------
+
+      if (
+        insertError.code === "23505"
+      ) {
+
+        const {
+          data: existingProfile,
+          error: reloadError
+        } =
+          await supabaseClient
+            .from("profiles")
+            .select(
+              "id,full_name,phone,country,role"
+            )
+            .eq(
+              "id",
+              currentUser.id
+            )
+            .maybeSingle();
+
+
+        if (reloadError) {
+
+          throw reloadError;
+
+        }
+
+
+        if (existingProfile) {
+
+          currentProfile =
+            existingProfile;
+
+          updateUserInterface();
+
+          return currentProfile;
+
+        }
+
+      }
+
+
       throw insertError;
+
     }
 
 
@@ -870,7 +951,8 @@ async function loadUserProfile() {
     );
 
 
-    currentProfile = null;
+    currentProfile =
+      null;
 
 
     showMessage(
@@ -894,7 +976,9 @@ async function loadUserProfile() {
 function updateUserInterface() {
 
   if (!currentUser) {
+
     return;
+
   }
 
 
@@ -968,13 +1052,15 @@ function updateUserInterface() {
 
 
 // ============================================================
-// INITIALISATION
+// INITIALISATION APPLICATION
 // ============================================================
 
 async function initializeApplication() {
 
   if (applicationInitializing) {
-    return;
+
+    return initializationPromise;
+
   }
 
 
@@ -982,56 +1068,112 @@ async function initializeApplication() {
     true;
 
 
-  try {
+  initializationPromise =
+    (async () => {
 
-    showAppPage();
+      try {
 
-    updateRatesUI();
+        showAppPage();
 
-
-    if (!currentUser) {
-
-      const {
-        data
-      } =
-        await supabaseClient.auth.getUser();
+        updateRatesUI();
 
 
-      if (data?.user) {
+        // ----------------------------------------------------
+        // RECUPERATION SESSION SI NECESSAIRE
+        // ----------------------------------------------------
 
-        currentUser =
-          data.user;
+        if (!currentUser) {
+
+          const {
+            data,
+            error
+          } =
+            await supabaseClient.auth.getUser();
+
+
+          if (error) {
+
+            throw error;
+
+          }
+
+
+          if (data?.user) {
+
+            currentUser =
+              data.user;
+
+          }
+
+        }
+
+
+        // ----------------------------------------------------
+        // PROFIL
+        // ----------------------------------------------------
+
+        if (currentUser) {
+
+          const profile =
+            await loadUserProfile();
+
+
+          if (!profile) {
+
+            throw new Error(
+              "Impossible de charger votre profil."
+            );
+
+          }
+
+        }
+
+
+        updateCalculator();
+
+
+        showSubPage(
+          "homePage"
+        );
+
+
+        await loadOrderHistory();
 
       }
 
-    }
+      catch (error) {
+
+        console.error(
+          "Erreur initialisation :",
+          error
+        );
 
 
-    if (currentUser) {
-
-      await loadUserProfile();
-
-    }
+        showAuthPage();
 
 
-    updateCalculator();
+        showMessage(
+          "Impossible d'initialiser l'application : " +
+          getSupabaseErrorMessage(error),
+          "error"
+        );
+
+      }
+
+      finally {
+
+        applicationInitializing =
+          false;
+
+        initializationPromise =
+          null;
+
+      }
+
+    })();
 
 
-    showSubPage(
-      "homePage"
-    );
-
-
-    await loadOrderHistory();
-
-  }
-
-  finally {
-
-    applicationInitializing =
-      false;
-
-  }
+  return initializationPromise;
 
 }
 
@@ -1110,7 +1252,9 @@ async function loginUser(event) {
 
 
     if (error) {
+
       throw error;
+
     }
 
 
@@ -1159,7 +1303,9 @@ async function loginUser(event) {
 
 
     let message =
-      getSupabaseErrorMessage(error);
+      getSupabaseErrorMessage(
+        error
+      );
 
 
     const lower =
@@ -1222,7 +1368,20 @@ async function logoutUser() {
 
   try {
 
-    await supabaseClient.auth.signOut();
+    const {
+      error
+    } =
+      await supabaseClient.auth.signOut();
+
+
+    if (error) {
+
+      console.error(
+        "Erreur Supabase déconnexion :",
+        error
+      );
+
+    }
 
   }
 
@@ -1236,11 +1395,14 @@ async function logoutUser() {
   }
 
 
-  currentUser = null;
+  currentUser =
+    null;
 
-  currentProfile = null;
+  currentProfile =
+    null;
 
-  currentOrder = null;
+  currentOrder =
+    null;
 
 
   showAuthPage();
@@ -1265,7 +1427,9 @@ function updateRatesUI() {
   if ($("homeBuyRate")) {
 
     $("homeBuyRate").textContent =
-      formatNumber(CONFIG.buyRate);
+      formatNumber(
+        CONFIG.buyRate
+      );
 
   }
 
@@ -1273,7 +1437,9 @@ function updateRatesUI() {
   if ($("homeSellRate")) {
 
     $("homeSellRate").textContent =
-      formatNumber(CONFIG.sellRate);
+      formatNumber(
+        CONFIG.sellRate
+      );
 
   }
 
@@ -1281,7 +1447,9 @@ function updateRatesUI() {
   if ($("homeMinOrder")) {
 
     $("homeMinOrder").textContent =
-      formatNumber(CONFIG.minOrder);
+      formatNumber(
+        CONFIG.minOrder
+      );
 
   }
 
@@ -1289,7 +1457,9 @@ function updateRatesUI() {
   if ($("homeMaxOrder")) {
 
     $("homeMaxOrder").textContent =
-      formatNumber(CONFIG.maxOrder);
+      formatNumber(
+        CONFIG.maxOrder
+      );
 
   }
 
@@ -1451,7 +1621,7 @@ function selectNetwork(network) {
 
 
 // ============================================================
-// CALCUL
+// CALCUL COMMANDE
 // ============================================================
 
 function calculateOrder() {
@@ -1470,9 +1640,11 @@ function calculateOrder() {
 
 
   const fee =
-    CONFIG.networks[
-      currentNetwork
-    ]?.fee || 0;
+    Number(
+      CONFIG.networks[
+        currentNetwork
+      ]?.fee
+    ) || 0;
 
 
   let usdt = 0;
@@ -1554,7 +1726,7 @@ function updateCalculator() {
   if ($("summaryUsdt")) {
 
     $("summaryUsdt").textContent =
-      `${calc.usdt.toFixed(6)} USDT`;
+      `${formatDecimal(calc.usdt)} USDT`;
 
   }
 
@@ -1580,7 +1752,7 @@ function updateCalculator() {
   if ($("summaryResult")) {
 
     $("summaryResult").textContent =
-      `${calc.result.toFixed(6)} USDT`;
+      `${formatDecimal(calc.result)} USDT`;
 
   }
 
@@ -1618,7 +1790,7 @@ function getWalletAddress() {
 
     if (
       element &&
-      element.value &&
+      typeof element.value === "string" &&
       element.value.trim()
     ) {
 
@@ -1709,10 +1881,6 @@ function reviewOrder() {
   const walletAddress =
     getWalletAddress();
 
-
-  // ----------------------------------------------------------
-  // L'adresse wallet est obligatoire
-  // ----------------------------------------------------------
 
   if (!walletAddress) {
 
@@ -1855,9 +2023,9 @@ function renderConfirmation() {
       <span>Montant USDT</span>
 
       <strong>
-        ${Number(
+        ${formatDecimal(
           currentOrder.crypto_amount
-        ).toFixed(6)} USDT
+        )} USDT
       </strong>
 
     </div>
@@ -1918,9 +2086,9 @@ function renderConfirmation() {
       </span>
 
       <strong>
-        ${Number(
+        ${formatDecimal(
           currentOrder.result_usdt
-        ).toFixed(6)} USDT
+        )} USDT
       </strong>
 
     </div>
@@ -1936,7 +2104,9 @@ function renderConfirmation() {
 
 function cancelReview() {
 
-  currentOrder = null;
+  currentOrder =
+    null;
+
 
   showSubPage(
     "exchangePage"
@@ -1947,22 +2117,6 @@ function cancelReview() {
 
 // ============================================================
 // CREATION COMMANDE
-//
-// TABLE : public.orders
-//
-// COLONNES :
-// id
-// created_at
-// user_id
-// type
-// fiat_amount
-// crypto_amount
-// rate
-// fee
-// network
-// wallet_address
-// payment_method
-// status
 // ============================================================
 
 async function placeOrder() {
@@ -2031,7 +2185,9 @@ async function placeOrder() {
 
 
     if (sessionError) {
+
       throw sessionError;
+
     }
 
 
@@ -2040,6 +2196,13 @@ async function placeOrder() {
 
 
     if (!session?.user) {
+
+      currentUser =
+        null;
+
+      currentProfile =
+        null;
+
 
       throw new Error(
         "Votre session n'est plus active."
@@ -2072,11 +2235,6 @@ async function placeOrder() {
     }
 
 
-    // --------------------------------------------------------
-    // VERIFICATION :
-    // profiles.id doit correspondre à auth.uid()
-    // --------------------------------------------------------
-
     if (
       currentProfile.id !==
       currentUser.id
@@ -2090,28 +2248,90 @@ async function placeOrder() {
 
 
     // --------------------------------------------------------
-    // PAYLOAD ORDERS
+    // VERIFICATION DES DONNEES
+    // --------------------------------------------------------
+
+    if (
+      !CONFIG.networks[
+        currentOrder.network
+      ]
+    ) {
+
+      throw new Error(
+        "Réseau USDT invalide."
+      );
+
+    }
+
+
+    if (
+      currentOrder.type !== "buy" &&
+      currentOrder.type !== "sell"
+    ) {
+
+      throw new Error(
+        "Type de commande invalide."
+      );
+
+    }
+
+
+    if (
+      Number(currentOrder.fiat_amount) <
+        CONFIG.minOrder ||
+      Number(currentOrder.fiat_amount) >
+        CONFIG.maxOrder
+    ) {
+
+      throw new Error(
+        "Le montant de la commande est invalide."
+      );
+
+    }
+
+
+    if (
+      !currentOrder.wallet_address
+    ) {
+
+      throw new Error(
+        "L'adresse du portefeuille est obligatoire."
+      );
+
+    }
+
+
+    // --------------------------------------------------------
+    // PAYLOAD
     // --------------------------------------------------------
 
     const orderPayload = {
 
       user_id:
-        currentProfile.id,
+        currentUser.id,
 
       type:
         currentOrder.type,
 
       fiat_amount:
-        currentOrder.fiat_amount,
+        Number(
+          currentOrder.fiat_amount
+        ),
 
       crypto_amount:
-        currentOrder.crypto_amount,
+        Number(
+          currentOrder.crypto_amount
+        ),
 
       rate:
-        currentOrder.rate,
+        Number(
+          currentOrder.rate
+        ),
 
       fee:
-        currentOrder.fee,
+        Number(
+          currentOrder.fee
+        ),
 
       network:
         currentOrder.network,
@@ -2136,6 +2356,9 @@ async function placeOrder() {
 
     // --------------------------------------------------------
     // INSERT
+    //
+    // IMPORTANT :
+    // user_id = auth.uid()
     // --------------------------------------------------------
 
     const {
@@ -2152,7 +2375,9 @@ async function placeOrder() {
 
 
     if (error) {
+
       throw error;
+
     }
 
 
@@ -2179,7 +2404,7 @@ async function placeOrder() {
 
 
     // --------------------------------------------------------
-    // PAIEMENT
+    // PAGE PAIEMENT
     // --------------------------------------------------------
 
     renderPaymentPage();
@@ -2191,7 +2416,7 @@ async function placeOrder() {
 
 
     showMessage(
-      "Votre commande a été enregistrée.",
+      "Votre commande a été enregistrée. Effectuez maintenant le paiement Orange Money.",
       "success"
     );
 
@@ -2240,7 +2465,9 @@ async function placeOrder() {
 function renderPaymentPage() {
 
   if (!currentOrder) {
+
     return;
+
   }
 
 
@@ -2297,6 +2524,22 @@ async function declarePayment() {
   }
 
 
+  if (
+    !isValidUUID(
+      currentOrder.id
+    )
+  ) {
+
+    showMessage(
+      "Identifiant de commande invalide.",
+      "error"
+    );
+
+    return;
+
+  }
+
+
   const button =
     $("paymentDoneBtn");
 
@@ -2317,6 +2560,10 @@ async function declarePayment() {
 
   try {
 
+    // --------------------------------------------------------
+    // SESSION
+    // --------------------------------------------------------
+
     const {
       data: sessionData,
       error: sessionError
@@ -2325,17 +2572,23 @@ async function declarePayment() {
 
 
     if (sessionError) {
+
       throw sessionError;
+
     }
 
 
-    if (!sessionData?.session) {
+    if (!sessionData?.session?.user) {
 
       throw new Error(
         "Votre session a expiré."
       );
 
     }
+
+
+    currentUser =
+      sessionData.session.user;
 
 
     // --------------------------------------------------------
@@ -2356,7 +2609,9 @@ async function declarePayment() {
 
 
     if (error) {
+
       throw error;
+
     }
 
 
@@ -2374,6 +2629,13 @@ async function declarePayment() {
 
       currentOrder.status =
         data.status;
+
+    }
+
+    else {
+
+      currentOrder.status =
+        "payment_declared";
 
     }
 
@@ -2445,7 +2707,9 @@ async function loadOrderHistory() {
 
 
   if (!list) {
+
     return;
+
   }
 
 
@@ -2475,6 +2739,48 @@ async function loadOrderHistory() {
 
   try {
 
+    // --------------------------------------------------------
+    // Vérification session
+    // --------------------------------------------------------
+
+    const {
+      data: sessionData,
+      error: sessionError
+    } =
+      await supabaseClient.auth.getSession();
+
+
+    if (sessionError) {
+
+      throw sessionError;
+
+    }
+
+
+    if (!sessionData?.session?.user) {
+
+      currentUser =
+        null;
+
+      currentProfile =
+        null;
+
+
+      throw new Error(
+        "Votre session a expiré."
+      );
+
+    }
+
+
+    currentUser =
+      sessionData.session.user;
+
+
+    // --------------------------------------------------------
+    // Profil
+    // --------------------------------------------------------
+
     if (!currentProfile) {
 
       await loadUserProfile();
@@ -2491,6 +2797,12 @@ async function loadOrderHistory() {
     }
 
 
+    // --------------------------------------------------------
+    // ORDERS
+    //
+    // On filtre directement par auth user.
+    // --------------------------------------------------------
+
     const {
       data,
       error
@@ -2500,7 +2812,7 @@ async function loadOrderHistory() {
         .select("*")
         .eq(
           "user_id",
-          currentProfile.id
+          currentUser.id
         )
         .order(
           "created_at",
@@ -2511,7 +2823,9 @@ async function loadOrderHistory() {
 
 
     if (error) {
+
       throw error;
+
     }
 
 
@@ -2581,7 +2895,9 @@ function renderOrderCard(order) {
 
 
   const statusLabel =
-    getStatusLabel(status);
+    getStatusLabel(
+      status
+    );
 
 
   const networkName =
@@ -2627,9 +2943,9 @@ function renderOrderCard(order) {
         <span>USDT</span>
 
         <strong>
-          ${Number(
-            order.crypto_amount || 0
-          ).toFixed(6)}
+          ${formatDecimal(
+            order.crypto_amount
+          )}
         </strong>
 
       </div>
@@ -2700,7 +3016,16 @@ function getStatusLabel(status) {
       "Paiement déclaré",
 
     payment_declared:
-      "Paiement déclaré"
+      "Paiement déclaré",
+
+    verified:
+      "Paiement vérifié",
+
+    rejected:
+      "Rejetée",
+
+    failed:
+      "Échec"
 
   };
 
@@ -2744,7 +3069,9 @@ async function loadOrdersForDispute() {
 
 
     if (!currentProfile?.id) {
+
       return;
+
     }
 
 
@@ -2759,7 +3086,7 @@ async function loadOrdersForDispute() {
         )
         .eq(
           "user_id",
-          currentProfile.id
+          currentUser.id
         )
         .order(
           "created_at",
@@ -2770,7 +3097,9 @@ async function loadOrdersForDispute() {
 
 
     if (error) {
+
       throw error;
+
     }
 
 
@@ -2918,6 +3247,10 @@ async function submitDispute(event) {
 
   try {
 
+    // --------------------------------------------------------
+    // PROFIL
+    // --------------------------------------------------------
+
     if (!currentProfile) {
 
       await loadUserProfile();
@@ -2935,7 +3268,7 @@ async function submitDispute(event) {
 
 
     // --------------------------------------------------------
-    // VERIFIER COMMANDE
+    // VERIFICATION COMMANDE
     // --------------------------------------------------------
 
     const {
@@ -2951,13 +3284,15 @@ async function submitDispute(event) {
         )
         .eq(
           "user_id",
-          currentProfile.id
+          currentUser.id
         )
         .maybeSingle();
 
 
     if (orderError) {
+
       throw orderError;
+
     }
 
 
@@ -2971,7 +3306,7 @@ async function submitDispute(event) {
 
 
     // --------------------------------------------------------
-    // LITIGE
+    // CREATION LITIGE
     // --------------------------------------------------------
 
     const {
@@ -2983,7 +3318,7 @@ async function submitDispute(event) {
         .insert({
 
           user_id:
-            currentProfile.id,
+            currentUser.id,
 
           order_id:
             orderId,
@@ -3003,7 +3338,9 @@ async function submitDispute(event) {
 
 
     if (error) {
+
       throw error;
+
     }
 
 
@@ -3116,7 +3453,7 @@ async function loadDisputes() {
         .select("*")
         .eq(
           "user_id",
-          currentProfile.id
+          currentUser.id
         )
         .order(
           "created_at",
@@ -3127,7 +3464,9 @@ async function loadDisputes() {
 
 
     if (error) {
+
       throw error;
+
     }
 
 
@@ -3159,6 +3498,12 @@ async function loadDisputes() {
               "open";
 
 
+            const statusLabel =
+              getDisputeStatusLabel(
+                disputeStatus
+              );
+
+
             return `
 
               <div class="order-card">
@@ -3173,7 +3518,7 @@ async function loadDisputes() {
 
                   <span class="status processing">
                     ${escapeHtml(
-                      disputeStatus
+                      statusLabel
                     )}
                   </span>
 
@@ -3229,6 +3574,41 @@ async function loadDisputes() {
 
 
 // ============================================================
+// STATUT LITIGE
+// ============================================================
+
+function getDisputeStatusLabel(status) {
+
+  const labels = {
+
+    open:
+      "Ouvert",
+
+    processing:
+      "En traitement",
+
+    resolved:
+      "Résolu",
+
+    closed:
+      "Fermé",
+
+    cancelled:
+      "Annulé"
+
+  };
+
+
+  return (
+    labels[status] ||
+    status ||
+    "Ouvert"
+  );
+
+}
+
+
+// ============================================================
 // ACCUEIL
 // ============================================================
 
@@ -3260,7 +3640,9 @@ function goToSell() {
 
 function setupEvents() {
 
+  // ----------------------------------------------------------
   // AUTH
+  // ----------------------------------------------------------
 
   $("loginTab")
     ?.addEventListener(
@@ -3276,7 +3658,9 @@ function setupEvents() {
     );
 
 
+  // ----------------------------------------------------------
   // CONNEXION
+  // ----------------------------------------------------------
 
   $("loginForm")
     ?.addEventListener(
@@ -3285,7 +3669,9 @@ function setupEvents() {
     );
 
 
+  // ----------------------------------------------------------
   // INSCRIPTION
+  // ----------------------------------------------------------
 
   $("registerForm")
     ?.addEventListener(
@@ -3294,7 +3680,9 @@ function setupEvents() {
     );
 
 
+  // ----------------------------------------------------------
   // DECONNEXION
+  // ----------------------------------------------------------
 
   $("logoutBtn")
     ?.addEventListener(
@@ -3303,7 +3691,9 @@ function setupEvents() {
     );
 
 
+  // ----------------------------------------------------------
   // ACCUEIL
+  // ----------------------------------------------------------
 
   $("goBuyBtn")
     ?.addEventListener(
@@ -3319,7 +3709,9 @@ function setupEvents() {
     );
 
 
+  // ----------------------------------------------------------
   // ACHAT
+  // ----------------------------------------------------------
 
   $("buyTab")
     ?.addEventListener(
@@ -3328,7 +3720,9 @@ function setupEvents() {
     );
 
 
+  // ----------------------------------------------------------
   // VENTE
+  // ----------------------------------------------------------
 
   $("sellTab")
     ?.addEventListener(
@@ -3337,13 +3731,17 @@ function setupEvents() {
     );
 
 
+  // ----------------------------------------------------------
   // RESEAUX
+  // ----------------------------------------------------------
 
   $("trc20Option")
     ?.addEventListener(
       "click",
       () =>
-        selectNetwork("trc20")
+        selectNetwork(
+          "trc20"
+        )
     );
 
 
@@ -3351,11 +3749,15 @@ function setupEvents() {
     ?.addEventListener(
       "click",
       () =>
-        selectNetwork("bp20")
+        selectNetwork(
+          "bp20"
+        )
     );
 
 
+  // ----------------------------------------------------------
   // CALCULATEUR
+  // ----------------------------------------------------------
 
   $("amountInput")
     ?.addEventListener(
@@ -3381,7 +3783,9 @@ function setupEvents() {
     );
 
 
+  // ----------------------------------------------------------
   // CONFIRMATION
+  // ----------------------------------------------------------
 
   $("placeOrderBtn")
     ?.addEventListener(
@@ -3397,7 +3801,9 @@ function setupEvents() {
     );
 
 
+  // ----------------------------------------------------------
   // PAIEMENT
+  // ----------------------------------------------------------
 
   $("paymentDoneBtn")
     ?.addEventListener(
@@ -3413,10 +3819,14 @@ function setupEvents() {
     );
 
 
+  // ----------------------------------------------------------
   // NAVIGATION
+  // ----------------------------------------------------------
 
   document
-    .querySelectorAll(".nav-btn")
+    .querySelectorAll(
+      ".nav-btn"
+    )
     .forEach(button => {
 
       button.addEventListener(
@@ -3429,7 +3839,9 @@ function setupEvents() {
 
           if (page) {
 
-            showSubPage(page);
+            showSubPage(
+              page
+            );
 
           }
 
@@ -3439,7 +3851,9 @@ function setupEvents() {
     });
 
 
+  // ----------------------------------------------------------
   // LITIGES
+  // ----------------------------------------------------------
 
   $("disputeForm")
     ?.addEventListener(
@@ -3466,7 +3880,9 @@ async function checkExistingSession() {
 
 
     if (error) {
+
       throw error;
+
     }
 
 
@@ -3486,9 +3902,12 @@ async function checkExistingSession() {
 
     else {
 
-      currentUser = null;
+      currentUser =
+        null;
 
-      currentProfile = null;
+      currentProfile =
+        null;
+
 
       showAuthPage();
 
@@ -3504,9 +3923,11 @@ async function checkExistingSession() {
     );
 
 
-    currentUser = null;
+    currentUser =
+      null;
 
-    currentProfile = null;
+    currentProfile =
+      null;
 
 
     showAuthPage();
@@ -3529,7 +3950,9 @@ async function checkExistingSession() {
 function setupAuthListener() {
 
   if (authListenerReady) {
+
     return;
+
   }
 
 
@@ -3547,22 +3970,35 @@ function setupAuthListener() {
         );
 
 
+        // ----------------------------------------------------
+        // DECONNEXION
+        // ----------------------------------------------------
+
         if (
           event === "SIGNED_OUT"
         ) {
 
-          currentUser = null;
+          currentUser =
+            null;
 
-          currentProfile = null;
+          currentProfile =
+            null;
 
-          currentOrder = null;
+          currentOrder =
+            null;
+
 
           showAuthPage();
+
 
           return;
 
         }
 
+
+        // ----------------------------------------------------
+        // CONNEXION
+        // ----------------------------------------------------
 
         if (
           event === "SIGNED_IN" &&
@@ -3581,6 +4017,27 @@ function setupAuthListener() {
             },
             0
           );
+
+
+          return;
+
+        }
+
+
+        // ----------------------------------------------------
+        // TOKEN REFRESH
+        // ----------------------------------------------------
+
+        if (
+          event === "TOKEN_REFRESHED" &&
+          session?.user
+        ) {
+
+          currentUser =
+            session.user;
+
+
+          return;
 
         }
 
@@ -3611,7 +4068,13 @@ document.addEventListener(
 
     updateRatesUI();
 
-    updateCalculator();
+
+    setBuyMode();
+
+
+    selectNetwork(
+      "trc20"
+    );
 
 
     await checkExistingSession();
