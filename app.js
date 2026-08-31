@@ -1,15 +1,16 @@
 // ============================================================
 // NOA DIGIT TRADE
-// APP.JS COMPLET ET CORRIGÉ
+// APP.JS COMPLET - VERSION CORRIGÉE
 //
 // SUPABASE AUTH
-// USERS
+// PROFILES
 // ORDERS
 // HISTORIQUE
 // CONFIRMATION COMMANDE
 // ORANGE MONEY
 // LITIGES
 // RLS
+// ADMIN
 // ============================================================
 
 
@@ -53,7 +54,7 @@ const CONFIG = {
       fee: 2
     },
 
-    // Valeur interne conservée : bp20
+    // Clé interne conservée pour compatibilité
     // Affichage utilisateur : BEP20
     bp20: {
       name: "USDT BEP20",
@@ -90,8 +91,6 @@ let currentExchangeType = "buy";
 
 let currentNetwork = "trc20";
 
-
-// Empêche les doubles initialisations
 let applicationInitializing = false;
 
 let authListenerReady = false;
@@ -115,10 +114,8 @@ function showMessage(message, type = "info") {
 
   if (!box) return;
 
-
   box.textContent =
     String(message || "");
-
 
   box.className = "";
 
@@ -134,7 +131,6 @@ function hideMessage() {
   const box = $("appMessage");
 
   if (!box) return;
-
 
   box.textContent = "";
 
@@ -154,7 +150,6 @@ function formatNumber(value) {
   const number =
     Number(value) || 0;
 
-
   return number.toLocaleString(
     "fr-FR"
   );
@@ -165,26 +160,19 @@ function formatNumber(value) {
 function formatDate(value) {
 
   if (!value) {
-
     return "-";
-
   }
-
 
   const date =
     new Date(value);
-
 
   if (
     Number.isNaN(
       date.getTime()
     )
   ) {
-
     return "-";
-
   }
-
 
   return date.toLocaleString(
     "fr-FR",
@@ -221,8 +209,25 @@ function escapeHtml(value) {
 }
 
 
+function getSupabaseErrorMessage(error) {
+
+  if (!error) {
+    return "Erreur inconnue.";
+  }
+
+  return (
+    error.message ||
+    error.error_description ||
+    error.details ||
+    error.hint ||
+    "Erreur inconnue."
+  );
+
+}
+
+
 // ============================================================
-// AUTH NAVIGATION
+// NAVIGATION AUTH
 // ============================================================
 
 function showAuthPage() {
@@ -231,11 +236,9 @@ function showAuthPage() {
     ?.classList
     .add("active");
 
-
   $("appPage")
     ?.classList
     .remove("active");
-
 
   $("bottomNav")
     ?.classList
@@ -250,11 +253,9 @@ function showAppPage() {
     ?.classList
     .remove("active");
 
-
   $("appPage")
     ?.classList
     .add("active");
-
 
   $("bottomNav")
     ?.classList
@@ -274,16 +275,11 @@ function showSubPage(pageId) {
       ".sub-page"
     );
 
-
   pages.forEach(page => {
 
-    page.classList.add(
-      "hidden"
-    );
+    page.classList.add("hidden");
 
-    page.classList.remove(
-      "active"
-    );
+    page.classList.remove("active");
 
   });
 
@@ -291,16 +287,11 @@ function showSubPage(pageId) {
   const target =
     $(pageId);
 
-
   if (target) {
 
-    target.classList.remove(
-      "hidden"
-    );
+    target.classList.remove("hidden");
 
-    target.classList.add(
-      "active"
-    );
+    target.classList.add("active");
 
   }
 
@@ -310,22 +301,15 @@ function showSubPage(pageId) {
       ".nav-btn"
     );
 
-
   navButtons.forEach(button => {
 
-    button.classList.remove(
-      "active"
-    );
-
+    button.classList.remove("active");
 
     if (
-      button.dataset.page ===
-      pageId
+      button.dataset.page === pageId
     ) {
 
-      button.classList.add(
-        "active"
-      );
+      button.classList.add("active");
 
     }
 
@@ -339,8 +323,7 @@ function showSubPage(pageId) {
 
 
   if (
-    pageId ===
-    "ordersPage"
+    pageId === "ordersPage"
   ) {
 
     loadOrderHistory();
@@ -349,8 +332,7 @@ function showSubPage(pageId) {
 
 
   if (
-    pageId ===
-    "supportPage"
+    pageId === "supportPage"
   ) {
 
     loadDisputes();
@@ -363,7 +345,7 @@ function showSubPage(pageId) {
 
 
 // ============================================================
-// AUTH TABS
+// FORMULAIRES AUTH
 // ============================================================
 
 function showLoginForm() {
@@ -372,16 +354,13 @@ function showLoginForm() {
     ?.classList
     .add("active");
 
-
   $("registerTab")
     ?.classList
     .remove("active");
 
-
   $("loginForm")
     ?.classList
     .add("active");
-
 
   $("registerForm")
     ?.classList
@@ -396,44 +375,17 @@ function showRegisterForm() {
     ?.classList
     .remove("active");
 
-
   $("registerTab")
     ?.classList
     .add("active");
-
 
   $("loginForm")
     ?.classList
     .remove("active");
 
-
   $("registerForm")
     ?.classList
     .add("active");
-
-}
-
-
-// ============================================================
-// NORMALISATION ERREURS SUPABASE
-// ============================================================
-
-function getSupabaseErrorMessage(error) {
-
-  if (!error) {
-
-    return "Erreur inconnue.";
-
-  }
-
-
-  return (
-    error.message ||
-    error.error_description ||
-    error.details ||
-    error.hint ||
-    "Erreur inconnue."
-  );
 
 }
 
@@ -484,10 +436,6 @@ async function registerUser(event) {
     $("registerPasswordConfirm")
       ?.value || "";
 
-
-  // ----------------------------------------------------------
-  // VALIDATIONS
-  // ----------------------------------------------------------
 
   if (!name) {
 
@@ -552,8 +500,7 @@ async function registerUser(event) {
 
 
   if (
-    password !==
-    confirmPassword
+    password !== confirmPassword
   ) {
 
     showMessage(
@@ -567,8 +514,7 @@ async function registerUser(event) {
 
 
   if (
-    country !==
-    "Burkina Faso"
+    country !== "Burkina Faso"
   ) {
 
     showMessage(
@@ -605,10 +551,6 @@ async function registerUser(event) {
 
   try {
 
-    // --------------------------------------------------------
-    // CREATION COMPTE SUPABASE AUTH
-    // --------------------------------------------------------
-
     const {
       data,
       error
@@ -623,14 +565,11 @@ async function registerUser(event) {
 
           data: {
 
-            full_name:
-              name,
+            full_name: name,
 
-            phone:
-              phone,
+            phone: phone,
 
-            country:
-              country
+            country: country
 
           }
 
@@ -640,9 +579,7 @@ async function registerUser(event) {
 
 
     if (error) {
-
       throw error;
-
     }
 
 
@@ -660,62 +597,22 @@ async function registerUser(event) {
 
 
     // --------------------------------------------------------
-    // CAS 1 :
-    // SUPABASE A DONNE UNE SESSION
-    //
-    // Dans ce cas, currentUser est authentifié.
-    // La policy RLS peut autoriser l'insertion Users.
+    // SI UNE SESSION EST DISPONIBLE
     // --------------------------------------------------------
 
     if (data.session) {
 
-      const profileResult =
-        await createUserProfile({
-
-          auth_id:
-            data.user.id,
-
-          email:
-            email,
-
-          name:
-            name,
-
-          phone:
-            phone,
-
-          country:
-            country
-
-        });
+      const profile =
+        await loadUserProfile();
 
 
-      if (
-        !profileResult.success
-      ) {
+      if (!profile) {
 
-        console.error(
-          "Erreur création profil :",
-          profileResult.error
+        throw new Error(
+          "Le profil utilisateur n'a pas pu être créé."
         );
-
-
-        showMessage(
-          "Le compte Auth a été créé, mais le profil Users n'a pas pu être enregistré. Détail : " +
-          getSupabaseErrorMessage(
-            profileResult.error
-          ),
-          "error"
-        );
-
-
-        return;
 
       }
-
-
-      currentProfile =
-        profileResult.profile;
 
 
       await initializeApplication();
@@ -726,30 +623,20 @@ async function registerUser(event) {
         "success"
       );
 
-
       return;
 
     }
 
 
     // --------------------------------------------------------
-    // CAS 2 :
-    // AUCUNE SESSION
-    //
-    // Cela arrive notamment lorsque Supabase exige la
-    // confirmation de l'adresse email.
-    //
-    // IMPORTANT :
-    // On ne tente PAS d'insérer Users ici.
-    // La RLS refuserait normalement l'opération car
-    // auth.uid() n'est pas encore disponible.
+    // SI CONFIRMATION EMAIL REQUISE
     // --------------------------------------------------------
 
     currentProfile = null;
 
 
     showMessage(
-      "Compte créé avec succès. Vérifiez votre adresse email puis connectez-vous pour terminer l'activation de votre profil.",
+      "Compte créé avec succès. Vérifiez votre adresse email puis connectez-vous.",
       "success"
     );
 
@@ -757,7 +644,6 @@ async function registerUser(event) {
     showLoginForm();
 
 
-    // Préremplir l'email de connexion
     if ($("loginEmail")) {
 
       $("loginEmail").value =
@@ -786,15 +672,9 @@ async function registerUser(event) {
 
 
     if (
-      lower.includes(
-        "already registered"
-      ) ||
-      lower.includes(
-        "user already registered"
-      ) ||
-      lower.includes(
-        "already exists"
-      )
+      lower.includes("already registered") ||
+      lower.includes("user already registered") ||
+      lower.includes("already exists")
     ) {
 
       message =
@@ -828,27 +708,26 @@ async function registerUser(event) {
 
 
 // ============================================================
-// CREER / RECUPERER PROFIL Users
+// PROFIL
+//
+// TABLE SUPABASE : public.profiles
+//
+// COLONNES UTILISEES :
+// id
+// full_name
+// phone
+// country
+// role
 // ============================================================
 
-async function createUserProfile(
-  profileData
-) {
+async function loadUserProfile() {
+
+  if (!currentUser) {
+    return null;
+  }
+
 
   try {
-
-    if (!profileData?.auth_id) {
-
-      throw new Error(
-        "Identifiant Auth manquant."
-      );
-
-    }
-
-
-    // --------------------------------------------------------
-    // VERIFICATION SESSION
-    // --------------------------------------------------------
 
     const {
       data: sessionData,
@@ -858,9 +737,7 @@ async function createUserProfile(
 
 
     if (sessionError) {
-
       throw sessionError;
-
     }
 
 
@@ -868,103 +745,90 @@ async function createUserProfile(
       sessionData?.session;
 
 
-    if (
-      !session?.user ||
-      session.user.id !==
-      profileData.auth_id
-    ) {
+    if (!session?.user) {
 
       throw new Error(
-        "Aucune session Supabase active pour créer le profil."
+        "Aucune session Supabase active."
       );
 
     }
 
 
+    currentUser =
+      session.user;
+
+
     // --------------------------------------------------------
-    // RECUPERATION PROFIL EXISTANT
+    // IMPORTANT :
+    // profiles.id = auth.users.id
     // --------------------------------------------------------
 
     const {
-      data: existingProfile,
-      error: selectError
+      data: profile,
+      error
     } =
       await supabaseClient
-        .from("Users")
-        .select("*")
+        .from("profiles")
+        .select(
+          "id,full_name,phone,country,role"
+        )
         .eq(
-          "auth_id",
-          profileData.auth_id
+          "id",
+          currentUser.id
         )
         .maybeSingle();
 
 
-    if (selectError) {
-
-      throw selectError;
-
+    if (error) {
+      throw error;
     }
 
 
-    if (existingProfile) {
+    // --------------------------------------------------------
+    // PROFIL EXISTANT
+    // --------------------------------------------------------
 
-      return {
+    if (profile) {
 
-        success: true,
+      currentProfile =
+        profile;
 
-        profile:
-          existingProfile
+      updateUserInterface();
 
-      };
+      return currentProfile;
 
     }
 
 
     // --------------------------------------------------------
-    // INSERTION PROFIL
-    // --------------------------------------------------------
-
-    // IMPORTANT :
-    // auth_id doit correspondre exactement à auth.uid()
+    // PROFIL ABSENT
     //
-    // id n'est PAS forcé ici.
-    // Cela permet à Supabase/PostgreSQL de gérer lui-même
-    // la colonne id si elle possède une valeur par défaut.
+    // Création dans public.profiles
+    // --------------------------------------------------------
 
-    const insertPayload = {
+    const metadata =
+      currentUser.user_metadata || {};
 
-      auth_id:
-        profileData.auth_id,
 
-      email:
-        profileData.email || ""
+    const profilePayload = {
+
+      id:
+        currentUser.id,
+
+      full_name:
+        metadata.full_name ||
+        metadata.name ||
+        "",
+
+      phone:
+        metadata.phone ||
+        "",
+
+      country:
+        metadata.country ||
+        "Burkina Faso"
 
     };
-
-
-    // Ajouter uniquement les informations connues.
-    if (profileData.name) {
-
-      insertPayload.name =
-        profileData.name;
-
-    }
-
-
-    if (profileData.phone) {
-
-      insertPayload.phone =
-        profileData.phone;
-
-    }
-
-
-    if (profileData.country) {
-
-      insertPayload.country =
-        profileData.country;
-
-    }
 
 
     const {
@@ -972,54 +836,200 @@ async function createUserProfile(
       error: insertError
     } =
       await supabaseClient
-        .from("Users")
+        .from("profiles")
         .insert(
-          insertPayload
+          profilePayload
         )
-        .select("*")
+        .select(
+          "id,full_name,phone,country,role"
+        )
         .single();
 
 
     if (insertError) {
-
-      console.error(
-        "Erreur INSERT Users :",
-        insertError
-      );
-
-
       throw insertError;
-
     }
 
 
-    return {
+    currentProfile =
+      insertedProfile;
 
-      success: true,
 
-      profile:
-        insertedProfile
+    updateUserInterface();
 
-    };
+
+    return currentProfile;
 
   }
 
   catch (error) {
 
     console.error(
-      "createUserProfile :",
+      "Erreur chargement profil :",
       error
     );
 
 
-    return {
+    currentProfile = null;
 
-      success: false,
 
-      error:
-        error
+    showMessage(
+      "Impossible de charger votre profil : " +
+      getSupabaseErrorMessage(error),
+      "error"
+    );
 
-    };
+
+    return null;
+
+  }
+
+}
+
+
+// ============================================================
+// INTERFACE PROFIL
+// ============================================================
+
+function updateUserInterface() {
+
+  if (!currentUser) {
+    return;
+  }
+
+
+  const profile =
+    currentProfile || {};
+
+
+  const metadata =
+    currentUser.user_metadata || {};
+
+
+  const name =
+    profile.full_name ||
+    metadata.full_name ||
+    metadata.name ||
+    "Utilisateur";
+
+
+  const phone =
+    profile.phone ||
+    metadata.phone ||
+    "";
+
+
+  const country =
+    profile.country ||
+    metadata.country ||
+    "Burkina Faso";
+
+
+  if ($("userName")) {
+
+    $("userName").textContent =
+      name;
+
+  }
+
+
+  if ($("userCountry")) {
+
+    $("userCountry").textContent =
+      "🇧🇫 " + country;
+
+  }
+
+
+  if ($("profileName")) {
+
+    $("profileName").value =
+      name;
+
+  }
+
+
+  if ($("profilePhone")) {
+
+    $("profilePhone").value =
+      phone;
+
+  }
+
+
+  if ($("profileCountry")) {
+
+    $("profileCountry").value =
+      country;
+
+  }
+
+}
+
+
+// ============================================================
+// INITIALISATION
+// ============================================================
+
+async function initializeApplication() {
+
+  if (applicationInitializing) {
+    return;
+  }
+
+
+  applicationInitializing =
+    true;
+
+
+  try {
+
+    showAppPage();
+
+    updateRatesUI();
+
+
+    if (!currentUser) {
+
+      const {
+        data
+      } =
+        await supabaseClient.auth.getUser();
+
+
+      if (data?.user) {
+
+        currentUser =
+          data.user;
+
+      }
+
+    }
+
+
+    if (currentUser) {
+
+      await loadUserProfile();
+
+    }
+
+
+    updateCalculator();
+
+
+    showSubPage(
+      "homePage"
+    );
+
+
+    await loadOrderHistory();
+
+  }
+
+  finally {
+
+    applicationInitializing =
+      false;
 
   }
 
@@ -1100,9 +1110,7 @@ async function loginUser(event) {
 
 
     if (error) {
-
       throw error;
-
     }
 
 
@@ -1119,10 +1127,6 @@ async function loginUser(event) {
       data.user;
 
 
-    // --------------------------------------------------------
-    // CHARGEMENT / CREATION PROFIL
-    // --------------------------------------------------------
-
     const profile =
       await loadUserProfile();
 
@@ -1130,7 +1134,7 @@ async function loginUser(event) {
     if (!profile) {
 
       throw new Error(
-        "Impossible de charger ou créer votre profil Users."
+        "Impossible de charger votre profil."
       );
 
     }
@@ -1155,9 +1159,7 @@ async function loginUser(event) {
 
 
     let message =
-      getSupabaseErrorMessage(
-        error
-      );
+      getSupabaseErrorMessage(error);
 
 
     const lower =
@@ -1255,358 +1257,6 @@ async function logoutUser() {
 
 
 // ============================================================
-// CHARGEMENT PROFIL UTILISATEUR
-// ============================================================
-
-async function loadUserProfile() {
-
-  if (!currentUser) {
-
-    return null;
-
-  }
-
-
-  try {
-
-    // --------------------------------------------------------
-    // Vérifier que la session correspond bien à currentUser
-    // --------------------------------------------------------
-
-    const {
-      data: sessionData,
-      error: sessionError
-    } =
-      await supabaseClient.auth
-        .getSession();
-
-
-    if (sessionError) {
-
-      throw sessionError;
-
-    }
-
-
-    const session =
-      sessionData?.session;
-
-
-    if (
-      !session?.user
-    ) {
-
-      throw new Error(
-        "Aucune session Supabase active."
-      );
-
-    }
-
-
-    currentUser =
-      session.user;
-
-
-    // --------------------------------------------------------
-    // RECHERCHE PROFIL
-    // --------------------------------------------------------
-
-    const {
-      data,
-      error
-    } =
-      await supabaseClient
-        .from("Users")
-        .select("*")
-        .eq(
-          "auth_id",
-          currentUser.id
-        )
-        .maybeSingle();
-
-
-    if (error) {
-
-      throw error;
-
-    }
-
-
-    // --------------------------------------------------------
-    // PROFIL EXISTANT
-    // --------------------------------------------------------
-
-    if (data) {
-
-      currentProfile =
-        data;
-
-
-      updateUserInterface();
-
-
-      return currentProfile;
-
-    }
-
-
-    // --------------------------------------------------------
-    // PROFIL ABSENT
-    // --------------------------------------------------------
-
-    const metadata =
-      currentUser.user_metadata ||
-      {};
-
-
-    const result =
-      await createUserProfile({
-
-        auth_id:
-          currentUser.id,
-
-        email:
-          currentUser.email || "",
-
-        name:
-          metadata.full_name ||
-          metadata.name ||
-          "",
-
-        phone:
-          metadata.phone ||
-          "",
-
-        country:
-          metadata.country ||
-          "Burkina Faso"
-
-      });
-
-
-    if (
-      !result.success
-    ) {
-
-      throw result.error;
-
-    }
-
-
-    currentProfile =
-      result.profile;
-
-
-    updateUserInterface();
-
-
-    return currentProfile;
-
-  }
-
-  catch (error) {
-
-    console.error(
-      "Erreur chargement profil :",
-      error
-    );
-
-
-    currentProfile = null;
-
-
-    showMessage(
-      "Impossible de charger votre profil : " +
-      getSupabaseErrorMessage(
-        error
-      ),
-      "error"
-    );
-
-
-    return null;
-
-  }
-
-}
-
-
-// ============================================================
-// INTERFACE UTILISATEUR
-// ============================================================
-
-function updateUserInterface() {
-
-  if (!currentUser) {
-
-    return;
-
-  }
-
-
-  const profile =
-    currentProfile || {};
-
-
-  const metadata =
-    currentUser.user_metadata ||
-    {};
-
-
-  const name =
-    profile.name ||
-    profile.full_name ||
-    metadata.full_name ||
-    metadata.name ||
-    "Utilisateur";
-
-
-  const phone =
-    profile.phone ||
-    metadata.phone ||
-    "";
-
-
-  const country =
-    profile.country ||
-    metadata.country ||
-    "Burkina Faso";
-
-
-  if ($("userName")) {
-
-    $("userName").textContent =
-      name;
-
-  }
-
-
-  if ($("userCountry")) {
-
-    $("userCountry").textContent =
-      "🇧🇫 " + country;
-
-  }
-
-
-  if ($("profileName")) {
-
-    $("profileName").value =
-      name;
-
-  }
-
-
-  if ($("profilePhone")) {
-
-    $("profilePhone").value =
-      phone;
-
-  }
-
-
-  if ($("profileCountry")) {
-
-    $("profileCountry").value =
-      country;
-
-  }
-
-}
-
-
-// ============================================================
-// INITIALISATION APPLICATION
-// ============================================================
-
-async function initializeApplication() {
-
-  if (
-    applicationInitializing
-  ) {
-
-    return;
-
-  }
-
-
-  applicationInitializing =
-    true;
-
-
-  try {
-
-    showAppPage();
-
-
-    updateRatesUI();
-
-
-    // --------------------------------------------------------
-    // CHARGER PROFIL
-    // --------------------------------------------------------
-
-    if (!currentUser) {
-
-      const {
-        data
-      } =
-        await supabaseClient.auth
-          .getUser();
-
-
-      if (data?.user) {
-
-        currentUser =
-          data.user;
-
-      }
-
-    }
-
-
-    if (currentUser) {
-
-      await loadUserProfile();
-
-    }
-
-
-    // --------------------------------------------------------
-    // CALCULATEUR
-    // --------------------------------------------------------
-
-    updateCalculator();
-
-
-    // --------------------------------------------------------
-    // PAGE ACCUEIL
-    // --------------------------------------------------------
-
-    showSubPage(
-      "homePage"
-    );
-
-
-    // --------------------------------------------------------
-    // HISTORIQUE
-    // --------------------------------------------------------
-
-    await loadOrderHistory();
-
-  }
-
-  finally {
-
-    applicationInitializing =
-      false;
-
-  }
-
-}
-
-
-// ============================================================
 // TARIFS
 // ============================================================
 
@@ -1615,9 +1265,7 @@ function updateRatesUI() {
   if ($("homeBuyRate")) {
 
     $("homeBuyRate").textContent =
-      formatNumber(
-        CONFIG.buyRate
-      );
+      formatNumber(CONFIG.buyRate);
 
   }
 
@@ -1625,9 +1273,7 @@ function updateRatesUI() {
   if ($("homeSellRate")) {
 
     $("homeSellRate").textContent =
-      formatNumber(
-        CONFIG.sellRate
-      );
+      formatNumber(CONFIG.sellRate);
 
   }
 
@@ -1635,9 +1281,7 @@ function updateRatesUI() {
   if ($("homeMinOrder")) {
 
     $("homeMinOrder").textContent =
-      formatNumber(
-        CONFIG.minOrder
-      );
+      formatNumber(CONFIG.minOrder);
 
   }
 
@@ -1645,9 +1289,7 @@ function updateRatesUI() {
   if ($("homeMaxOrder")) {
 
     $("homeMaxOrder").textContent =
-      formatNumber(
-        CONFIG.maxOrder
-      );
+      formatNumber(CONFIG.maxOrder);
 
   }
 
@@ -1655,9 +1297,7 @@ function updateRatesUI() {
   if ($("homeTrc20Fee")) {
 
     $("homeTrc20Fee").textContent =
-      CONFIG.networks
-        .trc20
-        .fee;
+      CONFIG.networks.trc20.fee;
 
   }
 
@@ -1665,9 +1305,7 @@ function updateRatesUI() {
   if ($("homeBp20Fee")) {
 
     $("homeBp20Fee").textContent =
-      CONFIG.networks
-        .bp20
-        .fee;
+      CONFIG.networks.bp20.fee;
 
   }
 
@@ -1675,9 +1313,7 @@ function updateRatesUI() {
   if ($("trc20Fee")) {
 
     $("trc20Fee").textContent =
-      CONFIG.networks
-        .trc20
-        .fee;
+      CONFIG.networks.trc20.fee;
 
   }
 
@@ -1685,9 +1321,7 @@ function updateRatesUI() {
   if ($("bp20Fee")) {
 
     $("bp20Fee").textContent =
-      CONFIG.networks
-        .bp20
-        .fee;
+      CONFIG.networks.bp20.fee;
 
   }
 
@@ -1783,9 +1417,7 @@ function setSellMode() {
 function selectNetwork(network) {
 
   if (
-    !CONFIG.networks[
-      network
-    ]
+    !CONFIG.networks[network]
   ) {
 
     return;
@@ -1819,7 +1451,7 @@ function selectNetwork(network) {
 
 
 // ============================================================
-// CALCUL COMMANDE
+// CALCUL
 // ============================================================
 
 function calculateOrder() {
@@ -1832,8 +1464,7 @@ function calculateOrder() {
 
 
   const rate =
-    currentExchangeType ===
-    "buy"
+    currentExchangeType === "buy"
       ? CONFIG.buyRate
       : CONFIG.sellRate;
 
@@ -1858,8 +1489,7 @@ function calculateOrder() {
 
 
   if (
-    currentExchangeType ===
-    "buy"
+    currentExchangeType === "buy"
   ) {
 
     result =
@@ -1896,7 +1526,7 @@ function calculateOrder() {
 
 
 // ============================================================
-// MISE A JOUR CALCULATEUR
+// CALCULATEUR
 // ============================================================
 
 function updateCalculator() {
@@ -1940,8 +1570,7 @@ function updateCalculator() {
   if ($("summaryResultLabel")) {
 
     $("summaryResultLabel").textContent =
-      currentExchangeType ===
-      "buy"
+      currentExchangeType === "buy"
         ? "Vous recevez"
         : "Vous envoyez";
 
@@ -1954,6 +1583,53 @@ function updateCalculator() {
       `${calc.result.toFixed(6)} USDT`;
 
   }
+
+}
+
+
+// ============================================================
+// RECUPERATION ADRESSE WALLET
+// ============================================================
+
+function getWalletAddress() {
+
+  const possibleIds = [
+
+    "walletAddress",
+
+    "wallet",
+
+    "walletInput",
+
+    "userWallet",
+
+    "wallet_address"
+
+  ];
+
+
+  for (
+    const id of possibleIds
+  ) {
+
+    const element =
+      $(id);
+
+
+    if (
+      element &&
+      element.value &&
+      element.value.trim()
+    ) {
+
+      return element.value.trim();
+
+    }
+
+  }
+
+
+  return "";
 
 }
 
@@ -1988,9 +1664,7 @@ function reviewOrder() {
     calculateOrder();
 
 
-  if (
-    !calc.amount
-  ) {
+  if (!calc.amount) {
 
     showMessage(
       "Veuillez saisir un montant.",
@@ -2003,10 +1677,8 @@ function reviewOrder() {
 
 
   if (
-    calc.amount <
-      CONFIG.minOrder ||
-    calc.amount >
-      CONFIG.maxOrder
+    calc.amount < CONFIG.minOrder ||
+    calc.amount > CONFIG.maxOrder
   ) {
 
     showMessage(
@@ -2020,8 +1692,7 @@ function reviewOrder() {
 
 
   if (
-    currentExchangeType ===
-      "buy" &&
+    currentExchangeType === "buy" &&
     calc.result <= 0
   ) {
 
@@ -2035,31 +1706,57 @@ function reviewOrder() {
   }
 
 
+  const walletAddress =
+    getWalletAddress();
+
+
+  // ----------------------------------------------------------
+  // L'adresse wallet est obligatoire
+  // ----------------------------------------------------------
+
+  if (!walletAddress) {
+
+    showMessage(
+      "Veuillez saisir votre adresse de portefeuille USDT.",
+      "error"
+    );
+
+    return;
+
+  }
+
+
   currentOrder = {
 
     type:
       currentExchangeType,
 
-    amount_cfa:
+    fiat_amount:
       calc.amount,
+
+    crypto_amount:
+      calc.usdt,
 
     rate:
       calc.rate,
 
-    amount_usdt:
-      calc.usdt,
-
     network:
       currentNetwork,
 
-    network_fee:
+    fee:
       calc.fee,
+
+    wallet_address:
+      walletAddress,
+
+    payment_method:
+      CONFIG.payment.method,
 
     result_usdt:
       calc.result,
 
-    payment_method:
-      CONFIG.payment.method
+    status:
+      "pending"
 
   };
 
@@ -2095,15 +1792,13 @@ function renderConfirmation() {
 
 
   const typeLabel =
-    currentOrder.type ===
-      "buy"
+    currentOrder.type === "buy"
       ? "Achat USDT"
       : "Vente USDT";
 
 
   const resultLabel =
-    currentOrder.type ===
-      "buy"
+    currentOrder.type === "buy"
       ? "Vous recevez"
       : "Vous envoyez";
 
@@ -2120,14 +1815,10 @@ function renderConfirmation() {
 
     <div class="summary-row">
 
-      <span>
-        Type
-      </span>
+      <span>Type</span>
 
       <strong>
-        ${escapeHtml(
-          typeLabel
-        )}
+        ${escapeHtml(typeLabel)}
       </strong>
 
     </div>
@@ -2135,13 +1826,11 @@ function renderConfirmation() {
 
     <div class="summary-row">
 
-      <span>
-        Montant FCFA
-      </span>
+      <span>Montant FCFA</span>
 
       <strong>
         ${formatNumber(
-          currentOrder.amount_cfa
+          currentOrder.fiat_amount
         )} FCFA
       </strong>
 
@@ -2150,9 +1839,7 @@ function renderConfirmation() {
 
     <div class="summary-row">
 
-      <span>
-        Taux
-      </span>
+      <span>Taux</span>
 
       <strong>
         ${formatNumber(
@@ -2165,13 +1852,11 @@ function renderConfirmation() {
 
     <div class="summary-row">
 
-      <span>
-        Montant USDT
-      </span>
+      <span>Montant USDT</span>
 
       <strong>
         ${Number(
-          currentOrder.amount_usdt
+          currentOrder.crypto_amount
         ).toFixed(6)} USDT
       </strong>
 
@@ -2180,14 +1865,10 @@ function renderConfirmation() {
 
     <div class="summary-row">
 
-      <span>
-        Réseau
-      </span>
+      <span>Réseau</span>
 
       <strong>
-        ${escapeHtml(
-          networkName
-        )}
+        ${escapeHtml(networkName)}
       </strong>
 
     </div>
@@ -2195,13 +1876,11 @@ function renderConfirmation() {
 
     <div class="summary-row">
 
-      <span>
-        Frais réseau
-      </span>
+      <span>Frais réseau</span>
 
       <strong>
         ${Number(
-          currentOrder.network_fee
+          currentOrder.fee
         )} USDT
       </strong>
 
@@ -2210,9 +1889,20 @@ function renderConfirmation() {
 
     <div class="summary-row">
 
-      <span>
-        Moyen de paiement
-      </span>
+      <span>Portefeuille</span>
+
+      <strong>
+        ${escapeHtml(
+          currentOrder.wallet_address
+        )}
+      </strong>
+
+    </div>
+
+
+    <div class="summary-row">
+
+      <span>Moyen de paiement</span>
 
       <strong>
         Orange Money
@@ -2224,9 +1914,7 @@ function renderConfirmation() {
     <div class="summary-row summary-total">
 
       <span>
-        ${escapeHtml(
-          resultLabel
-        )}
+        ${escapeHtml(resultLabel)}
       </span>
 
       <strong>
@@ -2250,7 +1938,6 @@ function cancelReview() {
 
   currentOrder = null;
 
-
   showSubPage(
     "exchangePage"
   );
@@ -2260,6 +1947,22 @@ function cancelReview() {
 
 // ============================================================
 // CREATION COMMANDE
+//
+// TABLE : public.orders
+//
+// COLONNES :
+// id
+// created_at
+// user_id
+// type
+// fiat_amount
+// crypto_amount
+// rate
+// fee
+// network
+// wallet_address
+// payment_method
+// status
 // ============================================================
 
 async function placeOrder() {
@@ -2317,21 +2020,18 @@ async function placeOrder() {
   try {
 
     // --------------------------------------------------------
-    // RECUPERATION SESSION
+    // SESSION
     // --------------------------------------------------------
 
     const {
       data: sessionData,
       error: sessionError
     } =
-      await supabaseClient.auth
-        .getSession();
+      await supabaseClient.auth.getSession();
 
 
     if (sessionError) {
-
       throw sessionError;
-
     }
 
 
@@ -2339,9 +2039,7 @@ async function placeOrder() {
       sessionData?.session;
 
 
-    if (
-      !session?.user
-    ) {
+    if (!session?.user) {
 
       throw new Error(
         "Votre session n'est plus active."
@@ -2355,7 +2053,7 @@ async function placeOrder() {
 
 
     // --------------------------------------------------------
-    // RECUPERATION PROFIL
+    // PROFIL
     // --------------------------------------------------------
 
     if (!currentProfile) {
@@ -2365,19 +2063,34 @@ async function placeOrder() {
     }
 
 
-    if (
-      !currentProfile?.id
-    ) {
+    if (!currentProfile?.id) {
 
       throw new Error(
-        "Impossible de trouver votre profil Users."
+        "Impossible de trouver votre profil."
       );
 
     }
 
 
     // --------------------------------------------------------
-    // PAYLOAD COMMANDE
+    // VERIFICATION :
+    // profiles.id doit correspondre à auth.uid()
+    // --------------------------------------------------------
+
+    if (
+      currentProfile.id !==
+      currentUser.id
+    ) {
+
+      throw new Error(
+        "Le profil utilisateur ne correspond pas à la session."
+      );
+
+    }
+
+
+    // --------------------------------------------------------
+    // PAYLOAD ORDERS
     // --------------------------------------------------------
 
     const orderPayload = {
@@ -2388,20 +2101,23 @@ async function placeOrder() {
       type:
         currentOrder.type,
 
-      amount_cfa:
-        currentOrder.amount_cfa,
+      fiat_amount:
+        currentOrder.fiat_amount,
 
-      amount_usdt:
-        currentOrder.amount_usdt,
+      crypto_amount:
+        currentOrder.crypto_amount,
 
       rate:
         currentOrder.rate,
 
+      fee:
+        currentOrder.fee,
+
       network:
         currentOrder.network,
 
-      network_fee:
-        currentOrder.network_fee,
+      wallet_address:
+        currentOrder.wallet_address,
 
       payment_method:
         currentOrder.payment_method,
@@ -2412,8 +2128,14 @@ async function placeOrder() {
     };
 
 
+    console.log(
+      "INSERT orders :",
+      orderPayload
+    );
+
+
     // --------------------------------------------------------
-    // INSERT ORDERS
+    // INSERT
     // --------------------------------------------------------
 
     const {
@@ -2430,9 +2152,7 @@ async function placeOrder() {
 
 
     if (error) {
-
       throw error;
-
     }
 
 
@@ -2459,7 +2179,7 @@ async function placeOrder() {
 
 
     // --------------------------------------------------------
-    // PAGE PAIEMENT
+    // PAIEMENT
     // --------------------------------------------------------
 
     renderPaymentPage();
@@ -2490,9 +2210,7 @@ async function placeOrder() {
 
     showMessage(
       "Impossible d'enregistrer la commande : " +
-      getSupabaseErrorMessage(
-        error
-      ),
+      getSupabaseErrorMessage(error),
       "error"
     );
 
@@ -2522,15 +2240,13 @@ async function placeOrder() {
 function renderPaymentPage() {
 
   if (!currentOrder) {
-
     return;
-
   }
 
 
   const amount =
     Number(
-      currentOrder.amount_cfa
+      currentOrder.fiat_amount
     ) || 0;
 
 
@@ -2569,9 +2285,7 @@ async function declarePayment() {
   hideMessage();
 
 
-  if (
-    !currentOrder?.id
-  ) {
+  if (!currentOrder?.id) {
 
     showMessage(
       "Commande introuvable.",
@@ -2603,28 +2317,19 @@ async function declarePayment() {
 
   try {
 
-    // --------------------------------------------------------
-    // Vérifier session
-    // --------------------------------------------------------
-
     const {
       data: sessionData,
       error: sessionError
     } =
-      await supabaseClient.auth
-        .getSession();
+      await supabaseClient.auth.getSession();
 
 
     if (sessionError) {
-
       throw sessionError;
-
     }
 
 
-    if (
-      !sessionData?.session
-    ) {
+    if (!sessionData?.session) {
 
       throw new Error(
         "Votre session a expiré."
@@ -2634,7 +2339,7 @@ async function declarePayment() {
 
 
     // --------------------------------------------------------
-    // RPC SECURISEE
+    // RPC
     // --------------------------------------------------------
 
     const {
@@ -2651,9 +2356,7 @@ async function declarePayment() {
 
 
     if (error) {
-
       throw error;
-
     }
 
 
@@ -2663,37 +2366,25 @@ async function declarePayment() {
     );
 
 
+    if (
+      data &&
+      typeof data === "object" &&
+      data.status
+    ) {
+
+      currentOrder.status =
+        data.status;
+
+    }
+
+
     showMessage(
       "Paiement déclaré. Votre commande est maintenant en attente de vérification.",
       "success"
     );
 
 
-    // --------------------------------------------------------
-    // Actualiser historique
-    // --------------------------------------------------------
-
     await loadOrderHistory();
-
-
-    // --------------------------------------------------------
-    // Si le RPC retourne une commande mise à jour,
-    // mettre également currentOrder à jour.
-    // --------------------------------------------------------
-
-    if (
-      data &&
-      typeof data === "object"
-    ) {
-
-      if (data.status) {
-
-        currentOrder.status =
-          data.status;
-
-      }
-
-    }
 
   }
 
@@ -2707,9 +2398,7 @@ async function declarePayment() {
 
     showMessage(
       "Impossible de confirmer le paiement : " +
-      getSupabaseErrorMessage(
-        error
-      ),
+      getSupabaseErrorMessage(error),
       "error"
     );
 
@@ -2756,9 +2445,7 @@ async function loadOrderHistory() {
 
 
   if (!list) {
-
     return;
-
   }
 
 
@@ -2767,9 +2454,7 @@ async function loadOrderHistory() {
     list.innerHTML = `
 
       <div class="small center">
-
         Connectez-vous pour voir vos commandes.
-
       </div>
 
     `;
@@ -2782,19 +2467,13 @@ async function loadOrderHistory() {
   list.innerHTML = `
 
     <div class="small center">
-
       Chargement des commandes...
-
     </div>
 
   `;
 
 
   try {
-
-    // --------------------------------------------------------
-    // PROFIL
-    // --------------------------------------------------------
 
     if (!currentProfile) {
 
@@ -2803,9 +2482,7 @@ async function loadOrderHistory() {
     }
 
 
-    if (
-      !currentProfile?.id
-    ) {
+    if (!currentProfile?.id) {
 
       throw new Error(
         "Profil utilisateur introuvable."
@@ -2813,10 +2490,6 @@ async function loadOrderHistory() {
 
     }
 
-
-    // --------------------------------------------------------
-    // COMMANDES
-    // --------------------------------------------------------
 
     const {
       data,
@@ -2838,9 +2511,7 @@ async function loadOrderHistory() {
 
 
     if (error) {
-
       throw error;
-
     }
 
 
@@ -2852,9 +2523,7 @@ async function loadOrderHistory() {
       list.innerHTML = `
 
         <div class="small center">
-
           Vous n'avez encore aucune commande.
-
         </div>
 
       `;
@@ -2884,9 +2553,7 @@ async function loadOrderHistory() {
     list.innerHTML = `
 
       <div class="small center">
-
         Impossible de charger vos commandes.
-
       </div>
 
     `;
@@ -2900,13 +2567,10 @@ async function loadOrderHistory() {
 // CARTE COMMANDE
 // ============================================================
 
-function renderOrderCard(
-  order
-) {
+function renderOrderCard(order) {
 
   const type =
-    order.type ===
-      "buy"
+    order.type === "buy"
       ? "Achat USDT"
       : "Vente USDT";
 
@@ -2917,9 +2581,7 @@ function renderOrderCard(
 
 
   const statusLabel =
-    getStatusLabel(
-      status
-    );
+    getStatusLabel(status);
 
 
   const networkName =
@@ -2937,22 +2599,11 @@ function renderOrderCard(
       <div class="order-header">
 
         <div class="order-type">
-
-          ${escapeHtml(
-            type
-          )}
-
+          ${escapeHtml(type)}
         </div>
 
-
-        <span class="status ${escapeHtml(
-          status
-        )}">
-
-          ${escapeHtml(
-            statusLabel
-          )}
-
+        <span class="status ${escapeHtml(status)}">
+          ${escapeHtml(statusLabel)}
         </span>
 
       </div>
@@ -2960,13 +2611,11 @@ function renderOrderCard(
 
       <div class="order-row">
 
-        <span>
-          Montant
-        </span>
+        <span>Montant</span>
 
         <strong>
           ${formatNumber(
-            order.amount_cfa
+            order.fiat_amount
           )} FCFA
         </strong>
 
@@ -2975,14 +2624,11 @@ function renderOrderCard(
 
       <div class="order-row">
 
-        <span>
-          USDT
-        </span>
+        <span>USDT</span>
 
         <strong>
           ${Number(
-            order.amount_usdt ||
-            0
+            order.crypto_amount || 0
           ).toFixed(6)}
         </strong>
 
@@ -2991,14 +2637,10 @@ function renderOrderCard(
 
       <div class="order-row">
 
-        <span>
-          Réseau
-        </span>
+        <span>Réseau</span>
 
         <strong>
-          ${escapeHtml(
-            networkName
-          )}
+          ${escapeHtml(networkName)}
         </strong>
 
       </div>
@@ -3006,9 +2648,7 @@ function renderOrderCard(
 
       <div class="order-row">
 
-        <span>
-          Paiement
-        </span>
+        <span>Paiement</span>
 
         <strong>
           Orange Money
@@ -3019,9 +2659,7 @@ function renderOrderCard(
 
       <div class="order-row">
 
-        <span>
-          Date
-        </span>
+        <span>Date</span>
 
         <strong>
           ${formatDate(
@@ -3039,12 +2677,10 @@ function renderOrderCard(
 
 
 // ============================================================
-// STATUT COMMANDE
+// STATUT
 // ============================================================
 
-function getStatusLabel(
-  status
-) {
+function getStatusLabel(status) {
 
   const labels = {
 
@@ -3107,12 +2743,8 @@ async function loadOrdersForDispute() {
     }
 
 
-    if (
-      !currentProfile?.id
-    ) {
-
+    if (!currentProfile?.id) {
       return;
-
     }
 
 
@@ -3123,7 +2755,7 @@ async function loadOrdersForDispute() {
       await supabaseClient
         .from("orders")
         .select(
-          "id,type,amount_cfa,created_at,status"
+          "id,type,fiat_amount,created_at,status"
         )
         .eq(
           "user_id",
@@ -3138,18 +2770,14 @@ async function loadOrdersForDispute() {
 
 
     if (error) {
-
       throw error;
-
     }
 
 
     select.innerHTML = `
 
       <option value="">
-
         Sélectionner une commande
-
       </option>
 
     `;
@@ -3169,15 +2797,14 @@ async function loadOrdersForDispute() {
 
 
         const type =
-          order.type ===
-            "buy"
+          order.type === "buy"
             ? "Achat"
             : "Vente";
 
 
         option.textContent =
           `${type} - ${formatNumber(
-            order.amount_cfa
+            order.fiat_amount
           )} FCFA - ${formatDate(
             order.created_at
           )}`;
@@ -3194,7 +2821,7 @@ async function loadOrdersForDispute() {
   catch (error) {
 
     console.error(
-      "Erreur chargement commandes litige :",
+      "Erreur commandes litige :",
       error
     );
 
@@ -3207,9 +2834,7 @@ async function loadOrdersForDispute() {
 // CREATION LITIGE
 // ============================================================
 
-async function submitDispute(
-  event
-) {
+async function submitDispute(event) {
 
   event.preventDefault();
 
@@ -3257,10 +2882,7 @@ async function submitDispute(
   }
 
 
-  if (
-    !subject ||
-    !message
-  ) {
+  if (!subject || !message) {
 
     showMessage(
       "Veuillez remplir tous les champs du litige.",
@@ -3303,9 +2925,7 @@ async function submitDispute(
     }
 
 
-    if (
-      !currentProfile?.id
-    ) {
+    if (!currentProfile?.id) {
 
       throw new Error(
         "Profil introuvable."
@@ -3315,7 +2935,7 @@ async function submitDispute(
 
 
     // --------------------------------------------------------
-    // Vérifier que la commande appartient bien à l'utilisateur
+    // VERIFIER COMMANDE
     // --------------------------------------------------------
 
     const {
@@ -3337,9 +2957,7 @@ async function submitDispute(
 
 
     if (orderError) {
-
       throw orderError;
-
     }
 
 
@@ -3353,7 +2971,7 @@ async function submitDispute(
 
 
     // --------------------------------------------------------
-    // CREATION LITIGE
+    // LITIGE
     // --------------------------------------------------------
 
     const {
@@ -3385,9 +3003,7 @@ async function submitDispute(
 
 
     if (error) {
-
       throw error;
-
     }
 
 
@@ -3421,9 +3037,7 @@ async function submitDispute(
 
     showMessage(
       "Impossible d'envoyer le litige : " +
-      getSupabaseErrorMessage(
-        error
-      ),
+      getSupabaseErrorMessage(error),
       "error"
     );
 
@@ -3469,9 +3083,7 @@ async function loadDisputes() {
   list.innerHTML = `
 
     <div class="small center">
-
       Chargement...
-
     </div>
 
   `;
@@ -3486,9 +3098,7 @@ async function loadDisputes() {
     }
 
 
-    if (
-      !currentProfile?.id
-    ) {
+    if (!currentProfile?.id) {
 
       throw new Error(
         "Profil introuvable."
@@ -3517,9 +3127,7 @@ async function loadDisputes() {
 
 
     if (error) {
-
       throw error;
-
     }
 
 
@@ -3531,9 +3139,7 @@ async function loadDisputes() {
       list.innerHTML = `
 
         <div class="small center">
-
           Aucun litige.
-
         </div>
 
       `;
@@ -3560,20 +3166,15 @@ async function loadDisputes() {
                 <div class="order-header">
 
                   <div class="order-type">
-
                     ${escapeHtml(
                       dispute.subject
                     )}
-
                   </div>
 
-
                   <span class="status processing">
-
                     ${escapeHtml(
                       disputeStatus
                     )}
-
                   </span>
 
                 </div>
@@ -3617,9 +3218,7 @@ async function loadDisputes() {
     list.innerHTML = `
 
       <div class="small center">
-
         Impossible de charger les litiges.
-
       </div>
 
     `;
@@ -3630,13 +3229,12 @@ async function loadDisputes() {
 
 
 // ============================================================
-// BOUTONS ACCUEIL
+// ACCUEIL
 // ============================================================
 
 function goToBuy() {
 
   setBuyMode();
-
 
   showSubPage(
     "exchangePage"
@@ -3648,7 +3246,6 @@ function goToBuy() {
 function goToSell() {
 
   setSellMode();
-
 
   showSubPage(
     "exchangePage"
@@ -3663,9 +3260,7 @@ function goToSell() {
 
 function setupEvents() {
 
-  // ----------------------------------------------------------
-  // AUTH TABS
-  // ----------------------------------------------------------
+  // AUTH
 
   $("loginTab")
     ?.addEventListener(
@@ -3681,9 +3276,7 @@ function setupEvents() {
     );
 
 
-  // ----------------------------------------------------------
-  // FORMULAIRE CONNEXION
-  // ----------------------------------------------------------
+  // CONNEXION
 
   $("loginForm")
     ?.addEventListener(
@@ -3692,9 +3285,7 @@ function setupEvents() {
     );
 
 
-  // ----------------------------------------------------------
-  // FORMULAIRE INSCRIPTION
-  // ----------------------------------------------------------
+  // INSCRIPTION
 
   $("registerForm")
     ?.addEventListener(
@@ -3703,9 +3294,7 @@ function setupEvents() {
     );
 
 
-  // ----------------------------------------------------------
   // DECONNEXION
-  // ----------------------------------------------------------
 
   $("logoutBtn")
     ?.addEventListener(
@@ -3714,9 +3303,7 @@ function setupEvents() {
     );
 
 
-  // ----------------------------------------------------------
   // ACCUEIL
-  // ----------------------------------------------------------
 
   $("goBuyBtn")
     ?.addEventListener(
@@ -3732,9 +3319,7 @@ function setupEvents() {
     );
 
 
-  // ----------------------------------------------------------
-  // ACHAT / VENTE
-  // ----------------------------------------------------------
+  // ACHAT
 
   $("buyTab")
     ?.addEventListener(
@@ -3743,6 +3328,8 @@ function setupEvents() {
     );
 
 
+  // VENTE
+
   $("sellTab")
     ?.addEventListener(
       "click",
@@ -3750,17 +3337,13 @@ function setupEvents() {
     );
 
 
-  // ----------------------------------------------------------
   // RESEAUX
-  // ----------------------------------------------------------
 
   $("trc20Option")
     ?.addEventListener(
       "click",
       () =>
-        selectNetwork(
-          "trc20"
-        )
+        selectNetwork("trc20")
     );
 
 
@@ -3768,15 +3351,11 @@ function setupEvents() {
     ?.addEventListener(
       "click",
       () =>
-        selectNetwork(
-          "bp20"
-        )
+        selectNetwork("bp20")
     );
 
 
-  // ----------------------------------------------------------
   // CALCULATEUR
-  // ----------------------------------------------------------
 
   $("amountInput")
     ?.addEventListener(
@@ -3802,9 +3381,7 @@ function setupEvents() {
     );
 
 
-  // ----------------------------------------------------------
   // CONFIRMATION
-  // ----------------------------------------------------------
 
   $("placeOrderBtn")
     ?.addEventListener(
@@ -3820,9 +3397,7 @@ function setupEvents() {
     );
 
 
-  // ----------------------------------------------------------
   // PAIEMENT
-  // ----------------------------------------------------------
 
   $("paymentDoneBtn")
     ?.addEventListener(
@@ -3838,14 +3413,10 @@ function setupEvents() {
     );
 
 
-  // ----------------------------------------------------------
-  // NAVIGATION BASSE
-  // ----------------------------------------------------------
+  // NAVIGATION
 
   document
-    .querySelectorAll(
-      ".nav-btn"
-    )
+    .querySelectorAll(".nav-btn")
     .forEach(button => {
 
       button.addEventListener(
@@ -3858,9 +3429,7 @@ function setupEvents() {
 
           if (page) {
 
-            showSubPage(
-              page
-            );
+            showSubPage(page);
 
           }
 
@@ -3870,9 +3439,7 @@ function setupEvents() {
     });
 
 
-  // ----------------------------------------------------------
-  // SUPPORT / LITIGES
-  // ----------------------------------------------------------
+  // LITIGES
 
   $("disputeForm")
     ?.addEventListener(
@@ -3895,14 +3462,11 @@ async function checkExistingSession() {
       data,
       error
     } =
-      await supabaseClient.auth
-        .getSession();
+      await supabaseClient.auth.getSession();
 
 
     if (error) {
-
       throw error;
-
     }
 
 
@@ -3910,9 +3474,7 @@ async function checkExistingSession() {
       data?.session;
 
 
-    if (
-      session?.user
-    ) {
+    if (session?.user) {
 
       currentUser =
         session.user;
@@ -3961,15 +3523,13 @@ async function checkExistingSession() {
 
 
 // ============================================================
-// ECOUTE DES CHANGEMENTS AUTH
+// AUTH LISTENER
 // ============================================================
 
 function setupAuthListener() {
 
   if (authListenerReady) {
-
     return;
-
   }
 
 
@@ -3987,13 +3547,8 @@ function setupAuthListener() {
         );
 
 
-        // ----------------------------------------------------
-        // DECONNEXION
-        // ----------------------------------------------------
-
         if (
-          event ===
-          "SIGNED_OUT"
+          event === "SIGNED_OUT"
         ) {
 
           currentUser = null;
@@ -4002,36 +3557,21 @@ function setupAuthListener() {
 
           currentOrder = null;
 
-
           showAuthPage();
-
 
           return;
 
         }
 
 
-        // ----------------------------------------------------
-        // CONNEXION
-        //
-        // IMPORTANT :
-        // Ne pas lancer immédiatement initializeApplication()
-        // dans le callback Auth afin d'éviter les doubles
-        // initialisations.
-        // ----------------------------------------------------
-
         if (
-          event ===
-          "SIGNED_IN" &&
+          event === "SIGNED_IN" &&
           session?.user
         ) {
 
           currentUser =
             session.user;
 
-
-          // Exécution différée pour laisser Supabase
-          // terminer son changement d'état.
 
           setTimeout(
             () => {
@@ -4051,7 +3591,7 @@ function setupAuthListener() {
 
 
 // ============================================================
-// DEMARRAGE APPLICATION
+// DEMARRAGE
 // ============================================================
 
 document.addEventListener(
@@ -4063,32 +3603,16 @@ document.addEventListener(
     );
 
 
-    // --------------------------------------------------------
-    // EVENEMENTS
-    // --------------------------------------------------------
-
     setupEvents();
 
 
-    // --------------------------------------------------------
-    // AUTH LISTENER
-    // --------------------------------------------------------
-
     setupAuthListener();
 
-
-    // --------------------------------------------------------
-    // INTERFACE INITIALE
-    // --------------------------------------------------------
 
     updateRatesUI();
 
     updateCalculator();
 
-
-    // --------------------------------------------------------
-    // SESSION EXISTANTE
-    // --------------------------------------------------------
 
     await checkExistingSession();
 
