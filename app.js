@@ -1,8 +1,8 @@
-// ===============================
-// NOA DIGIT TRADE - SUPABASE
-// ===============================
+// ==========================================
+// NOA DIGIT TRADE - APPLICATION
+// SUPABASE AUTH + ORDERS
+// ==========================================
 
-// Configuration Supabase
 const SUPABASE_URL =
   'https://vowafwsvrjpkhkocptih.supabase.co';
 
@@ -10,260 +10,108 @@ const SUPABASE_KEY =
   'sb_publishable_umIa4749av8722xus6aQHw_1nf8b-PC';
 
 
-// ===============================
-// CLIENT SUPABASE
-// ===============================
+// ==========================================
+// INITIALISATION SUPABASE
+// ==========================================
 
-const supabaseClient =
-  window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
-  );
+const { createClient } = supabase;
+
+const supabaseClient = createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
 
 
-// Type de commande
+// ==========================================
+// VARIABLES
+// ==========================================
+
 let type = 'buy';
 
 
-// ===============================
-// STYLE DE LA FENÊTRE AUTH
-// ===============================
-
-const authStyle = document.createElement('style');
-
-authStyle.textContent = `
-
-.auth-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.55);
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  padding: 20px;
-
-  z-index: 9999;
-}
-
-.auth-modal {
-  width: 100%;
-  max-width: 430px;
-
-  background: #ffffff;
-
-  border-radius: 22px;
-
-  padding: 28px;
-
-  box-shadow: 0 25px 70px rgba(0,0,0,0.2);
-
-  position: relative;
-}
-
-.auth-close {
-  position: absolute;
-
-  top: 14px;
-  right: 16px;
-
-  width: 36px;
-  height: 36px;
-
-  border-radius: 50%;
-
-  border: 1px solid #e5e7eb;
-
-  background: #fff;
-
-  font-size: 22px;
-
-  cursor: pointer;
-}
-
-.auth-modal h2 {
-  margin: 0 0 8px;
-
-  font-size: 28px;
-}
-
-.auth-subtitle {
-  margin: 0 0 25px;
-
-  color: #667085;
-
-  line-height: 1.5;
-}
-
-.auth-modal label {
-  display: block;
-
-  margin: 15px 0 7px;
-
-  font-size: 14px;
-
-  font-weight: 700;
-}
-
-.auth-input {
-  width: 100%;
-
-  padding: 14px;
-
-  border: 1px solid #d0d5dd;
-
-  border-radius: 10px;
-
-  font-size: 16px;
-
-  outline: none;
-}
-
-.auth-input:focus {
-  border-color: #111827;
-
-  box-shadow: 0 0 0 3px rgba(17,24,39,0.08);
-}
-
-.password-wrapper {
-  position: relative;
-}
-
-.password-wrapper .auth-input {
-  padding-right: 55px;
-}
-
-.password-toggle {
-  position: absolute;
-
-  right: 8px;
-  top: 50%;
-
-  transform: translateY(-50%);
-
-  border: 0;
-
-  background: transparent;
-
-  cursor: pointer;
-
-  font-size: 18px;
-}
-
-.auth-submit {
-  width: 100%;
-
-  margin-top: 22px;
-
-  padding: 14px;
-
-  border: 0;
-
-  border-radius: 12px;
-
-  background: #111827;
-
-  color: white;
-
-  font-size: 15px;
-
-  font-weight: 700;
-
-  cursor: pointer;
-}
-
-.auth-submit:hover {
-  background: #1f2937;
-}
-
-.auth-submit:disabled {
-  opacity: 0.6;
-
-  cursor: not-allowed;
-}
-
-.auth-switch {
-  margin-top: 20px;
-
-  text-align: center;
-
-  color: #667085;
-
-  font-size: 14px;
-}
-
-.auth-switch button {
-  border: 0;
-
-  background: transparent;
-
-  color: #111827;
-
-  font-weight: 700;
-
-  cursor: pointer;
-}
-
-.auth-message {
-  margin-top: 16px;
-
-  padding: 11px;
-
-  border-radius: 10px;
-
-  font-size: 14px;
-
-  line-height: 1.4;
-
-  display: none;
-}
-
-.auth-message.error {
-  display: block;
-
-  background: #fef2f2;
-
-  color: #b42318;
-}
-
-.auth-message.success {
-  display: block;
-
-  background: #ecfdf3;
-
-  color: #027a48;
-}
-
-@media (max-width: 500px) {
-
-  .auth-modal {
-    padding: 24px 18px;
-
-    border-radius: 18px;
-  }
-
-  .auth-modal h2 {
-    font-size: 24px;
-  }
-
-}
-
-`;
-
-document.head.appendChild(authStyle);
-
-
-// ===============================
+// ==========================================
 // PAGE CHARGÉE
-// ===============================
+// ==========================================
 
 document.addEventListener('DOMContentLoaded', async () => {
 
+  // Vérifier la connexion
+  await checkSession();
 
-  // ===============================
-  // ONGLET ACHETER / VENDRE
-  // ===============================
+  // Boutons
+  setupTabs();
+  setupStartButton();
+  setupLoginButton();
+  setupSubmitButton();
+
+});
+
+
+// ==========================================
+// VÉRIFIER LA SESSION
+// ==========================================
+
+async function checkSession() {
+
+  const {
+    data: { session }
+  } = await supabaseClient.auth.getSession();
+
+  updateLoginButton(session);
+
+}
+
+
+// ==========================================
+// ÉCOUTER LES CHANGEMENTS DE SESSION
+// ==========================================
+
+supabaseClient.auth.onAuthStateChange(
+  (_event, session) => {
+
+    updateLoginButton(session);
+
+  }
+);
+
+
+// ==========================================
+// BOUTON CONNEXION
+// ==========================================
+
+function updateLoginButton(session) {
+
+  const login = document.getElementById('login');
+
+  if (!login) return;
+
+
+  if (session) {
+
+    login.textContent = 'Mon compte';
+
+    login.onclick = () => {
+      showAccountModal(session.user);
+    };
+
+  } else {
+
+    login.textContent = 'Se connecter';
+
+    login.onclick = () => {
+      showAuthModal();
+    };
+
+  }
+
+}
+
+
+// ==========================================
+// ONGLET ACHETER / VENDRE
+// ==========================================
+
+function setupTabs() {
 
   document.querySelectorAll('.tab').forEach(button => {
 
@@ -271,9 +119,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       document
         .querySelectorAll('.tab')
-        .forEach(item => {
-          item.classList.remove('active');
-        });
+        .forEach(item =>
+          item.classList.remove('active')
+        );
 
       button.classList.add('active');
 
@@ -283,1133 +131,755 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   });
 
+}
 
-  // ===============================
-  // BOUTON COMMENCER
-  // ===============================
+
+// ==========================================
+// BOUTON COMMENCER
+// ==========================================
+
+function setupStartButton() {
 
   const start =
     document.getElementById('start');
 
-  if (start) {
-
-    start.addEventListener('click', () => {
-
-      const order =
-        document.getElementById('order');
-
-      if (order) {
-
-        order.scrollIntoView({
-          behavior: 'smooth',
-          block: 'start'
-        });
-
-      }
-
-    });
-
-  }
+  if (!start) return;
 
 
-  // ===============================
-  // BOUTON CONNEXION
-  // ===============================
+  start.addEventListener('click', () => {
+
+    const order =
+      document.getElementById('order');
+
+    if (order) {
+
+      order.scrollIntoView({
+        behavior: 'smooth'
+      });
+
+    }
+
+  });
+
+}
+
+
+// ==========================================
+// BOUTON LOGIN
+// ==========================================
+
+function setupLoginButton() {
 
   const login =
     document.getElementById('login');
 
-  if (login) {
+  if (!login) return;
 
-    login.addEventListener('click', async () => {
+  login.addEventListener('click', () => {
+    showAuthModal();
+  });
 
-      const {
-        data: {
-          session
-        }
-      } = await supabaseClient.auth.getSession();
+}
 
 
-      if (session) {
+// ==========================================
+// FENÊTRE CONNEXION / INSCRIPTION
+// ==========================================
 
-        showAccountWindow();
+function showAuthModal() {
 
-      } else {
+  closeModal();
 
-        showAuthWindow('login');
-
-      }
-
-    });
-
-  }
-
-
-  // ===============================
-  // VÉRIFIER SESSION AU CHARGEMENT
-  // ===============================
-
-  updateLoginButton();
-
-
-  // ===============================
-  // ÉCOUTER LES CHANGEMENTS AUTH
-  // ===============================
-
-  supabaseClient.auth.onAuthStateChange(
-    async (event, session) => {
-
-      console.log(
-        'Auth event:',
-        event
-      );
-
-      updateLoginButton();
-
-    }
-  );
-
-
-  // ===============================
-  // ENVOI COMMANDE
-  // ===============================
-
-  const submit =
-    document.getElementById('submit');
-
-  if (submit) {
-
-    submit.addEventListener(
-      'click',
-      async () => {
-
-        const amountElement =
-          document.getElementById('amount');
-
-        const walletElement =
-          document.getElementById('wallet');
-
-        const networkElement =
-          document.getElementById('network');
-
-        const message =
-          document.getElementById('msg');
-
-
-        if (
-          !amountElement ||
-          !walletElement ||
-          !networkElement ||
-          !message
-        ) {
-          return;
-        }
-
-
-        const amount =
-          amountElement.value.trim();
-
-        const wallet =
-          walletElement.value.trim();
-
-        const network =
-          networkElement.value;
-
-
-        // -------------------------------
-        // VALIDATION
-        // -------------------------------
-
-        if (!amount || !wallet) {
-
-          message.textContent =
-            'Veuillez remplir le montant et l’adresse du portefeuille.';
-
-          return;
-
-        }
-
-
-        if (Number(amount) <= 0) {
-
-          message.textContent =
-            'Le montant doit être supérieur à 0.';
-
-          return;
-
-        }
-
-
-        // -------------------------------
-        // DÉSACTIVER BOUTON
-        // -------------------------------
-
-        submit.disabled = true;
-
-        submit.textContent =
-          'Envoi en cours...';
-
-
-        try {
-
-          // -------------------------------
-          // ENVOI SUPABASE
-          // -------------------------------
-
-          const response =
-            await fetch(
-              `${SUPABASE_URL}/rest/v1/orders`,
-              {
-                method: 'POST',
-
-                headers: {
-                  'apikey': SUPABASE_KEY,
-
-                  'Authorization':
-                    `Bearer ${SUPABASE_KEY}`,
-
-                  'Content-Type':
-                    'application/json',
-
-                  'Prefer':
-                    'return=minimal'
-                },
-
-                body: JSON.stringify({
-
-                  type: type,
-
-                  crypto_amount:
-                    Number(amount),
-
-                  network: network,
-
-                  wallet_address:
-                    wallet,
-
-                  status:
-                    'pending'
-
-                })
-              }
-            );
-
-
-          // -------------------------------
-          // ERREUR
-          // -------------------------------
-
-          if (!response.ok) {
-
-            const errorText =
-              await response.text();
-
-            console.error(
-              'Erreur Supabase:',
-              errorText
-            );
-
-            throw new Error(
-              errorText ||
-              'Erreur lors de la création de la commande.'
-            );
-
-          }
-
-
-          // -------------------------------
-          // SUCCÈS
-          // -------------------------------
-
-          console.log(
-            'Commande créée avec succès'
-          );
-
-
-          message.textContent =
-            `Demande ${
-              type === 'buy'
-                ? 'd’achat'
-                : 'de vente'
-            } envoyée avec succès : ${amount} USDT (${network}).`;
-
-
-          amountElement.value = '';
-
-          walletElement.value = '';
-
-
-        } catch (error) {
-
-          console.error(error);
-
-          message.textContent =
-            `Erreur : ${error.message}`;
-
-
-        } finally {
-
-          submit.disabled = false;
-
-          submit.textContent =
-            'Envoyer la demande';
-
-        }
-
-      }
-    );
-
-  }
-
-});
-
-
-// ==================================================
-// FENÊTRE AUTHENTIFICATION
-// ==================================================
-
-function showAuthWindow(mode = 'login') {
-
-  // Supprimer une ancienne fenêtre
-  const old =
-    document.getElementById('authOverlay');
-
-  if (old) {
-    old.remove();
-  }
-
-
-  const isLogin =
-    mode === 'login';
-
-
-  // -------------------------------
-  // OVERLAY
-  // -------------------------------
-
-  const overlay =
-    document.createElement('div');
-
-  overlay.id =
-    'authOverlay';
-
-  overlay.className =
-    'auth-overlay';
-
-
-  // -------------------------------
-  // MODAL
-  // -------------------------------
 
   const modal =
     document.createElement('div');
 
-  modal.className =
-    'auth-modal';
+  modal.id = 'authModal';
+
+  modal.innerHTML = `
+
+    <div style="
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,.55);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      z-index:9999;
+      padding:20px;
+    ">
+
+      <div style="
+        width:100%;
+        max-width:420px;
+        background:white;
+        border-radius:20px;
+        padding:28px;
+        box-shadow:0 20px 50px rgba(0,0,0,.25);
+      ">
+
+        <div style="
+          display:flex;
+          justify-content:space-between;
+          align-items:center;
+          margin-bottom:20px;
+        ">
+
+          <h2 id="authTitle" style="margin:0">
+            Se connecter
+          </h2>
+
+          <button
+            id="closeAuth"
+            type="button"
+            style="
+              border:0;
+              background:none;
+              font-size:25px;
+              cursor:pointer;
+            "
+          >
+            ×
+          </button>
+
+        </div>
 
 
-  // -------------------------------
-  // FERMER
-  // -------------------------------
-
-  const close =
-    document.createElement('button');
-
-  close.className =
-    'auth-close';
-
-  close.type =
-    'button';
-
-  close.innerHTML =
-    '&times;';
-
-
-  close.addEventListener(
-    'click',
-    () => overlay.remove()
-  );
+        <input
+          id="authEmail"
+          type="email"
+          placeholder="Adresse email"
+          autocomplete="email"
+          style="
+            width:100%;
+            padding:14px;
+            margin-bottom:12px;
+            border:1px solid #d0d5dd;
+            border-radius:10px;
+            font-size:16px;
+          "
+        >
 
 
-  // -------------------------------
-  // TITRE
-  // -------------------------------
+        <input
+          id="authPassword"
+          type="password"
+          placeholder="Mot de passe"
+          autocomplete="current-password"
+          style="
+            width:100%;
+            padding:14px;
+            margin-bottom:16px;
+            border:1px solid #d0d5dd;
+            border-radius:10px;
+            font-size:16px;
+          "
+        >
+
+
+        <button
+          id="authSubmit"
+          type="button"
+          style="
+            width:100%;
+            padding:14px;
+            border:0;
+            border-radius:10px;
+            background:#111827;
+            color:white;
+            font-weight:700;
+            font-size:16px;
+            cursor:pointer;
+          "
+        >
+          Se connecter
+        </button>
+
+
+        <p
+          id="authMessage"
+          style="
+            margin-top:15px;
+            line-height:1.5;
+          "
+        ></p>
+
+
+        <button
+          id="switchAuth"
+          type="button"
+          style="
+            width:100%;
+            margin-top:10px;
+            padding:10px;
+            border:0;
+            background:none;
+            cursor:pointer;
+            color:#344054;
+          "
+        >
+          Créer un compte
+        </button>
+
+      </div>
+
+    </div>
+
+  `;
+
+
+  document.body.appendChild(modal);
+
+
+  let mode = 'login';
+
 
   const title =
-    document.createElement('h2');
-
-  title.textContent =
-    isLogin
-      ? 'Se connecter'
-      : 'Créer un compte';
-
-
-  const subtitle =
-    document.createElement('p');
-
-  subtitle.className =
-    'auth-subtitle';
-
-  subtitle.textContent =
-    isLogin
-      ? 'Connectez-vous à votre espace Noa Digit Trade.'
-      : 'Créez votre compte pour accéder à votre espace personnel.';
-
-
-  // -------------------------------
-  // EMAIL
-  // -------------------------------
-
-  const emailLabel =
-    document.createElement('label');
-
-  emailLabel.textContent =
-    'Adresse email';
-
-
-  const email =
-    document.createElement('input');
-
-  email.type =
-    'email';
-
-  email.className =
-    'auth-input';
-
-  email.placeholder =
-    'exemple@email.com';
-
-  email.autocomplete =
-    'email';
-
-
-  // -------------------------------
-  // MOT DE PASSE
-  // -------------------------------
-
-  const passwordLabel =
-    document.createElement('label');
-
-  passwordLabel.textContent =
-    'Mot de passe';
-
-
-  const passwordWrapper =
-    document.createElement('div');
-
-  passwordWrapper.className =
-    'password-wrapper';
-
-
-  const password =
-    document.createElement('input');
-
-  password.type =
-    'password';
-
-  password.className =
-    'auth-input';
-
-  password.placeholder =
-    'Votre mot de passe';
-
-  password.autocomplete =
-    isLogin
-      ? 'current-password'
-      : 'new-password';
-
-
-  const passwordToggle =
-    document.createElement('button');
-
-  passwordToggle.type =
-    'button';
-
-  passwordToggle.className =
-    'password-toggle';
-
-  passwordToggle.textContent =
-    '👁';
-
-
-  passwordToggle.addEventListener(
-    'click',
-    () => {
-
-      if (
-        password.type === 'password'
-      ) {
-
-        password.type =
-          'text';
-
-        passwordToggle.textContent =
-          '🙈';
-
-      } else {
-
-        password.type =
-          'password';
-
-        passwordToggle.textContent =
-          '👁';
-
-      }
-
-    }
-  );
-
-
-  passwordWrapper.appendChild(password);
-
-  passwordWrapper.appendChild(
-    passwordToggle
-  );
-
-
-  // -------------------------------
-  // BOUTON
-  // -------------------------------
+    document.getElementById('authTitle');
 
   const submit =
-    document.createElement('button');
-
-  submit.type =
-    'button';
-
-  submit.className =
-    'auth-submit';
-
-  submit.textContent =
-    isLogin
-      ? 'Se connecter'
-      : 'Créer mon compte';
-
-
-  // -------------------------------
-  // MESSAGE
-  // -------------------------------
-
-  const message =
-    document.createElement('div');
-
-  message.className =
-    'auth-message';
-
-
-  // -------------------------------
-  // CHANGEMENT DE MODE
-  // -------------------------------
-
-  const switchContainer =
-    document.createElement('div');
-
-  switchContainer.className =
-    'auth-switch';
-
-
-  const switchText =
-    document.createElement('span');
-
-  switchText.textContent =
-    isLogin
-      ? 'Vous n’avez pas encore de compte ? '
-      : 'Vous avez déjà un compte ? ';
-
+    document.getElementById('authSubmit');
 
   const switchButton =
-    document.createElement('button');
+    document.getElementById('switchAuth');
 
-  switchButton.type =
-    'button';
-
-  switchButton.textContent =
-    isLogin
-      ? 'Créer un compte'
-      : 'Se connecter';
+  const message =
+    document.getElementById('authMessage');
 
 
-  switchButton.addEventListener(
-    'click',
-    () => {
-
-      overlay.remove();
-
-      showAuthWindow(
-        isLogin
-          ? 'signup'
-          : 'login'
-      );
-
-    }
-  );
+  document
+    .getElementById('closeAuth')
+    .addEventListener('click', closeModal);
 
 
-  switchContainer.appendChild(
-    switchText
-  );
-
-  switchContainer.appendChild(
-    switchButton
-  );
-
-
-  // -------------------------------
+  // ========================================
   // CONNEXION / INSCRIPTION
-  // -------------------------------
+  // ========================================
 
-  submit.addEventListener(
-    'click',
-    async () => {
+  submit.addEventListener('click', async () => {
 
-      const emailValue =
-        email.value.trim();
+    const email =
+      document
+        .getElementById('authEmail')
+        .value
+        .trim();
 
-      const passwordValue =
-        password.value;
+    const password =
+      document
+        .getElementById('authPassword')
+        .value;
 
 
-      message.className =
-        'auth-message';
+    if (!email || !password) {
 
       message.textContent =
-        '';
+        'Veuillez remplir tous les champs.';
+
+      return;
+
+    }
+
+
+    if (password.length < 6) {
+
+      message.textContent =
+        'Le mot de passe doit contenir au moins 6 caractères.';
+
+      return;
+
+    }
+
+
+    submit.disabled = true;
+
+    submit.textContent =
+      'Patientez...';
+
+
+    try {
+
+      let result;
 
 
       // -------------------------------
-      // VALIDATION EMAIL
+      // CONNEXION
       // -------------------------------
 
-      if (!emailValue) {
+      if (mode === 'login') {
 
-        showAuthMessage(
-          message,
-          'Veuillez saisir votre adresse email.',
-          'error'
-        );
+        result =
+          await supabaseClient.auth.signInWithPassword({
+            email,
+            password
+          });
 
-        return;
+
+      }
+
+      // -------------------------------
+      // INSCRIPTION
+      // -------------------------------
+
+      else {
+
+        result =
+          await supabaseClient.auth.signUp({
+            email,
+            password
+          });
+
+      }
+
+
+      if (result.error) {
+
+        throw result.error;
 
       }
 
 
       // -------------------------------
-      // VALIDATION MOT DE PASSE
+      // SUCCÈS CONNEXION
       // -------------------------------
 
-      if (!passwordValue) {
+      if (mode === 'login') {
 
-        showAuthMessage(
-          message,
-          'Veuillez saisir votre mot de passe.',
-          'error'
-        );
+        message.textContent =
+          'Connexion réussie.';
 
-        return;
+        setTimeout(() => {
 
-      }
+          closeModal();
 
-
-      if (passwordValue.length < 6) {
-
-        showAuthMessage(
-          message,
-          'Le mot de passe doit contenir au moins 6 caractères.',
-          'error'
-        );
-
-        return;
+        }, 800);
 
       }
 
 
       // -------------------------------
-      // CHARGEMENT
+      // SUCCÈS INSCRIPTION
       // -------------------------------
 
-      submit.disabled =
-        true;
+      else {
+
+        message.textContent =
+          'Compte créé. Vérifiez votre adresse email pour confirmer votre compte.';
+
+      }
+
+
+    } catch (error) {
+
+      console.error(error);
+
+      message.textContent =
+        `Erreur : ${error.message}`;
+
+    } finally {
+
+      submit.disabled = false;
 
       submit.textContent =
-        isLogin
-          ? 'Connexion...'
-          : 'Création...';
-
-
-      try {
-
-        let result;
-
-
-        // ===============================
-        // CONNEXION
-        // ===============================
-
-        if (isLogin) {
-
-          result =
-            await supabaseClient.auth.signInWithPassword({
-              email: emailValue,
-              password: passwordValue
-            });
-
-
-        // ===============================
-        // INSCRIPTION
-        // ===============================
-
-        } else {
-
-          result =
-            await supabaseClient.auth.signUp({
-              email: emailValue,
-              password: passwordValue
-            });
-
-        }
-
-
-        // -------------------------------
-        // ERREUR SUPABASE
-        // -------------------------------
-
-        if (result.error) {
-
-          throw result.error;
-
-        }
-
-
-        // ===============================
-        // INSCRIPTION
-        // ===============================
-
-        if (!isLogin) {
-
-          if (
-            result.data.session
-          ) {
-
-            showAuthMessage(
-              message,
-              'Compte créé avec succès. Vous êtes maintenant connecté.',
-              'success'
-            );
-
-
-            setTimeout(
-              () => {
-                overlay.remove();
-                updateLoginButton();
-              },
-              1200
-            );
-
-
-          } else {
-
-            showAuthMessage(
-              message,
-              'Compte créé ! Vérifiez votre email pour confirmer votre adresse avant de vous connecter.',
-              'success'
-            );
-
-          }
-
-
-        // ===============================
-        // CONNEXION
-        // ===============================
-
-        } else {
-
-          showAuthMessage(
-            message,
-            'Connexion réussie !',
-            'success'
-          );
-
-
-          setTimeout(
-            () => {
-
-              overlay.remove();
-
-              updateLoginButton();
-
-            },
-            700
-          );
-
-        }
-
-
-      } catch (error) {
-
-        console.error(
-          'Erreur Auth Supabase:',
-          error
-        );
-
-
-        let errorMessage =
-          error.message ||
-          'Une erreur est survenue.';
-
-
-        // Messages plus simples
-        if (
-          errorMessage.includes(
-            'Invalid login credentials'
-          )
-        ) {
-
-          errorMessage =
-            'Email ou mot de passe incorrect.';
-
-        }
-
-
-        if (
-          errorMessage.includes(
-            'User already registered'
-          )
-        ) {
-
-          errorMessage =
-            'Un compte existe déjà avec cet email.';
-
-        }
-
-
-        if (
-          errorMessage.includes(
-            'Password should be at least'
-          )
-        ) {
-
-          errorMessage =
-            'Le mot de passe doit contenir au moins 6 caractères.';
-
-        }
-
-
-        showAuthMessage(
-          message,
-          errorMessage,
-          'error'
-        );
-
-
-      } finally {
-
-        submit.disabled =
-          false;
-
-        submit.textContent =
-          isLogin
-            ? 'Se connecter'
-            : 'Créer mon compte';
-
-      }
+        mode === 'login'
+          ? 'Se connecter'
+          : 'Créer mon compte';
 
     }
-  );
+
+  });
 
 
-  // -------------------------------
-  // CONSTRUCTION
-  // -------------------------------
+  // ========================================
+  // CHANGER LOGIN / INSCRIPTION
+  // ========================================
 
-  modal.appendChild(close);
+  switchButton.addEventListener('click', () => {
 
-  modal.appendChild(title);
-
-  modal.appendChild(subtitle);
-
-  modal.appendChild(emailLabel);
-
-  modal.appendChild(email);
-
-  modal.appendChild(passwordLabel);
-
-  modal.appendChild(passwordWrapper);
-
-  modal.appendChild(submit);
-
-  modal.appendChild(message);
-
-  modal.appendChild(switchContainer);
-
-  overlay.appendChild(modal);
-
-  document.body.appendChild(overlay);
+    mode =
+      mode === 'login'
+        ? 'signup'
+        : 'login';
 
 
-  // -------------------------------
-  // FERMER EN CLIQUANT À L'EXTÉRIEUR
-  // -------------------------------
+    if (mode === 'login') {
 
-  overlay.addEventListener(
-    'click',
-    event => {
+      title.textContent =
+        'Se connecter';
 
-      if (
-        event.target === overlay
-      ) {
+      submit.textContent =
+        'Se connecter';
 
-        overlay.remove();
+      switchButton.textContent =
+        'Créer un compte';
 
-      }
+    } else {
+
+      title.textContent =
+        'Créer un compte';
+
+      submit.textContent =
+        'Créer mon compte';
+
+      switchButton.textContent =
+        'J'ai déjà un compte';
 
     }
-  );
 
+    message.textContent = '';
 
-  // Focus email
-  setTimeout(
-    () => email.focus(),
-    100
-  );
+  });
 
 }
 
 
-// ==================================================
-// MESSAGE AUTH
-// ==================================================
+// ==========================================
+// FENÊTRE MON COMPTE
+// ==========================================
 
-function showAuthMessage(
-  element,
-  text,
-  type
-) {
+function showAccountModal(user) {
 
-  element.textContent =
-    text;
-
-  element.className =
-    `auth-message ${type}`;
-
-}
-
-
-// ==================================================
-// BOUTON COMPTE
-// ==================================================
-
-async function updateLoginButton() {
-
-  const login =
-    document.getElementById('login');
-
-  if (!login) {
-    return;
-  }
-
-
-  const {
-    data: {
-      session
-    }
-  } =
-    await supabaseClient.auth.getSession();
-
-
-  if (session) {
-
-    login.textContent =
-      'Mon compte';
-
-  } else {
-
-    login.textContent =
-      'Se connecter';
-
-  }
-
-}
-
-
-// ==================================================
-// FENÊTRE COMPTE
-// ==================================================
-
-async function showAccountWindow() {
-
-  const {
-    data: {
-      user
-    }
-  } =
-    await supabaseClient.auth.getUser();
-
-
-  if (!user) {
-
-    showAuthWindow('login');
-
-    return;
-
-  }
-
-
-  const old =
-    document.getElementById('authOverlay');
-
-  if (old) {
-    old.remove();
-  }
-
-
-  const overlay =
-    document.createElement('div');
-
-  overlay.id =
-    'authOverlay';
-
-  overlay.className =
-    'auth-overlay';
+  closeModal();
 
 
   const modal =
     document.createElement('div');
 
-  modal.className =
-    'auth-modal';
+  modal.id = 'accountModal';
 
 
-  const close =
-    document.createElement('button');
+  modal.innerHTML = `
 
-  close.type =
-    'button';
+    <div style="
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,.55);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      z-index:9999;
+      padding:20px;
+    ">
 
-  close.className =
-    'auth-close';
+      <div style="
+        width:100%;
+        max-width:420px;
+        background:white;
+        border-radius:20px;
+        padding:28px;
+      ">
 
-  close.innerHTML =
-    '&times;';
+        <h2>
+          Mon compte
+        </h2>
+
+        <p>
+          <strong>Email :</strong><br>
+          ${user.email}
+        </p>
+
+        <button
+          id="logout"
+          type="button"
+          style="
+            width:100%;
+            padding:14px;
+            border:0;
+            border-radius:10px;
+            background:#111827;
+            color:white;
+            font-weight:700;
+            cursor:pointer;
+          "
+        >
+          Se déconnecter
+        </button>
+
+        <button
+          id="closeAccount"
+          type="button"
+          style="
+            width:100%;
+            margin-top:10px;
+            padding:12px;
+            border:1px solid #d0d5dd;
+            border-radius:10px;
+            background:white;
+            cursor:pointer;
+          "
+        >
+          Fermer
+        </button>
+
+      </div>
+
+    </div>
+
+  `;
 
 
-  close.addEventListener(
-    'click',
-    () => overlay.remove()
-  );
+  document.body.appendChild(modal);
 
 
-  const title =
-    document.createElement('h2');
-
-  title.textContent =
-    'Mon compte';
+  document
+    .getElementById('closeAccount')
+    .addEventListener('click', closeModal);
 
 
-  const subtitle =
-    document.createElement('p');
-
-  subtitle.className =
-    'auth-subtitle';
-
-  subtitle.innerHTML =
-    `Connecté avec<br><strong>${escapeHTML(user.email)}</strong>`;
-
-
-  const logout =
-    document.createElement('button');
-
-  logout.type =
-    'button';
-
-  logout.className =
-    'auth-submit';
-
-  logout.textContent =
-    'Se déconnecter';
-
-
-  logout.addEventListener(
-    'click',
-    async () => {
-
-      logout.disabled =
-        true;
-
-      logout.textContent =
-        'Déconnexion...';
-
+  document
+    .getElementById('logout')
+    .addEventListener('click', async () => {
 
       const {
         error
-      } =
-        await supabaseClient.auth.signOut();
+      } = await supabaseClient.auth.signOut();
 
 
       if (error) {
 
-        console.error(error);
-
-        logout.disabled =
-          false;
-
-        logout.textContent =
-          'Se déconnecter';
+        alert(
+          `Erreur : ${error.message}`
+        );
 
         return;
 
       }
 
 
-      overlay.remove();
+      closeModal();
 
-      updateLoginButton();
-
-    }
-  );
-
-
-  modal.appendChild(close);
-
-  modal.appendChild(title);
-
-  modal.appendChild(subtitle);
-
-  modal.appendChild(logout);
-
-  overlay.appendChild(modal);
-
-  document.body.appendChild(overlay);
-
-
-  overlay.addEventListener(
-    'click',
-    event => {
-
-      if (
-        event.target === overlay
-      ) {
-
-        overlay.remove();
-
-      }
-
-    }
-  );
+    });
 
 }
 
 
-// ==================================================
-// PROTECTION AFFICHAGE EMAIL
-// ==================================================
+// ==========================================
+// FERMER LES FENÊTRES
+// ==========================================
 
-function escapeHTML(value) {
+function closeModal() {
 
-  return String(value)
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;');
+  const auth =
+    document.getElementById('authModal');
+
+  const account =
+    document.getElementById('accountModal');
+
+
+  if (auth) {
+    auth.remove();
+  }
+
+
+  if (account) {
+    account.remove();
+  }
+
+}
+
+
+// ==========================================
+// ENVOYER UNE COMMANDE
+// ==========================================
+
+function setupSubmitButton() {
+
+  const submit =
+    document.getElementById('submit');
+
+  if (!submit) return;
+
+
+  submit.addEventListener('click', async () => {
+
+    const amount =
+      document
+        .getElementById('amount')
+        .value
+        .trim();
+
+
+    const wallet =
+      document
+        .getElementById('wallet')
+        .value
+        .trim();
+
+
+    const network =
+      document
+        .getElementById('network')
+        .value;
+
+
+    const message =
+      document.getElementById('msg');
+
+
+    // -------------------------------
+    // VALIDATION
+    // -------------------------------
+
+    if (!amount || !wallet) {
+
+      message.textContent =
+        'Veuillez remplir le montant et l’adresse du portefeuille.';
+
+      return;
+
+    }
+
+
+    if (Number(amount) <= 0) {
+
+      message.textContent =
+        'Le montant doit être supérieur à 0.';
+
+      return;
+
+    }
+
+
+    // -------------------------------
+    // SESSION
+    // -------------------------------
+
+    const {
+      data: {
+        session
+      }
+    } =
+      await supabaseClient.auth.getSession();
+
+
+    if (!session) {
+
+      message.textContent =
+        'Veuillez vous connecter avant d’envoyer une demande.';
+
+      showAuthModal();
+
+      return;
+
+    }
+
+
+    submit.disabled = true;
+
+    submit.textContent =
+      'Envoi en cours...';
+
+
+    try {
+
+      // -------------------------------
+      // CRÉATION COMMANDE
+      // -------------------------------
+
+      const response =
+        await fetch(
+          `${SUPABASE_URL}/rest/v1/orders`,
+          {
+
+            method: 'POST',
+
+            headers: {
+
+              'apikey':
+                SUPABASE_KEY,
+
+              'Authorization':
+                `Bearer ${session.access_token}`,
+
+              'Content-Type':
+                'application/json',
+
+              'Prefer':
+                'return=minimal'
+
+            },
+
+
+            body: JSON.stringify({
+
+              type: type,
+
+              crypto_amount:
+                Number(amount),
+
+              network: network,
+
+              wallet_address:
+                wallet,
+
+              status:
+                'pending'
+
+            })
+
+          }
+        );
+
+
+      if (!response.ok) {
+
+        const errorText =
+          await response.text();
+
+
+        console.error(
+          'Erreur Supabase :',
+          errorText
+        );
+
+
+        throw new Error(
+          errorText ||
+          'Erreur lors de la création de la commande.'
+        );
+
+      }
+
+
+      console.log(
+        'Commande créée avec succès'
+      );
+
+
+      message.textContent =
+        `Demande ${
+          type === 'buy'
+            ? 'd’achat'
+            : 'de vente'
+        } envoyée avec succès : ${amount} USDT (${network}).`;
+
+
+      document
+        .getElementById('amount')
+        .value = '';
+
+
+      document
+        .getElementById('wallet')
+        .value = '';
+
+
+    } catch (error) {
+
+      console.error(error);
+
+
+      message.textContent =
+        `Erreur : ${error.message}`;
+
+    } finally {
+
+      submit.disabled = false;
+
+      submit.textContent =
+        'Envoyer la demande';
+
+    }
+
+  });
 
 }
