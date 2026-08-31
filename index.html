@@ -2,660 +2,1032 @@
 <html lang="fr">
 
 <head>
-  <meta charset="utf-8">
+
+  <meta charset="UTF-8">
 
   <meta
     name="viewport"
-    content="width=device-width, initial-scale=1"
+    content="width=device-width, initial-scale=1.0"
   >
 
-  <title>Noa Digit Trade</title>
-
-  <link
-    rel="stylesheet"
-    href="styles.css"
+  <meta
+    name="description"
+    content="NOA DIGIT TRADE - Achat et vente de USDT"
   >
+
+  <title>
+    NOA DIGIT TRADE
+  </title>
+
+
+  <style>
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      font-family:
+        Georgia,
+        "Times New Roman",
+        serif;
+      background: #f6f7fb;
+      color: #101828;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .container {
+      width: min(1100px, 92%);
+      margin: auto;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: white;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .header-inner {
+      min-height: 82px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .brand {
+      font-size: 22px;
+      letter-spacing: 1px;
+      font-weight: 500;
+    }
+
+    .account-btn {
+      border: 1px solid #101828;
+      background: white;
+      color: #101828;
+      border-radius: 12px;
+      padding: 13px 22px;
+    }
+
+    .hero {
+      padding: 70px 0 50px;
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-size: clamp(45px, 8vw, 78px);
+      line-height: .95;
+      max-width: 750px;
+    }
+
+    .hero p {
+      max-width: 700px;
+      font-size: 22px;
+      line-height: 1.7;
+      color: #667085;
+    }
+
+    .primary {
+      background: #101828;
+      color: white;
+      border: none;
+      border-radius: 14px;
+      padding: 16px 28px;
+    }
+
+    .full {
+      width: 100%;
+    }
+
+    .hero-card {
+      margin-top: 40px;
+      min-height: 260px;
+      border-radius: 40px;
+      background: #101828;
+      color: white;
+      padding: 45px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .online {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #20c76a;
+      margin-bottom: 20px;
+    }
+
+    .hero-card h2 {
+      margin: 0 0 10px;
+      font-size: 28px;
+    }
+
+    .hero-card p {
+      margin: 0;
+      color: #b8c0ce;
+      font-size: 20px;
+    }
+
+    .order-section {
+      margin: 30px 0 70px;
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 32px;
+      padding: 38px;
+    }
+
+    .order-section h2 {
+      font-size: 36px;
+      margin-top: 0;
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+
+    .tab {
+      padding: 16px;
+      border-radius: 14px;
+      border: 1px solid #d0d5dd;
+      background: white;
+      color: #101828;
+    }
+
+    .tab.active {
+      background: #101828;
+      color: white;
+      border-color: #101828;
+    }
+
+    .field {
+      margin-bottom: 22px;
+    }
+
+    .field label {
+      display: block;
+      margin-bottom: 9px;
+      font-size: 18px;
+    }
+
+    .field input,
+    .field select {
+      width: 100%;
+      padding: 17px;
+      border-radius: 14px;
+      border: 1px solid #d0d5dd;
+      background: white;
+      outline: none;
+    }
+
+    .field input:focus,
+    .field select:focus {
+      border-color: #101828;
+    }
+
+    .calculation {
+      margin: 24px 0;
+      padding: 25px;
+      border-radius: 20px;
+      background: #f1f3f7;
+      border: 1px solid #e4e7ec;
+    }
+
+    .calculation span {
+      display: block;
+      color: #667085;
+      font-size: 17px;
+      margin-bottom: 7px;
+    }
+
+    .calculation strong {
+      display: block;
+      font-size: 34px;
+      margin-bottom: 7px;
+    }
+
+    .calculation small {
+      color: #667085;
+      line-height: 1.5;
+    }
+
+    #rateText {
+      margin: 0 0 20px;
+      color: #475467;
+    }
+
+    #msg {
+      margin: 20px 0 0;
+      line-height: 1.5;
+      font-size: 17px;
+    }
+
+    .info {
+      margin-top: 25px;
+      padding: 20px;
+      border-radius: 18px;
+      background: #f8fafc;
+      color: #475467;
+      line-height: 1.6;
+    }
+
+    .section-card {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 28px;
+      padding: 35px;
+      margin-bottom: 25px;
+    }
+
+    .section-number {
+      font-size: 18px;
+      margin-bottom: 15px;
+    }
+
+    footer {
+      padding: 50px 0;
+      background: #101828;
+      color: white;
+      text-align: center;
+    }
+
+    /* ==============================
+       MODAL AUTH
+       ============================== */
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(0,0,0,.58);
+    }
+
+    .modal-box {
+      width: 100%;
+      max-width: 430px;
+      background: white;
+      border-radius: 25px;
+      padding: 30px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.25);
+    }
+
+    .modal-box h2 {
+      margin-top: 0;
+      font-size: 32px;
+    }
+
+    .auth-form {
+      display: block;
+    }
+
+    .auth-form[hidden] {
+      display: none;
+    }
+
+    .auth-field {
+      margin-bottom: 16px;
+    }
+
+    .auth-field label {
+      display: block;
+      margin-bottom: 7px;
+    }
+
+    .auth-field input {
+      width: 100%;
+      padding: 14px;
+      border: 1px solid #d0d5dd;
+      border-radius: 12px;
+    }
+
+    .password-wrap {
+      position: relative;
+    }
+
+    .password-wrap input {
+      padding-right: 80px;
+    }
+
+    .show-password {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      border: none;
+      background: transparent;
+      padding: 8px;
+      color: #344054;
+      font-size: 13px;
+    }
+
+    .auth-switch {
+      margin-top: 18px;
+      text-align: center;
+    }
+
+    .auth-switch button {
+      border: none;
+      background: none;
+      text-decoration: underline;
+      color: #101828;
+    }
+
+    .close-btn {
+      width: 100%;
+      margin-top: 10px;
+      padding: 13px;
+      border: 1px solid #d0d5dd;
+      border-radius: 12px;
+      background: white;
+    }
+
+    .message {
+      min-height: 24px;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 600px) {
+
+      .header-inner {
+        min-height: 72px;
+      }
+
+      .brand {
+        font-size: 18px;
+      }
+
+      .account-btn {
+        padding: 11px 15px;
+      }
+
+      .hero {
+        padding-top: 45px;
+      }
+
+      .hero p {
+        font-size: 18px;
+      }
+
+      .hero-card {
+        padding: 30px;
+        border-radius: 30px;
+      }
+
+      .order-section {
+        padding: 25px;
+        border-radius: 25px;
+      }
+
+      .order-section h2 {
+        font-size: 31px;
+      }
+
+      .calculation strong {
+        font-size: 28px;
+      }
+
+    }
+
+  </style>
+
 </head>
 
 
 <body>
 
 
-<!-- ========================================= -->
-<!-- EN-TÊTE -->
-<!-- ========================================= -->
+  <!-- ==================================
+       HEADER
+       ================================== -->
 
-<header>
+  <header>
 
-  <div class="brand">
-    NOA <span>DIGIT TRADE</span>
-  </div>
+    <div class="container header-inner">
 
-
-  <button
-    id="login"
-    type="button"
-  >
-    Se connecter
-  </button>
-
-</header>
-
-
-
-<main>
-
-
-  <!-- ========================================= -->
-  <!-- HERO -->
-  <!-- ========================================= -->
-
-  <section class="hero">
-
-    <div>
-
-      <small>
-        ÉCHANGE DIGITAL SIMPLE
-      </small>
-
-
-      <h1>
-        Achetez ou vendez vos USDT facilement.
-      </h1>
-
-
-      <p>
-        Une interface simple et rapide pour envoyer
-        vos demandes d'achat ou de vente d'USDT.
-      </p>
-
+      <div class="brand">
+        NOA DIGIT TRADE
+      </div>
 
       <button
-        class="primary"
-        id="start"
-        type="button"
-      >
-        Commencer
+        id="login"
+        class="account-btn"
+        type="button">
+        Se connecter
       </button>
 
     </div>
 
+  </header>
 
 
-    <div class="card">
+  <!-- ==================================
+       HERO
+       ================================== -->
 
-      <i></i>
+  <main>
 
-      <b>
-        Noa Digit Trade
-      </b>
+    <section class="hero">
 
-      <span>
-        Service d'échange
-      </span>
+      <div class="container">
 
-    </div>
+        <h1>
+          USDT facilement.
+        </h1>
 
-  </section>
+        <p>
+          Une interface simple et rapide
+          pour envoyer vos demandes
+          d’achat ou de vente d’USDT.
+        </p>
 
+        <button
+          id="start"
+          class="primary"
+          type="button">
+          Commencer
+        </button>
 
 
-  <!-- ========================================= -->
-  <!-- FORMULAIRE DE COMMANDE -->
-  <!-- ========================================= -->
+        <div class="hero-card">
 
-  <section
-    id="order"
-    class="panel"
-  >
+          <div class="online"></div>
 
-    <h2>
-      Nouvelle demande
-    </h2>
+          <h2>
+            Noa Digit Trade
+          </h2>
 
+          <p>
+            Service d’échange
+          </p>
 
-    <div class="tabs">
+        </div>
 
-      <button
-        class="tab active"
-        data-type="buy"
-        type="button"
-      >
-        Acheter USDT
-      </button>
+      </div>
 
+    </section>
 
-      <button
-        class="tab"
-        data-type="sell"
-        type="button"
-      >
-        Vendre USDT
-      </button>
 
-    </div>
+    <!-- ==================================
+         COMMANDE
+         ================================== -->
 
-
-
-    <label for="network">
-      Réseau
-    </label>
-
-
-    <select id="network">
-
-      <option value="BEP20">
-        BEP20
-      </option>
-
-
-      <option value="TRC20">
-        TRC20
-      </option>
-
-
-      <option value="ERC20">
-        ERC20
-      </option>
-
-    </select>
-
-
-
-    <label for="amount">
-      Montant (USDT)
-    </label>
-
-
-    <input
-      id="amount"
-      type="number"
-      min="1"
-      step="0.01"
-      placeholder="Ex. 100"
-      autocomplete="off"
-    >
-
-
-
-    <label for="wallet">
-      Adresse du portefeuille
-    </label>
-
-
-    <input
-      id="wallet"
-      type="text"
-      placeholder="Adresse USDT"
-      autocomplete="off"
-    >
-
-
-
-    <button
-      class="primary full"
-      id="submit"
-      type="button"
-    >
-      Envoyer la demande
-    </button>
-
-
-    <p
-      id="msg"
-      role="status"
-    ></p>
-
-  </section>
-
-
-
-  <!-- ========================================= -->
-  <!-- FONCTIONNEMENT -->
-  <!-- ========================================= -->
-
-  <section class="features">
-
-
-    <div>
-
-      <b>
-        01
-      </b>
-
-
-      <h3>
-        Connexion
-      </h3>
-
-
-      <p>
-        Espace personnel pour chaque client.
-      </p>
-
-    </div>
-
-
-
-    <div>
-
-      <b>
-        02
-      </b>
-
-
-      <h3>
-        Demande
-      </h3>
-
-
-      <p>
-        Achat ou vente avec le réseau choisi.
-      </p>
-
-    </div>
-
-
-
-    <div>
-
-      <b>
-        03
-      </b>
-
-
-      <h3>
-        Validation
-      </h3>
-
-
-      <p>
-        Traitement depuis l'espace administrateur.
-      </p>
-
-    </div>
-
-
-  </section>
-
-</main>
-
-
-
-<!-- ========================================= -->
-<!-- FENÊTRE AUTHENTIFICATION -->
-<!-- ========================================= -->
-
-<div
-  id="authModal"
-  class="modal"
-  aria-hidden="true"
->
-
-
-  <div class="modal-content">
-
-
-    <!-- ===================================== -->
-    <!-- BOUTON FERMER -->
-    <!-- ===================================== -->
-
-    <button
-      id="closeAuth"
-      class="close"
-      type="button"
-      aria-label="Fermer"
-    >
-      ×
-    </button>
-
-
-
-    <!-- ===================================== -->
-    <!-- CONNEXION -->
-    <!-- ===================================== -->
-
-    <div id="loginForm">
-
+    <section
+      id="order"
+      class="container order-section">
 
       <h2>
-        Se connecter
+        Nouvelle demande
       </h2>
 
 
-      <p class="auth-subtitle">
-        Accédez à votre espace personnel.
-      </p>
-
-
-
-      <!-- EMAIL -->
-
-      <label for="loginEmail">
-        Email
-      </label>
-
-
-      <input
-        id="loginEmail"
-        type="email"
-        placeholder="Votre adresse email"
-        autocomplete="email"
-      >
-
-
-
-      <!-- MOT DE PASSE -->
-
-      <label for="loginPassword">
-        Mot de passe
-      </label>
-
-
-      <div class="password-wrapper">
-
-        <input
-          id="loginPassword"
-          type="password"
-          placeholder="Votre mot de passe"
-          autocomplete="current-password"
-        >
-
+      <div class="tabs">
 
         <button
-          class="toggle-password"
-          type="button"
-          data-target="loginPassword"
-          aria-label="Afficher le mot de passe"
-          title="Afficher le mot de passe"
-        >
-          👁️
+          class="tab active"
+          data-type="buy"
+          type="button">
+          Acheter USDT
+        </button>
+
+        <button
+          class="tab"
+          data-type="sell"
+          type="button">
+          Vendre USDT
         </button>
 
       </div>
 
+
+      <!-- RÉSEAU -->
+
+      <div class="field">
+
+        <label for="network">
+          Réseau
+        </label>
+
+        <select id="network">
+
+          <option value="BEP20">
+            BEP20
+          </option>
+
+          <option value="TRC20">
+            TRC20
+          </option>
+
+          <option value="ERC20">
+            ERC20
+          </option>
+
+        </select>
+
+      </div>
+
+
+      <!-- MONTANT -->
+
+      <div class="field">
+
+        <label
+          id="amountLabel"
+          for="amount">
+          Montant à payer (FCFA)
+        </label>
+
+        <input
+          id="amount"
+          type="number"
+          min="0"
+          step="any"
+          placeholder="Ex. 10000"
+          autocomplete="off"
+        >
+
+      </div>
+
+
+      <!-- TAUX -->
+
+      <p id="rateText">
+        Taux d'achat :
+        1 USDT = 600 FCFA
+      </p>
+
+
+      <!-- CALCUL -->
+
+      <div
+        id="calculation"
+        class="calculation">
+
+        <span>
+          Vous recevrez
+        </span>
+
+        <strong id="resultAmount">
+          0 USDT
+        </strong>
+
+        <small id="resultDetail">
+          1 USDT = 600 FCFA
+        </small>
+
+      </div>
+
+
+      <!-- PORTEFEUILLE -->
+
+      <div class="field">
+
+        <label
+          id="walletLabel"
+          for="wallet">
+          Adresse du portefeuille USDT
+        </label>
+
+        <input
+          id="wallet"
+          type="text"
+          placeholder="Adresse USDT"
+          autocomplete="off"
+        >
+
+      </div>
+
+
+      <!-- ENVOI -->
+
+      <button
+        id="submit"
+        class="primary full"
+        type="button">
+
+        Envoyer la demande
+
+      </button>
+
+
+      <p
+        id="msg"
+        class="message">
+      </p>
+
+
+      <div class="info">
+
+        Votre demande sera enregistrée
+        avec le montant en FCFA,
+        le montant en USDT et le taux
+        appliqué.
+
+        <br><br>
+
+        Votre ordre sera traité après
+        validation par notre équipe.
+
+      </div>
+
+    </section>
+
+
+    <!-- ==================================
+         INFORMATIONS
+         ================================== -->
+
+    <section class="container">
+
+      <div class="section-card">
+
+        <div class="section-number">
+          01
+        </div>
+
+        <h2>
+          Connexion
+        </h2>
+
+        <p>
+          Espace personnel pour chaque client.
+        </p>
+
+      </div>
+
+
+      <div class="section-card">
+
+        <div class="section-number">
+          02
+        </div>
+
+        <h2>
+          Demande
+        </h2>
+
+        <p>
+          Choisissez votre opération,
+          indiquez le montant et envoyez
+          votre demande.
+        </p>
+
+      </div>
+
+
+      <div class="section-card">
+
+        <div class="section-number">
+          03
+        </div>
+
+        <h2>
+          Validation
+        </h2>
+
+        <p>
+          Chaque demande est enregistrée
+          et reste en attente de validation.
+        </p>
+
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <!-- ==================================
+       FOOTER
+       ================================== -->
+
+  <footer>
+
+    NOA DIGIT TRADE
+
+    <br><br>
+
+    Achat et vente de USDT
+
+  </footer>
+
+
+  <!-- ==================================
+       MODAL AUTHENTIFICATION
+       ================================== -->
+
+  <div
+    id="authModal"
+    class="modal"
+    aria-hidden="true">
+
+    <div class="modal-box">
+
+      <h2>
+        Connexion
+      </h2>
 
 
       <!-- CONNEXION -->
 
-      <button
-        id="loginSubmit"
-        class="primary full"
-        type="button"
-      >
-        Se connecter
-      </button>
+      <div
+        id="loginForm"
+        class="auth-form">
+
+        <div class="auth-field">
+
+          <label for="loginEmail">
+            Email
+          </label>
+
+          <input
+            id="loginEmail"
+            type="email"
+            placeholder="Votre email"
+            autocomplete="email"
+          >
+
+        </div>
 
 
-      <p
-        id="loginMessage"
-        class="auth-message"
-        role="status"
-      ></p>
+        <div class="auth-field">
 
+          <label for="loginPassword">
+            Mot de passe
+          </label>
 
+          <div class="password-wrap">
 
-      <!-- PASSER À L'INSCRIPTION -->
+            <input
+              id="loginPassword"
+              type="password"
+              placeholder="Votre mot de passe"
+              autocomplete="current-password"
+            >
 
-      <p class="switch-auth">
+            <button
+              type="button"
+              class="show-password"
+              data-target="loginPassword">
+              Afficher
+            </button>
 
-        Vous n'avez pas encore de compte ?
+          </div>
 
-        <button
-          id="showSignup"
-          type="button"
-        >
-          Créer un compte
-        </button>
-
-      </p>
-
-    </div>
-
-
-
-    <!-- ===================================== -->
-    <!-- INSCRIPTION -->
-    <!-- ===================================== -->
-
-    <div
-      id="signupForm"
-      hidden
-    >
-
-
-      <h2>
-        Créer un compte
-      </h2>
-
-
-      <p class="auth-subtitle">
-        Créez votre compte Noa Digit Trade.
-      </p>
-
-
-
-      <!-- EMAIL -->
-
-      <label for="signupEmail">
-        Email
-      </label>
-
-
-      <input
-        id="signupEmail"
-        type="email"
-        placeholder="Votre adresse email"
-        autocomplete="email"
-      >
-
-
-
-      <!-- MOT DE PASSE -->
-
-      <label for="signupPassword">
-        Mot de passe
-      </label>
-
-
-      <div class="password-wrapper">
-
-        <input
-          id="signupPassword"
-          type="password"
-          placeholder="Minimum 6 caractères"
-          autocomplete="new-password"
-        >
+        </div>
 
 
         <button
-          class="toggle-password"
+          id="loginSubmit"
           type="button"
-          data-target="signupPassword"
-          aria-label="Afficher le mot de passe"
-          title="Afficher le mot de passe"
-        >
-          👁️
-        </button>
+          class="primary full">
 
-      </div>
-
-
-
-      <!-- CONFIRMATION MOT DE PASSE -->
-
-      <label for="signupPasswordConfirm">
-        Confirmer le mot de passe
-      </label>
-
-
-      <div class="password-wrapper">
-
-        <input
-          id="signupPasswordConfirm"
-          type="password"
-          placeholder="Confirmez votre mot de passe"
-          autocomplete="new-password"
-        >
-
-
-        <button
-          class="toggle-password"
-          type="button"
-          data-target="signupPasswordConfirm"
-          aria-label="Afficher le mot de passe"
-          title="Afficher le mot de passe"
-        >
-          👁️
-        </button>
-
-      </div>
-
-
-
-      <!-- CRÉER LE COMPTE -->
-
-      <button
-        id="signupSubmit"
-        class="primary full"
-        type="button"
-      >
-        Créer mon compte
-      </button>
-
-
-      <p
-        id="signupMessage"
-        class="auth-message"
-        role="status"
-      ></p>
-
-
-
-      <!-- RETOUR CONNEXION -->
-
-      <p class="switch-auth">
-
-        Vous avez déjà un compte ?
-
-        <button
-          id="showLogin"
-          type="button"
-        >
           Se connecter
+
         </button>
 
-      </p>
+
+        <p
+          id="loginMessage"
+          class="message">
+        </p>
+
+
+        <div class="auth-switch">
+
+          Pas encore de compte ?
+
+          <button
+            id="showSignup"
+            type="button">
+            Créer un compte
+          </button>
+
+        </div>
+
+      </div>
+
+
+      <!-- INSCRIPTION -->
+
+      <div
+        id="signupForm"
+        class="auth-form"
+        hidden>
+
+        <h2>
+          Créer un compte
+        </h2>
+
+
+        <div class="auth-field">
+
+          <label for="signupEmail">
+            Email
+          </label>
+
+          <input
+            id="signupEmail"
+            type="email"
+            placeholder="Votre email"
+            autocomplete="email"
+          >
+
+        </div>
+
+
+        <div class="auth-field">
+
+          <label for="signupPassword">
+            Mot de passe
+          </label>
+
+          <div class="password-wrap">
+
+            <input
+              id="signupPassword"
+              type="password"
+              placeholder="6 caractères minimum"
+              autocomplete="new-password"
+            >
+
+            <button
+              type="button"
+              class="show-password"
+              data-target="signupPassword">
+              Afficher
+            </button>
+
+          </div>
+
+        </div>
+
+
+        <div class="auth-field">
+
+          <label for="signupPasswordConfirm">
+            Confirmer le mot de passe
+          </label>
+
+          <div class="password-wrap">
+
+            <input
+              id="signupPasswordConfirm"
+              type="password"
+              placeholder="Confirmez le mot de passe"
+              autocomplete="new-password"
+            >
+
+            <button
+              type="button"
+              class="show-password"
+              data-target="signupPasswordConfirm">
+              Afficher
+            </button>
+
+          </div>
+
+        </div>
+
+
+        <button
+          id="signupSubmit"
+          type="button"
+          class="primary full">
+
+          Créer mon compte
+
+        </button>
+
+
+        <p
+          id="signupMessage"
+          class="message">
+        </p>
+
+
+        <div class="auth-switch">
+
+          Déjà un compte ?
+
+          <button
+            id="showLogin"
+            type="button">
+            Se connecter
+          </button>
+
+        </div>
+
+      </div>
+
+
+      <button
+        id="closeAuth"
+        type="button"
+        class="close-btn">
+
+        Fermer
+
+      </button>
 
     </div>
 
   </div>
 
-</div>
+
+  <!-- ==================================
+       SUPABASE
+       ================================== -->
+
+  <script
+    src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+  </script>
 
 
+  <!-- ==================================
+       AFFICHAGE MOT DE PASSE
+       ================================== -->
 
-<!-- ========================================= -->
-<!-- PIED DE PAGE -->
-<!-- ========================================= -->
+  <script>
 
-<footer>
+    document
+      .querySelectorAll(
+        '.show-password'
+      )
+      .forEach(button => {
 
-  © 2026 Noa Digit Trade
+        button.addEventListener(
+          'click',
+          () => {
 
-</footer>
+            const targetId =
+              button.dataset.target;
 
+            const input =
+              document.getElementById(
+                targetId
+              );
 
+            if (!input) {
+              return;
+            }
 
-<!-- ========================================= -->
-<!-- SUPABASE -->
-<!-- ========================================= -->
+            if (
+              input.type === 'password'
+            ) {
 
-<script
-  src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"
-></script>
+              input.type =
+                'text';
 
+              button.textContent =
+                'Masquer';
 
+            } else {
 
-<!-- ========================================= -->
-<!-- APPLICATION -->
-<!-- ========================================= -->
+              input.type =
+                'password';
 
-<script src="app.js"></script>
+              button.textContent =
+                'Afficher';
 
-
-
-<!-- ========================================= -->
-<!-- AFFICHER / MASQUER LES MOTS DE PASSE -->
-<!-- ========================================= -->
-
-<script>
-
-  document
-    .querySelectorAll('.toggle-password')
-    .forEach(button => {
-
-      button.addEventListener(
-        'click',
-        () => {
-
-          const targetId =
-            button.dataset.target;
-
-
-          const input =
-            document.getElementById(
-              targetId
-            );
-
-
-          if (!input) {
-            return;
-          }
-
-
-          if (
-            input.type === 'password'
-          ) {
-
-            input.type = 'text';
-
-            button.textContent = '🙈';
-
-            button.setAttribute(
-              'aria-label',
-              'Masquer le mot de passe'
-            );
-
-            button.setAttribute(
-              'title',
-              'Masquer le mot de passe'
-            );
-
-          } else {
-
-            input.type = 'password';
-
-            button.textContent = '👁️';
-
-            button.setAttribute(
-              'aria-label',
-              'Afficher le mot de passe'
-            );
-
-            button.setAttribute(
-              'title',
-              'Afficher le mot de passe'
-            );
+            }
 
           }
+        );
 
-        }
-      );
+      });
 
-    });
+  </script>
 
-</script>
+
+  <!-- ==================================
+       APP
+       ================================== -->
+
+  <script src="app.js"></script>
 
 
 </body>
