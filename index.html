@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="fr">
 <head>
@@ -13,6 +12,7 @@
 <body>
 
 <header>
+
   <div class="brand">
     NOA <span>DIGIT TRADE</span>
   </div>
@@ -20,15 +20,20 @@
   <button id="login" type="button">
     Se connecter
   </button>
+
 </header>
 
 
 <main>
 
-  <!-- SECTION PRINCIPALE -->
+  <!-- ========================= -->
+  <!-- HERO -->
+  <!-- ========================= -->
+
   <section class="hero">
 
     <div>
+
       <small>ÉCHANGE DIGITAL SIMPLE</small>
 
       <h1>
@@ -43,22 +48,32 @@
       <button class="primary" id="start" type="button">
         Commencer
       </button>
+
     </div>
 
 
     <div class="card">
+
       <i></i>
+
       <b>Noa Digit Trade</b>
+
       <span>Service d'échange</span>
+
     </div>
 
   </section>
 
 
+
+  <!-- ========================= -->
   <!-- FORMULAIRE DE COMMANDE -->
+  <!-- ========================= -->
+
   <section id="order" class="panel">
 
     <h2>Nouvelle demande</h2>
+
 
     <div class="tabs">
 
@@ -139,10 +154,15 @@
   </section>
 
 
+
+  <!-- ========================= -->
   <!-- FONCTIONNEMENT -->
+  <!-- ========================= -->
+
   <section class="features">
 
     <div>
+
       <b>01</b>
 
       <h3>
@@ -152,10 +172,12 @@
       <p>
         Espace personnel pour chaque client.
       </p>
+
     </div>
 
 
     <div>
+
       <b>02</b>
 
       <h3>
@@ -165,10 +187,12 @@
       <p>
         Achat ou vente avec le réseau choisi.
       </p>
+
     </div>
 
 
     <div>
+
       <b>03</b>
 
       <h3>
@@ -178,6 +202,7 @@
       <p>
         Traitement depuis l'espace administrateur.
       </p>
+
     </div>
 
   </section>
@@ -185,15 +210,200 @@
 </main>
 
 
+
+<!-- ========================= -->
+<!-- FENÊTRE AUTHENTIFICATION -->
+<!-- ========================= -->
+
+<div
+  id="authModal"
+  class="modal"
+  aria-hidden="true">
+
+  <div class="modal-content">
+
+    <button
+      id="closeAuth"
+      class="close"
+      type="button"
+      aria-label="Fermer">
+      ×
+    </button>
+
+
+    <!-- CONNEXION -->
+
+    <div id="loginForm">
+
+      <h2>
+        Se connecter
+      </h2>
+
+      <p class="auth-subtitle">
+        Accédez à votre espace personnel.
+      </p>
+
+
+      <label for="loginEmail">
+        Email
+      </label>
+
+      <input
+        id="loginEmail"
+        type="email"
+        placeholder="Votre adresse email"
+        autocomplete="email"
+      >
+
+
+      <label for="loginPassword">
+        Mot de passe
+      </label>
+
+      <input
+        id="loginPassword"
+        type="password"
+        placeholder="Votre mot de passe"
+        autocomplete="current-password"
+      >
+
+
+      <button
+        id="loginSubmit"
+        class="primary full"
+        type="button">
+        Se connecter
+      </button>
+
+
+      <p
+        id="loginMessage"
+        class="auth-message"
+        role="status">
+      </p>
+
+
+      <p class="switch-auth">
+
+        Vous n'avez pas encore de compte ?
+
+        <button
+          id="showSignup"
+          type="button">
+          Créer un compte
+        </button>
+
+      </p>
+
+    </div>
+
+
+
+    <!-- INSCRIPTION -->
+
+    <div
+      id="signupForm"
+      hidden>
+
+      <h2>
+        Créer un compte
+      </h2>
+
+      <p class="auth-subtitle">
+        Créez votre compte Noa Digit Trade.
+      </p>
+
+
+      <label for="signupEmail">
+        Email
+      </label>
+
+      <input
+        id="signupEmail"
+        type="email"
+        placeholder="Votre adresse email"
+        autocomplete="email"
+      >
+
+
+      <label for="signupPassword">
+        Mot de passe
+      </label>
+
+      <input
+        id="signupPassword"
+        type="password"
+        placeholder="Minimum 6 caractères"
+        autocomplete="new-password"
+      >
+
+
+      <label for="signupPasswordConfirm">
+        Confirmer le mot de passe
+      </label>
+
+      <input
+        id="signupPasswordConfirm"
+        type="password"
+        placeholder="Confirmez votre mot de passe"
+        autocomplete="new-password"
+      >
+
+
+      <button
+        id="signupSubmit"
+        class="primary full"
+        type="button">
+        Créer mon compte
+      </button>
+
+
+      <p
+        id="signupMessage"
+        class="auth-message"
+        role="status">
+      </p>
+
+
+      <p class="switch-auth">
+
+        Vous avez déjà un compte ?
+
+        <button
+          id="showLogin"
+          type="button">
+          Se connecter
+        </button>
+
+      </p>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+
 <footer>
+
   © 2026 Noa Digit Trade
+
 </footer>
 
 
+
+<!-- ========================= -->
 <!-- SUPABASE -->
+<!-- ========================= -->
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<!-- APPLICATION NOA DIGIT TRADE -->
+
+<!-- ========================= -->
+<!-- APPLICATION -->
+<!-- ========================= -->
+
 <script src="app.js"></script>
 
 </body>
