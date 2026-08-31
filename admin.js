@@ -1,17 +1,24 @@
 // ============================================================
 // NOA DIGIT TRADE
-// ADMIN.JS
+// ADMIN.JS — VERSION COMPLETE
 //
 // ESPACE ADMINISTRATEUR
 //
 // - Connexion Supabase
 // - Vérification role = admin
 // - Tableau de bord
+// - Paramètres de l'application
+// - Taux achat / vente
+// - Minimum / maximum commande
+// - Frais TRC20 / BEP20
+// - Numéro Orange Money
 // - Toutes les commandes
 // - Modification des statuts
 // - Litiges
+// - Modification des statuts de litiges
 // - Utilisateurs
 // - Statistiques
+// - Déconnexion
 // ============================================================
 
 
@@ -26,6 +33,13 @@ const SUPABASE_KEY =
   "sb_publishable_umIa4749av8722xus6aQHw_1nf8b-PC";
 
 
+if (!window.supabase) {
+  console.error(
+    "Supabase JS n'est pas chargé."
+  );
+}
+
+
 const supabaseClient =
   window.supabase.createClient(
     SUPABASE_URL,
@@ -34,12 +48,14 @@ const supabaseClient =
 
 
 // ============================================================
-// ETAT
+// ETAT GLOBAL
 // ============================================================
 
 let currentUser = null;
 
 let currentProfile = null;
+
+let currentSettings = null;
 
 let allOrders = [];
 
@@ -51,9 +67,42 @@ let selectedOrder = null;
 
 let selectedDispute = null;
 
+let authListenerReady = false;
+
 
 // ============================================================
-// UTILITAIRES
+// CONFIGURATION PAR DEFAUT
+// ============================================================
+
+const DEFAULT_SETTINGS = {
+
+  id: 1,
+
+  country: "Burkina Faso",
+
+  currency: "XOF",
+
+  buy_rate: 600,
+
+  sell_rate: 570,
+
+  min_order_cfa: 2000,
+
+  max_order_cfa: 50000,
+
+  trc20_fee_usdt: 2,
+
+  bp20_fee_usdt: 0,
+
+  orange_money_number: "74602553",
+
+  payment_method: "Orange Money"
+
+};
+
+
+// ============================================================
+// UTILITAIRE DOM
 // ============================================================
 
 function $(id) {
@@ -62,6 +111,10 @@ function $(id) {
 
 }
 
+
+// ============================================================
+// ECHAPPEMENT HTML
+// ============================================================
 
 function escapeHtml(value) {
 
@@ -75,14 +128,64 @@ function escapeHtml(value) {
 }
 
 
-function formatNumber(value) {
+// ============================================================
+// FORMAT NOMBRE
+// ============================================================
 
-  return (
-    Number(value) || 0
-  ).toLocaleString("fr-FR");
+function formatNumber(
+  value,
+  maximumFractionDigits = 0
+) {
+
+  const number =
+    Number(value);
+
+  if (
+    !Number.isFinite(number)
+  ) {
+
+    return "0";
+
+  }
+
+
+  return number.toLocaleString(
+    "fr-FR",
+    {
+      minimumFractionDigits: 0,
+      maximumFractionDigits
+    }
+  );
 
 }
 
+
+// ============================================================
+// FORMAT DECIMAL
+// ============================================================
+
+function formatDecimal(value) {
+
+  const number =
+    Number(value);
+
+  if (
+    !Number.isFinite(number)
+  ) {
+
+    return "0";
+
+  }
+
+
+  return number.toFixed(6);
+
+}
+
+
+// ============================================================
+// FORMAT DATE
+// ============================================================
 
 function formatDate(value) {
 
@@ -92,8 +195,10 @@ function formatDate(value) {
 
   }
 
+
   const date =
     new Date(value);
+
 
   if (
     Number.isNaN(
@@ -104,6 +209,7 @@ function formatDate(value) {
     return "-";
 
   }
+
 
   return date.toLocaleString(
     "fr-FR",
@@ -119,23 +225,9 @@ function formatDate(value) {
 }
 
 
-function formatDecimal(value) {
-
-  const number =
-    Number(value);
-
-  if (
-    !Number.isFinite(number)
-  ) {
-
-    return "0";
-
-  }
-
-  return number.toFixed(6);
-
-}
-
+// ============================================================
+// MESSAGE ERREUR
+// ============================================================
 
 function getErrorMessage(error) {
 
@@ -144,6 +236,7 @@ function getErrorMessage(error) {
     return "Erreur inconnue.";
 
   }
+
 
   return (
     error.message ||
@@ -157,7 +250,7 @@ function getErrorMessage(error) {
 
 
 // ============================================================
-// MESSAGE LOGIN
+// MESSAGES
 // ============================================================
 
 function showLoginMessage(
@@ -168,14 +261,17 @@ function showLoginMessage(
   const box =
     $("loginMessage");
 
+
   if (!box) {
 
     return;
 
   }
 
+
   box.textContent =
-    message;
+    String(message || "");
+
 
   box.className =
     "message show " + type;
@@ -183,7 +279,28 @@ function showLoginMessage(
 }
 
 
-function showModalMessage(
+function clearLoginMessage() {
+
+  const box =
+    $("loginMessage");
+
+
+  if (!box) {
+
+    return;
+
+  }
+
+
+  box.textContent = "";
+
+  box.className =
+    "message";
+
+}
+
+
+function showMessage(
   id,
   message,
   type = "error"
@@ -192,14 +309,17 @@ function showModalMessage(
   const box =
     $(id);
 
+
   if (!box) {
 
     return;
 
   }
 
+
   box.textContent =
-    message;
+    String(message || "");
+
 
   box.className =
     "message show " + type;
@@ -207,16 +327,18 @@ function showModalMessage(
 }
 
 
-function clearModalMessage(id) {
+function clearMessage(id) {
 
   const box =
     $(id);
+
 
   if (!box) {
 
     return;
 
   }
+
 
   box.textContent = "";
 
@@ -227,7 +349,7 @@ function clearModalMessage(id) {
 
 
 // ============================================================
-// AFFICHAGE
+// AFFICHAGE LOGIN / ADMIN
 // ============================================================
 
 function showLoginPage() {
@@ -235,6 +357,7 @@ function showLoginPage() {
   $("adminLoginPage")
     ?.classList
     .remove("hidden");
+
 
   $("adminPage")
     ?.classList
@@ -249,6 +372,7 @@ function showAdminPage() {
     ?.classList
     .add("hidden");
 
+
   $("adminPage")
     ?.classList
     .remove("hidden");
@@ -257,17 +381,90 @@ function showAdminPage() {
 
 
 // ============================================================
-// CONNEXION
+// VERIFICATION ADMIN
+// ============================================================
+
+async function verifyAdmin() {
+
+  if (!currentUser) {
+
+    return false;
+
+  }
+
+
+  try {
+
+    const {
+      data,
+      error
+    } =
+      await supabaseClient
+        .from("profiles")
+        .select(
+          "id,full_name,phone,country,role"
+        )
+        .eq(
+          "id",
+          currentUser.id
+        )
+        .maybeSingle();
+
+
+    if (error) {
+
+      throw error;
+
+    }
+
+
+    if (!data) {
+
+      return false;
+
+    }
+
+
+    currentProfile =
+      data;
+
+
+    const role =
+      String(
+        data.role || ""
+      )
+      .trim()
+      .toLowerCase();
+
+
+    return role === "admin";
+
+  }
+
+  catch (error) {
+
+    console.error(
+      "Erreur vérification admin:",
+      error
+    );
+
+    return false;
+
+  }
+
+}
+
+
+// ============================================================
+// CONNEXION ADMIN
 // ============================================================
 
 async function adminLogin(event) {
 
   event.preventDefault();
 
-  showLoginMessage(
-    "",
-    "success"
-  );
+
+  clearLoginMessage();
 
 
   const email =
@@ -353,10 +550,15 @@ async function adminLogin(event) {
 
     if (!isAdmin) {
 
-      await supabaseClient.auth.signOut();
+      await supabaseClient
+        .auth
+        .signOut();
 
-      currentUser =
-        null;
+
+      currentUser = null;
+
+      currentProfile = null;
+
 
       throw new Error(
         "Accès refusé. Ce compte n'est pas administrateur."
@@ -367,6 +569,7 @@ async function adminLogin(event) {
 
     showAdminPage();
 
+
     await loadDashboard();
 
   }
@@ -374,7 +577,7 @@ async function adminLogin(event) {
   catch (error) {
 
     console.error(
-      "Erreur connexion admin :",
+      "Erreur connexion admin:",
       error
     );
 
@@ -396,88 +599,6 @@ async function adminLogin(event) {
         "Se connecter";
 
     }
-
-  }
-
-}
-
-
-// ============================================================
-// VERIFICATION ADMIN
-// ============================================================
-
-async function verifyAdmin() {
-
-  if (!currentUser) {
-
-    return false;
-
-  }
-
-
-  try {
-
-    const {
-      data,
-      error
-    } =
-      await supabaseClient
-        .from("profiles")
-        .select(
-          "id,full_name,phone,country,role"
-        )
-        .eq(
-          "id",
-          currentUser.id
-        )
-        .maybeSingle();
-
-
-    if (error) {
-
-      throw error;
-
-    }
-
-
-    if (!data) {
-
-      return false;
-
-    }
-
-
-    currentProfile =
-      data;
-
-
-    const role =
-      String(
-        data.role || ""
-      )
-      .trim()
-      .toLowerCase();
-
-
-    if (role !== "admin") {
-
-      return false;
-
-    }
-
-
-    return true;
-
-  }
-
-  catch (error) {
-
-    console.error(
-      "Erreur vérification admin :",
-      error
-    );
-
-    return false;
 
   }
 
@@ -513,6 +634,10 @@ async function checkSession() {
 
     if (!session?.user) {
 
+      currentUser = null;
+
+      currentProfile = null;
+
       showLoginPage();
 
       return;
@@ -530,19 +655,22 @@ async function checkSession() {
 
     if (!isAdmin) {
 
-      await supabaseClient.auth.signOut();
+      await supabaseClient
+        .auth
+        .signOut();
 
-      currentUser =
-        null;
 
-      currentProfile =
-        null;
+      currentUser = null;
+
+      currentProfile = null;
 
       showLoginPage();
+
 
       showLoginMessage(
         "Accès refusé. Vous devez être administrateur."
       );
+
 
       return;
 
@@ -551,6 +679,7 @@ async function checkSession() {
 
     showAdminPage();
 
+
     await loadDashboard();
 
   }
@@ -558,11 +687,17 @@ async function checkSession() {
   catch (error) {
 
     console.error(
-      "Erreur session admin :",
+      "Erreur session admin:",
       error
     );
 
+
+    currentUser = null;
+
+    currentProfile = null;
+
     showLoginPage();
+
 
     showLoginMessage(
       "Impossible de vérifier votre session."
@@ -581,11 +716,19 @@ async function loadDashboard() {
 
   updateAdminHeader();
 
+
   await Promise.all([
+
+    loadSettings(),
+
     loadOrders(),
+
     loadDisputes(),
+
     loadUsers()
+
   ]);
+
 
   updateStatistics();
 
@@ -593,12 +736,16 @@ async function loadDashboard() {
 
 
 // ============================================================
-// HEADER
+// HEADER ADMIN
 // ============================================================
 
 function updateAdminHeader() {
 
-  if (!$("adminUserName")) {
+  const element =
+    $("adminUserName");
+
+
+  if (!element) {
 
     return;
 
@@ -611,8 +758,939 @@ function updateAdminHeader() {
     "Administrateur";
 
 
-  $("adminUserName").textContent =
+  element.textContent =
     `${name} — ADMIN`;
+
+}
+
+
+// ============================================================
+// PARAMETRES
+// ============================================================
+
+function getSettingsField(
+  names
+) {
+
+  for (
+    const name of names
+  ) {
+
+    const element =
+      $(name);
+
+
+    if (element) {
+
+      return element;
+
+    }
+
+  }
+
+
+  return null;
+
+}
+
+
+// ============================================================
+// REMPLIR UN CHAMP
+// ============================================================
+
+function setFieldValue(
+  names,
+  value
+) {
+
+  const field =
+    getSettingsField(names);
+
+
+  if (!field) {
+
+    return;
+
+  }
+
+
+  field.value =
+    value ?? "";
+
+}
+
+
+// ============================================================
+// RECUPERER UNE VALEUR
+// ============================================================
+
+function getFieldValue(
+  names
+) {
+
+  const field =
+    getSettingsField(names);
+
+
+  if (!field) {
+
+    return "";
+
+  }
+
+
+  return String(
+    field.value ?? ""
+  ).trim();
+
+}
+
+
+// ============================================================
+// CHARGER PARAMETRES
+// ============================================================
+
+async function loadSettings() {
+
+  try {
+
+    const {
+      data,
+      error
+    } =
+      await supabaseClient
+        .from("app_settings")
+        .select("*")
+        .eq("id", 1)
+        .maybeSingle();
+
+
+    if (error) {
+
+      throw error;
+
+    }
+
+
+    currentSettings =
+      data || {
+        ...DEFAULT_SETTINGS
+      };
+
+
+    fillSettingsForm();
+
+
+  }
+
+  catch (error) {
+
+    console.error(
+      "Erreur chargement paramètres:",
+      error
+    );
+
+
+    currentSettings = {
+      ...DEFAULT_SETTINGS
+    };
+
+
+    fillSettingsForm();
+
+
+    showMessage(
+      "settingsMessage",
+      "Impossible de charger les paramètres : " +
+      getErrorMessage(error),
+      "error"
+    );
+
+  }
+
+}
+
+
+// ============================================================
+// REMPLIR FORMULAIRE PARAMETRES
+// ============================================================
+
+function fillSettingsForm() {
+
+  const settings =
+    {
+      ...DEFAULT_SETTINGS,
+      ...(currentSettings || {})
+    };
+
+
+  // ----------------------------------------------------------
+  // TAUX ACHAT
+  // ----------------------------------------------------------
+
+  setFieldValue(
+    [
+      "buyRate",
+      "adminBuyRate",
+      "settingsBuyRate"
+    ],
+    settings.buy_rate
+  );
+
+
+  // ----------------------------------------------------------
+  // TAUX VENTE
+  // ----------------------------------------------------------
+
+  setFieldValue(
+    [
+      "sellRate",
+      "adminSellRate",
+      "settingsSellRate"
+    ],
+    settings.sell_rate
+  );
+
+
+  // ----------------------------------------------------------
+  // MINIMUM
+  // ----------------------------------------------------------
+
+  setFieldValue(
+    [
+      "minOrderCfa",
+      "minOrder",
+      "adminMinOrder",
+      "settingsMinOrder"
+    ],
+    settings.min_order_cfa
+  );
+
+
+  // ----------------------------------------------------------
+  // MAXIMUM
+  // ----------------------------------------------------------
+
+  setFieldValue(
+    [
+      "maxOrderCfa",
+      "maxOrder",
+      "adminMaxOrder",
+      "settingsMaxOrder"
+    ],
+    settings.max_order_cfa
+  );
+
+
+  // ----------------------------------------------------------
+  // FRAIS TRC20
+  // ----------------------------------------------------------
+
+  setFieldValue(
+    [
+      "trc20Fee",
+      "trc20FeeUsdt",
+      "adminTrc20Fee",
+      "settingsTrc20Fee"
+    ],
+    settings.trc20_fee_usdt
+  );
+
+
+  // ----------------------------------------------------------
+  // FRAIS BEP20 / BP20
+  // ----------------------------------------------------------
+
+  setFieldValue(
+    [
+      "bp20Fee",
+      "bep20Fee",
+      "bp20FeeUsdt",
+      "bep20FeeUsdt",
+      "adminBp20Fee",
+      "adminBep20Fee",
+      "settingsBp20Fee"
+    ],
+    settings.bp20_fee_usdt
+  );
+
+
+  // ----------------------------------------------------------
+  // ORANGE MONEY
+  // ----------------------------------------------------------
+
+  setFieldValue(
+    [
+      "orangeMoneyNumber",
+      "orangeMoney",
+      "orangeMoneyPhone",
+      "adminOrangeMoneyNumber",
+      "settingsOrangeMoneyNumber"
+    ],
+    settings.orange_money_number
+  );
+
+
+  // ----------------------------------------------------------
+  // PAIEMENT
+  // ----------------------------------------------------------
+
+  setFieldValue(
+    [
+      "paymentMethod",
+      "adminPaymentMethod",
+      "settingsPaymentMethod"
+    ],
+    settings.payment_method
+  );
+
+
+  // ----------------------------------------------------------
+  // PAYS
+  // ----------------------------------------------------------
+
+  setFieldValue(
+    [
+      "country",
+      "settingsCountry"
+    ],
+    settings.country
+  );
+
+
+  // ----------------------------------------------------------
+  // DEVISE
+  // ----------------------------------------------------------
+
+  setFieldValue(
+    [
+      "currency",
+      "settingsCurrency"
+    ],
+    settings.currency
+  );
+
+
+  updateSettingsPreview();
+
+}
+
+
+// ============================================================
+// APERCU PARAMETRES
+// ============================================================
+
+function updateSettingsPreview() {
+
+  const settings =
+    {
+      ...DEFAULT_SETTINGS,
+      ...(currentSettings || {})
+    };
+
+
+  const buyRate =
+    Number(
+      getFieldValue([
+        "buyRate",
+        "adminBuyRate",
+        "settingsBuyRate"
+      ])
+    );
+
+
+  const sellRate =
+    Number(
+      getFieldValue([
+        "sellRate",
+        "adminSellRate",
+        "settingsSellRate"
+      ])
+    );
+
+
+  const minOrder =
+    Number(
+      getFieldValue([
+        "minOrderCfa",
+        "minOrder",
+        "adminMinOrder",
+        "settingsMinOrder"
+      ])
+    );
+
+
+  const maxOrder =
+    Number(
+      getFieldValue([
+        "maxOrderCfa",
+        "maxOrder",
+        "adminMaxOrder",
+        "settingsMaxOrder"
+      ])
+    );
+
+
+  const trc20Fee =
+    Number(
+      getFieldValue([
+        "trc20Fee",
+        "trc20FeeUsdt",
+        "adminTrc20Fee",
+        "settingsTrc20Fee"
+      ])
+    );
+
+
+  const bp20Fee =
+    Number(
+      getFieldValue([
+        "bp20Fee",
+        "bep20Fee",
+        "bp20FeeUsdt",
+        "bep20FeeUsdt",
+        "adminBp20Fee",
+        "adminBep20Fee",
+        "settingsBp20Fee"
+      ])
+    );
+
+
+  const orange =
+    getFieldValue([
+      "orangeMoneyNumber",
+      "orangeMoney",
+      "orangeMoneyPhone",
+      "adminOrangeMoneyNumber",
+      "settingsOrangeMoneyNumber"
+    ]);
+
+
+  const previewBuy =
+    $("previewBuyRate");
+
+
+  if (previewBuy) {
+
+    previewBuy.textContent =
+      `${formatNumber(
+        Number.isFinite(buyRate)
+          ? buyRate
+          : settings.buy_rate
+      )} FCFA`;
+
+  }
+
+
+  const previewSell =
+    $("previewSellRate");
+
+
+  if (previewSell) {
+
+    previewSell.textContent =
+      `${formatNumber(
+        Number.isFinite(sellRate)
+          ? sellRate
+          : settings.sell_rate
+      )} FCFA`;
+
+  }
+
+
+  const previewMin =
+    $("previewMinOrder");
+
+
+  if (previewMin) {
+
+    previewMin.textContent =
+      `${formatNumber(
+        Number.isFinite(minOrder)
+          ? minOrder
+          : settings.min_order_cfa
+      )} FCFA`;
+
+  }
+
+
+  const previewMax =
+    $("previewMaxOrder");
+
+
+  if (previewMax) {
+
+    previewMax.textContent =
+      `${formatNumber(
+        Number.isFinite(maxOrder)
+          ? maxOrder
+          : settings.max_order_cfa
+      )} FCFA`;
+
+  }
+
+
+  const previewTrc =
+    $("previewTrc20Fee");
+
+
+  if (previewTrc) {
+
+    previewTrc.textContent =
+      `${Number.isFinite(trc20Fee)
+        ? trc20Fee
+        : settings.trc20_fee_usdt} USDT`;
+
+  }
+
+
+  const previewBep =
+    $("previewBp20Fee") ||
+    $("previewBep20Fee");
+
+
+  if (previewBep) {
+
+    previewBep.textContent =
+      `${Number.isFinite(bp20Fee)
+        ? bp20Fee
+        : settings.bp20_fee_usdt} USDT`;
+
+  }
+
+
+  const previewOrange =
+    $("previewOrangeMoney");
+
+
+  if (previewOrange) {
+
+    previewOrange.textContent =
+      orange ||
+      settings.orange_money_number;
+
+  }
+
+}
+
+
+// ============================================================
+// SAUVEGARDER PARAMETRES
+// ============================================================
+
+async function saveSettings(event) {
+
+  if (event) {
+
+    event.preventDefault();
+
+  }
+
+
+  clearMessage(
+    "settingsMessage"
+  );
+
+
+  // ----------------------------------------------------------
+  // RECUPERATION
+  // ----------------------------------------------------------
+
+  const buyRate =
+    Number(
+      getFieldValue([
+        "buyRate",
+        "adminBuyRate",
+        "settingsBuyRate"
+      ])
+    );
+
+
+  const sellRate =
+    Number(
+      getFieldValue([
+        "sellRate",
+        "adminSellRate",
+        "settingsSellRate"
+      ])
+    );
+
+
+  const minOrder =
+    Number(
+      getFieldValue([
+        "minOrderCfa",
+        "minOrder",
+        "adminMinOrder",
+        "settingsMinOrder"
+      ])
+    );
+
+
+  const maxOrder =
+    Number(
+      getFieldValue([
+        "maxOrderCfa",
+        "maxOrder",
+        "adminMaxOrder",
+        "settingsMaxOrder"
+      ])
+    );
+
+
+  const trc20Fee =
+    Number(
+      getFieldValue([
+        "trc20Fee",
+        "trc20FeeUsdt",
+        "adminTrc20Fee",
+        "settingsTrc20Fee"
+      ])
+    );
+
+
+  const bp20Fee =
+    Number(
+      getFieldValue([
+        "bp20Fee",
+        "bep20Fee",
+        "bp20FeeUsdt",
+        "bep20FeeUsdt",
+        "adminBp20Fee",
+        "adminBep20Fee",
+        "settingsBp20Fee"
+      ])
+    );
+
+
+  const orangeMoney =
+    getFieldValue([
+      "orangeMoneyNumber",
+      "orangeMoney",
+      "orangeMoneyPhone",
+      "adminOrangeMoneyNumber",
+      "settingsOrangeMoneyNumber"
+    ]);
+
+
+  let paymentMethod =
+    getFieldValue([
+      "paymentMethod",
+      "adminPaymentMethod",
+      "settingsPaymentMethod"
+    ]);
+
+
+  let country =
+    getFieldValue([
+      "country",
+      "settingsCountry"
+    ]);
+
+
+  let currency =
+    getFieldValue([
+      "currency",
+      "settingsCurrency"
+    ]);
+
+
+  // ----------------------------------------------------------
+  // VALEURS PAR DEFAUT
+  // ----------------------------------------------------------
+
+  if (!paymentMethod) {
+
+    paymentMethod =
+      "Orange Money";
+
+  }
+
+
+  if (!country) {
+
+    country =
+      "Burkina Faso";
+
+  }
+
+
+  if (!currency) {
+
+    currency =
+      "XOF";
+
+  }
+
+
+  // ----------------------------------------------------------
+  // VALIDATION TAUX
+  // ----------------------------------------------------------
+
+  if (
+    !Number.isFinite(buyRate) ||
+    buyRate <= 0
+  ) {
+
+    showMessage(
+      "settingsMessage",
+      "Le taux d'achat doit être supérieur à 0."
+    );
+
+    return;
+
+  }
+
+
+  if (
+    !Number.isFinite(sellRate) ||
+    sellRate <= 0
+  ) {
+
+    showMessage(
+      "settingsMessage",
+      "Le taux de vente doit être supérieur à 0."
+    );
+
+    return;
+
+  }
+
+
+  // ----------------------------------------------------------
+  // VALIDATION LIMITES
+  // ----------------------------------------------------------
+
+  if (
+    !Number.isFinite(minOrder) ||
+    minOrder <= 0
+  ) {
+
+    showMessage(
+      "settingsMessage",
+      "Le montant minimum doit être supérieur à 0."
+    );
+
+    return;
+
+  }
+
+
+  if (
+    !Number.isFinite(maxOrder) ||
+    maxOrder <= 0
+  ) {
+
+    showMessage(
+      "settingsMessage",
+      "Le montant maximum doit être supérieur à 0."
+    );
+
+    return;
+
+  }
+
+
+  if (
+    minOrder >= maxOrder
+  ) {
+
+    showMessage(
+      "settingsMessage",
+      "Le minimum doit être inférieur au maximum."
+    );
+
+    return;
+
+  }
+
+
+  // ----------------------------------------------------------
+  // VALIDATION FRAIS
+  // ----------------------------------------------------------
+
+  if (
+    !Number.isFinite(trc20Fee) ||
+    trc20Fee < 0
+  ) {
+
+    showMessage(
+      "settingsMessage",
+      "Le frais TRC20 doit être supérieur ou égal à 0."
+    );
+
+    return;
+
+  }
+
+
+  if (
+    !Number.isFinite(bp20Fee) ||
+    bp20Fee < 0
+  ) {
+
+    showMessage(
+      "settingsMessage",
+      "Le frais BEP20 doit être supérieur ou égal à 0."
+    );
+
+    return;
+
+  }
+
+
+  // ----------------------------------------------------------
+  // VALIDATION ORANGE MONEY
+  // ----------------------------------------------------------
+
+  if (!orangeMoney) {
+
+    showMessage(
+      "settingsMessage",
+      "Veuillez saisir le numéro Orange Money."
+    );
+
+    return;
+
+  }
+
+
+  // ----------------------------------------------------------
+  // BOUTON
+  // ----------------------------------------------------------
+
+  const button =
+    $("saveSettingsBtn") ||
+    $("saveSettingsButton") ||
+    $("settingsSaveBtn");
+
+
+  const oldText =
+    button?.textContent;
+
+
+  if (button) {
+
+    button.disabled = true;
+
+    button.textContent =
+      "Enregistrement...";
+
+  }
+
+
+  // ----------------------------------------------------------
+  // DONNEES
+  // ----------------------------------------------------------
+
+  const payload = {
+
+    country,
+
+    currency,
+
+    buy_rate:
+      buyRate,
+
+    sell_rate:
+      sellRate,
+
+    min_order_cfa:
+      minOrder,
+
+    max_order_cfa:
+      maxOrder,
+
+    trc20_fee_usdt:
+      trc20Fee,
+
+    bp20_fee_usdt:
+      bp20Fee,
+
+    orange_money_number:
+      orangeMoney,
+
+    payment_method:
+      paymentMethod
+
+  };
+
+
+  // ----------------------------------------------------------
+  // ENREGISTREMENT
+  // ----------------------------------------------------------
+
+  try {
+
+    const {
+      data,
+      error
+    } =
+      await supabaseClient
+        .from("app_settings")
+        .update(payload)
+        .eq("id", 1)
+        .select("*")
+        .single();
+
+
+    if (error) {
+
+      throw error;
+
+    }
+
+
+    currentSettings =
+      data;
+
+
+    fillSettingsForm();
+
+
+    showMessage(
+      "settingsMessage",
+      "Les paramètres ont été enregistrés avec succès.",
+      "success"
+    );
+
+
+    console.log(
+      "Paramètres enregistrés:",
+      data
+    );
+
+  }
+
+  catch (error) {
+
+    console.error(
+      "Erreur sauvegarde paramètres:",
+      error
+    );
+
+
+    showMessage(
+      "settingsMessage",
+      "Impossible d'enregistrer les paramètres : " +
+      getErrorMessage(error)
+    );
+
+  }
+
+  finally {
+
+    if (button) {
+
+      button.disabled = false;
+
+      button.textContent =
+        oldText ||
+        "Enregistrer les paramètres";
+
+    }
+
+  }
 
 }
 
@@ -685,7 +1763,7 @@ async function loadOrders() {
   catch (error) {
 
     console.error(
-      "Erreur commandes admin :",
+      "Erreur commandes admin:",
       error
     );
 
@@ -741,44 +1819,57 @@ function renderOrders() {
     .toLowerCase();
 
 
-  const status =
+  const statusFilter =
     $("orderStatusFilter")
       ?.value || "";
 
 
   const filtered =
-    allOrders.filter(order => {
+    allOrders.filter(
+      order => {
 
-      const text =
-        [
-          order.id,
-          order.user_id,
-          order.type,
-          order.network,
-          order.status,
-          order.wallet_address,
-          order.payment_method
-        ]
-        .join(" ")
-        .toLowerCase();
+        const text =
+          [
+
+            order.id,
+
+            order.user_id,
+
+            order.type,
+
+            order.network,
+
+            order.status,
+
+            order.wallet_address,
+
+            order.payment_method
+
+          ]
+          .join(" ")
+          .toLowerCase();
 
 
-      const matchesSearch =
-        !search ||
-        text.includes(search);
+        const matchesSearch =
+          !search ||
+          text.includes(search);
 
 
-      const matchesStatus =
-        !status ||
-        order.status === status;
+        const matchesStatus =
+          !statusFilter ||
+          String(
+            order.status || ""
+          ) ===
+          statusFilter;
 
 
-      return (
-        matchesSearch &&
-        matchesStatus
-      );
+        return (
+          matchesSearch &&
+          matchesStatus
+        );
 
-    });
+      }
+    );
 
 
   if (
@@ -808,103 +1899,138 @@ function renderOrders() {
 
   body.innerHTML =
     filtered
-      .map(order => {
+      .map(
+        order => {
 
-        const type =
-          order.type === "buy"
-            ? "Achat"
-            : "Vente";
-
-
-        const status =
-          order.status ||
-          "pending";
+          const type =
+            String(
+              order.type || ""
+            ).toLowerCase() === "buy"
+              ? "Achat"
+              : "Vente";
 
 
-        const statusLabel =
-          getOrderStatusLabel(
-            status
-          );
+          const status =
+            order.status ||
+            "pending";
 
 
-        return `
+          const statusLabel =
+            getOrderStatusLabel(
+              status
+            );
 
-          <tr>
 
-            <td>
-              <strong>
+          return `
+
+            <tr>
+
+              <td>
+
+                <strong>
+
+                  ${escapeHtml(
+                    String(
+                      order.id || ""
+                    ).slice(0, 8)
+                  )}
+
+                </strong>
+
+              </td>
+
+
+              <td>
+
+                ${escapeHtml(
+                  type
+                )}
+
+              </td>
+
+
+              <td>
+
                 ${escapeHtml(
                   String(
-                    order.id
+                    order.user_id || ""
                   ).slice(0, 8)
                 )}
-              </strong>
-            </td>
 
-            <td>
-              ${escapeHtml(type)}
-            </td>
+              </td>
 
-            <td>
-              ${escapeHtml(
-                String(
-                  order.user_id || ""
-                ).slice(0, 8)
-              )}
-            </td>
 
-            <td>
-              <strong>
-                ${formatNumber(
-                  order.fiat_amount
-                )} FCFA
-              </strong>
-            </td>
+              <td>
 
-            <td>
-              ${escapeHtml(
-                order.network || "-"
-              )}
-            </td>
+                <strong>
 
-            <td>
+                  ${formatNumber(
+                    order.fiat_amount
+                  )}
+                  FCFA
 
-              <span
-                class="status ${escapeHtml(
-                  status
-                )}"
-              >
+                </strong>
+
+              </td>
+
+
+              <td>
+
                 ${escapeHtml(
-                  statusLabel
+                  order.network || "-"
                 )}
-              </span>
 
-            </td>
+              </td>
 
-            <td>
-              ${formatDate(
-                order.created_at
-              )}
-            </td>
 
-            <td>
+              <td>
 
-              <button
-                class="action-btn"
-                data-view-order="${escapeHtml(
-                  order.id
-                )}"
-              >
-                Voir
-              </button>
+                <span
+                  class="status ${escapeHtml(
+                    status
+                  )}"
+                >
 
-            </td>
+                  ${escapeHtml(
+                    statusLabel
+                  )}
 
-          </tr>
+                </span>
 
-        `;
+              </td>
 
-      })
+
+              <td>
+
+                ${formatDate(
+                  order.created_at
+                )}
+
+              </td>
+
+
+              <td>
+
+                <button
+                  class="action-btn"
+                  type="button"
+                  data-view-order="${escapeHtml(
+                    order.id
+                  )}"
+                >
+
+                  Voir
+
+                </button>
+
+              </td>
+
+            </tr>
+
+          `;
+
+        }
+      )
       .join("");
 
 }
@@ -972,7 +2098,8 @@ function updateStatistics() {
   const pending =
     allOrders.filter(
       order =>
-        order.status === "pending"
+        order.status ===
+        "pending"
     ).length;
 
 
@@ -981,14 +2108,26 @@ function updateStatistics() {
       order =>
         order.status ===
           "payment_declared" ||
-        order.status === "paid"
+        order.status ===
+          "paid"
     ).length;
 
 
   const completed =
     allOrders.filter(
       order =>
-        order.status === "completed"
+        order.status ===
+        "completed"
+    ).length;
+
+
+  const disputes =
+    allDisputes.filter(
+      dispute =>
+        dispute.status ===
+          "open" ||
+        dispute.status ===
+          "processing"
     ).length;
 
 
@@ -1027,6 +2166,26 @@ function updateStatistics() {
 
   }
 
+
+  if ($("statDisputes")) {
+
+    $("statDisputes")
+      .textContent =
+      formatNumber(disputes);
+
+  }
+
+
+  if ($("statUsers")) {
+
+    $("statUsers")
+      .textContent =
+      formatNumber(
+        allUsers.length
+      );
+
+  }
+
 }
 
 
@@ -1053,17 +2212,28 @@ function openOrderModal(
   }
 
 
-  const network =
-    selectedOrder.network ||
-    "-";
-
-
   const status =
     selectedOrder.status ||
     "pending";
 
 
-  $("orderDetails").innerHTML = `
+  const network =
+    selectedOrder.network ||
+    "-";
+
+
+  const details =
+    $("orderDetails");
+
+
+  if (!details) {
+
+    return;
+
+  }
+
+
+  details.innerHTML = `
 
     <div class="detail-row">
 
@@ -1096,9 +2266,15 @@ function openOrderModal(
       <span>Type</span>
 
       <strong>
-        ${selectedOrder.type === "buy"
-          ? "Achat USDT"
-          : "Vente USDT"}
+
+        ${
+          String(
+            selectedOrder.type || ""
+          ).toLowerCase() === "buy"
+            ? "Achat USDT"
+            : "Vente USDT"
+        }
+
       </strong>
 
     </div>
@@ -1109,9 +2285,12 @@ function openOrderModal(
       <span>Montant FCFA</span>
 
       <strong>
+
         ${formatNumber(
           selectedOrder.fiat_amount
-        )} FCFA
+        )}
+        FCFA
+
       </strong>
 
     </div>
@@ -1122,9 +2301,12 @@ function openOrderModal(
       <span>Montant USDT</span>
 
       <strong>
+
         ${formatDecimal(
           selectedOrder.crypto_amount
-        )} USDT
+        )}
+        USDT
+
       </strong>
 
     </div>
@@ -1135,9 +2317,12 @@ function openOrderModal(
       <span>Taux</span>
 
       <strong>
+
         ${formatNumber(
           selectedOrder.rate
-        )} FCFA / USDT
+        )}
+        FCFA / USDT
+
       </strong>
 
     </div>
@@ -1148,9 +2333,12 @@ function openOrderModal(
       <span>Frais</span>
 
       <strong>
+
         ${formatDecimal(
           selectedOrder.fee
-        )} USDT
+        )}
+        USDT
+
       </strong>
 
     </div>
@@ -1161,7 +2349,11 @@ function openOrderModal(
       <span>Réseau</span>
 
       <strong>
-        ${escapeHtml(network)}
+
+        ${escapeHtml(
+          network
+        )}
+
       </strong>
 
     </div>
@@ -1172,9 +2364,12 @@ function openOrderModal(
       <span>Wallet</span>
 
       <strong>
+
         ${escapeHtml(
-          selectedOrder.wallet_address || "-"
+          selectedOrder.wallet_address ||
+          "-"
         )}
+
       </strong>
 
     </div>
@@ -1185,10 +2380,12 @@ function openOrderModal(
       <span>Paiement</span>
 
       <strong>
+
         ${escapeHtml(
           selectedOrder.payment_method ||
           "Orange Money"
         )}
+
       </strong>
 
     </div>
@@ -1199,11 +2396,13 @@ function openOrderModal(
       <span>Statut</span>
 
       <strong>
+
         ${escapeHtml(
           getOrderStatusLabel(
             status
           )
         )}
+
       </strong>
 
     </div>
@@ -1214,9 +2413,11 @@ function openOrderModal(
       <span>Date</span>
 
       <strong>
+
         ${formatDate(
           selectedOrder.created_at
         )}
+
       </strong>
 
     </div>
@@ -1224,7 +2425,23 @@ function openOrderModal(
   `;
 
 
-  clearModalMessage(
+  // ----------------------------------------------------------
+  // SELECT STATUT
+  // ----------------------------------------------------------
+
+  const statusSelect =
+    $("orderStatusSelect");
+
+
+  if (statusSelect) {
+
+    statusSelect.value =
+      status;
+
+  }
+
+
+  clearMessage(
     "orderModalMessage"
   );
 
@@ -1237,7 +2454,7 @@ function openOrderModal(
 
 
 // ============================================================
-// MODIFICATION STATUT COMMANDE
+// MODIFIER STATUT COMMANDE
 // ============================================================
 
 async function updateOrderStatus(
@@ -1278,7 +2495,7 @@ async function updateOrderStatus(
     )
   ) {
 
-    showModalMessage(
+    showMessage(
       "orderModalMessage",
       "Statut invalide."
     );
@@ -1298,8 +2515,7 @@ async function updateOrderStatus(
         .from("orders")
         .update({
 
-          status:
-            status
+          status
 
         })
         .eq(
@@ -1341,12 +2557,13 @@ async function updateOrderStatus(
 
     updateStatistics();
 
+
     openOrderModal(
       data.id
     );
 
 
-    showModalMessage(
+    showMessage(
       "orderModalMessage",
       "Statut de la commande mis à jour.",
       "success"
@@ -1357,12 +2574,12 @@ async function updateOrderStatus(
   catch (error) {
 
     console.error(
-      "Erreur statut commande :",
+      "Erreur statut commande:",
       error
     );
 
 
-    showModalMessage(
+    showMessage(
       "orderModalMessage",
       "Impossible de modifier la commande : " +
       getErrorMessage(error)
@@ -1393,6 +2610,7 @@ async function loadDisputes() {
           colspan="7"
           style="text-align:center"
         >
+
           Chargement des litiges...
 
         </td>
@@ -1434,12 +2652,14 @@ async function loadDisputes() {
 
     renderDisputes();
 
+    updateStatistics();
+
   }
 
   catch (error) {
 
     console.error(
-      "Erreur litiges admin :",
+      "Erreur litiges admin:",
       error
     );
 
@@ -1454,6 +2674,7 @@ async function loadDisputes() {
             colspan="7"
             style="text-align:center"
           >
+
             Impossible de charger les litiges.
 
           </td>
@@ -1498,6 +2719,7 @@ function renderDisputes() {
           colspan="7"
           style="text-align:center"
         >
+
           Aucun litige.
 
         </td>
@@ -1513,95 +2735,106 @@ function renderDisputes() {
 
   body.innerHTML =
     allDisputes
-      .map(dispute => {
+      .map(
+        dispute => {
 
-        const status =
-          dispute.status ||
-          "open";
+          const status =
+            dispute.status ||
+            "open";
 
 
-        return `
+          return `
 
-          <tr>
+            <tr>
 
-            <td>
-
-              ${escapeHtml(
-                String(
-                  dispute.id || ""
-                ).slice(0, 8)
-              )}
-
-            </td>
-
-            <td>
-
-              ${escapeHtml(
-                String(
-                  dispute.order_id || ""
-                ).slice(0, 8)
-              )}
-
-            </td>
-
-            <td>
-
-              ${escapeHtml(
-                String(
-                  dispute.user_id || ""
-                ).slice(0, 8)
-              )}
-
-            </td>
-
-            <td>
-
-              ${escapeHtml(
-                dispute.subject || "-"
-              )}
-
-            </td>
-
-            <td>
-
-              <span class="status">
+              <td>
 
                 ${escapeHtml(
-                  getDisputeStatusLabel(
-                    status
-                  )
+                  String(
+                    dispute.id || ""
+                  ).slice(0, 8)
                 )}
 
-              </span>
+              </td>
 
-            </td>
 
-            <td>
+              <td>
 
-              ${formatDate(
-                dispute.created_at
-              )}
+                ${escapeHtml(
+                  String(
+                    dispute.order_id || ""
+                  ).slice(0, 8)
+                )}
 
-            </td>
+              </td>
 
-            <td>
 
-              <button
-                class="action-btn"
-                data-view-dispute="${escapeHtml(
-                  dispute.id
-                )}"
-              >
-                Voir
-              </button>
+              <td>
 
-            </td>
+                ${escapeHtml(
+                  String(
+                    dispute.user_id || ""
+                  ).slice(0, 8)
+                )}
 
-          </tr>
+              </td>
 
-        `;
 
-      })
+              <td>
+
+                ${escapeHtml(
+                  dispute.subject || "-"
+                )}
+
+              </td>
+
+
+              <td>
+
+                <span class="status">
+
+                  ${escapeHtml(
+                    getDisputeStatusLabel(
+                      status
+                    )
+                  )}
+
+                </span>
+
+              </td>
+
+
+              <td>
+
+                ${formatDate(
+                  dispute.created_at
+                )}
+
+              </td>
+
+
+              <td>
+
+                <button
+                  class="action-btn"
+                  type="button"
+                  data-view-dispute="${escapeHtml(
+                    dispute.id
+                  )}"
+                >
+
+                  Voir
+
+                </button>
+
+              </td>
+
+            </tr>
+
+          `;
+
+        }
+      )
       .join("");
 
 }
@@ -1667,16 +2900,29 @@ function openDisputeModal(
   }
 
 
-  $("disputeDetails").innerHTML = `
+  const details =
+    $("disputeDetails");
+
+
+  if (!details) {
+
+    return;
+
+  }
+
+
+  details.innerHTML = `
 
     <div class="detail-row">
 
       <span>ID</span>
 
       <strong>
+
         ${escapeHtml(
           selectedDispute.id
         )}
+
       </strong>
 
     </div>
@@ -1687,9 +2933,11 @@ function openDisputeModal(
       <span>Commande</span>
 
       <strong>
+
         ${escapeHtml(
           selectedDispute.order_id || "-"
         )}
+
       </strong>
 
     </div>
@@ -1700,9 +2948,11 @@ function openDisputeModal(
       <span>Utilisateur</span>
 
       <strong>
+
         ${escapeHtml(
           selectedDispute.user_id || "-"
         )}
+
       </strong>
 
     </div>
@@ -1713,9 +2963,11 @@ function openDisputeModal(
       <span>Sujet</span>
 
       <strong>
+
         ${escapeHtml(
           selectedDispute.subject || "-"
         )}
+
       </strong>
 
     </div>
@@ -1726,9 +2978,11 @@ function openDisputeModal(
       <span>Message</span>
 
       <strong>
+
         ${escapeHtml(
           selectedDispute.message || "-"
         )}
+
       </strong>
 
     </div>
@@ -1739,11 +2993,13 @@ function openDisputeModal(
       <span>Statut</span>
 
       <strong>
+
         ${escapeHtml(
           getDisputeStatusLabel(
             selectedDispute.status
           )
         )}
+
       </strong>
 
     </div>
@@ -1754,9 +3010,11 @@ function openDisputeModal(
       <span>Date</span>
 
       <strong>
+
         ${formatDate(
           selectedDispute.created_at
         )}
+
       </strong>
 
     </div>
@@ -1764,7 +3022,20 @@ function openDisputeModal(
   `;
 
 
-  clearModalMessage(
+  const statusSelect =
+    $("disputeStatusSelect");
+
+
+  if (statusSelect) {
+
+    statusSelect.value =
+      selectedDispute.status ||
+      "open";
+
+  }
+
+
+  clearMessage(
     "disputeModalMessage"
   );
 
@@ -1810,7 +3081,7 @@ async function updateDisputeStatus(
     !allowed.includes(status)
   ) {
 
-    showModalMessage(
+    showMessage(
       "disputeModalMessage",
       "Statut de litige invalide."
     );
@@ -1830,8 +3101,7 @@ async function updateDisputeStatus(
         .from("disputes")
         .update({
 
-          status:
-            status
+          status
 
         })
         .eq(
@@ -1871,12 +3141,15 @@ async function updateDisputeStatus(
 
     renderDisputes();
 
+    updateStatistics();
+
+
     openDisputeModal(
       data.id
     );
 
 
-    showModalMessage(
+    showMessage(
       "disputeModalMessage",
       "Statut du litige mis à jour.",
       "success"
@@ -1887,12 +3160,12 @@ async function updateDisputeStatus(
   catch (error) {
 
     console.error(
-      "Erreur statut litige :",
+      "Erreur statut litige:",
       error
     );
 
 
-    showModalMessage(
+    showMessage(
       "disputeModalMessage",
       "Impossible de modifier le litige : " +
       getErrorMessage(error)
@@ -1923,6 +3196,7 @@ async function loadUsers() {
           colspan="5"
           style="text-align:center"
         >
+
           Chargement des utilisateurs...
 
         </td>
@@ -1966,12 +3240,14 @@ async function loadUsers() {
 
     renderUsers();
 
+    updateStatistics();
+
   }
 
   catch (error) {
 
     console.error(
-      "Erreur utilisateurs admin :",
+      "Erreur utilisateurs admin:",
       error
     );
 
@@ -1986,6 +3262,7 @@ async function loadUsers() {
             colspan="5"
             style="text-align:center"
           >
+
             Impossible de charger les utilisateurs.
 
           </td>
@@ -2028,26 +3305,34 @@ function renderUsers() {
 
 
   const filtered =
-    allUsers.filter(user => {
+    allUsers.filter(
+      user => {
 
-      const text =
-        [
-          user.id,
-          user.full_name,
-          user.phone,
-          user.country,
-          user.role
-        ]
-        .join(" ")
-        .toLowerCase();
+        const text =
+          [
+
+            user.id,
+
+            user.full_name,
+
+            user.phone,
+
+            user.country,
+
+            user.role
+
+          ]
+          .join(" ")
+          .toLowerCase();
 
 
-      return (
-        !search ||
-        text.includes(search)
-      );
+        return (
+          !search ||
+          text.includes(search)
+        );
 
-    });
+      }
+    );
 
 
   if (
@@ -2062,6 +3347,7 @@ function renderUsers() {
           colspan="5"
           style="text-align:center"
         >
+
           Aucun utilisateur trouvé.
 
         </td>
@@ -2077,49 +3363,67 @@ function renderUsers() {
 
   body.innerHTML =
     filtered
-      .map(user => {
+      .map(
+        user => {
 
-        return `
+          return `
 
-          <tr>
+            <tr>
 
-            <td>
-              ${escapeHtml(
-                user.full_name || "-"
-              )}
-            </td>
+              <td>
 
-            <td>
-              ${escapeHtml(
-                user.phone || "-"
-              )}
-            </td>
-
-            <td>
-              ${escapeHtml(
-                user.country || "-"
-              )}
-            </td>
-
-            <td>
-              ${escapeHtml(
-                user.role || "user"
-              )}
-            </td>
-
-            <td>
-              <small>
                 ${escapeHtml(
-                  user.id
+                  user.full_name || "-"
                 )}
-              </small>
-            </td>
 
-          </tr>
+              </td>
 
-        `;
 
-      })
+              <td>
+
+                ${escapeHtml(
+                  user.phone || "-"
+                )}
+
+              </td>
+
+
+              <td>
+
+                ${escapeHtml(
+                  user.country || "-"
+                )}
+
+              </td>
+
+
+              <td>
+
+                ${escapeHtml(
+                  user.role || "user"
+                )}
+
+              </td>
+
+
+              <td>
+
+                <small>
+
+                  ${escapeHtml(
+                    user.id
+                  )}
+
+                </small>
+
+              </td>
+
+            </tr>
+
+          `;
+
+        }
+      )
       .join("");
 
 }
@@ -2133,25 +3437,27 @@ async function adminLogout() {
 
   try {
 
-    await supabaseClient.auth.signOut();
+    await supabaseClient
+      .auth
+      .signOut();
 
   }
 
   catch (error) {
 
     console.error(
-      "Erreur déconnexion admin :",
+      "Erreur déconnexion admin:",
       error
     );
 
   }
 
 
-  currentUser =
-    null;
+  currentUser = null;
 
-  currentProfile =
-    null;
+  currentProfile = null;
+
+  currentSettings = null;
 
   allOrders = [];
 
@@ -2159,14 +3465,38 @@ async function adminLogout() {
 
   allUsers = [];
 
-  selectedOrder =
-    null;
+  selectedOrder = null;
 
-  selectedDispute =
-    null;
+  selectedDispute = null;
 
 
   showLoginPage();
+
+}
+
+
+// ============================================================
+// FERMER MODAL
+// ============================================================
+
+function closeOrderModal() {
+
+  $("orderModal")
+    ?.classList
+    .remove("show");
+
+  selectedOrder = null;
+
+}
+
+
+function closeDisputeModal() {
+
+  $("disputeModal")
+    ?.classList
+    .remove("show");
+
+  selectedDispute = null;
 
 }
 
@@ -2200,54 +3530,179 @@ function setupEvents() {
 
 
   // ----------------------------------------------------------
+  // PARAMETRES
+  // ----------------------------------------------------------
+
+  const settingsForm =
+    $("settingsForm") ||
+    $("adminSettingsForm");
+
+
+  settingsForm
+    ?.addEventListener(
+      "submit",
+      saveSettings
+    );
+
+
+  $("saveSettingsBtn")
+    ?.addEventListener(
+      "click",
+      saveSettings
+    );
+
+
+  $("saveSettingsButton")
+    ?.addEventListener(
+      "click",
+      saveSettings
+    );
+
+
+  $("settingsSaveBtn")
+    ?.addEventListener(
+      "click",
+      saveSettings
+    );
+
+
+  // ----------------------------------------------------------
+  // APERCU EN TEMPS REEL
+  // ----------------------------------------------------------
+
+  [
+
+    "buyRate",
+
+    "adminBuyRate",
+
+    "settingsBuyRate",
+
+    "sellRate",
+
+    "adminSellRate",
+
+    "settingsSellRate",
+
+    "minOrderCfa",
+
+    "minOrder",
+
+    "adminMinOrder",
+
+    "settingsMinOrder",
+
+    "maxOrderCfa",
+
+    "maxOrder",
+
+    "adminMaxOrder",
+
+    "settingsMaxOrder",
+
+    "trc20Fee",
+
+    "trc20FeeUsdt",
+
+    "adminTrc20Fee",
+
+    "settingsTrc20Fee",
+
+    "bp20Fee",
+
+    "bep20Fee",
+
+    "bp20FeeUsdt",
+
+    "bep20FeeUsdt",
+
+    "adminBp20Fee",
+
+    "adminBep20Fee",
+
+    "settingsBp20Fee",
+
+    "orangeMoneyNumber",
+
+    "orangeMoney",
+
+    "orangeMoneyPhone",
+
+    "adminOrangeMoneyNumber",
+
+    "settingsOrangeMoneyNumber"
+
+  ]
+  .forEach(
+    id => {
+
+      $(id)
+        ?.addEventListener(
+          "input",
+          updateSettingsPreview
+        );
+
+    }
+  );
+
+
+  // ----------------------------------------------------------
   // ONGLETS
   // ----------------------------------------------------------
 
   document
     .querySelectorAll(".tab")
-    .forEach(tab => {
+    .forEach(
+      tab => {
 
-      tab.addEventListener(
-        "click",
-        () => {
+        tab.addEventListener(
+          "click",
+          () => {
 
-          document
-            .querySelectorAll(".tab")
-            .forEach(item =>
-              item.classList.remove(
-                "active"
+            document
+              .querySelectorAll(".tab")
+              .forEach(
+                item =>
+                  item.classList.remove(
+                    "active"
+                  )
+              );
+
+
+            document
+              .querySelectorAll(
+                ".admin-section"
               )
+              .forEach(
+                section =>
+                  section.classList.remove(
+                    "active"
+                  )
+              );
+
+
+            tab.classList.add(
+              "active"
             );
 
 
-          document
-            .querySelectorAll(
-              ".admin-section"
-            )
-            .forEach(section =>
-              section.classList.remove(
-                "active"
-              )
-            );
+            const sectionId =
+              tab.dataset.section;
 
 
-          tab.classList.add(
-            "active"
-          );
+            if (sectionId) {
 
+              $(sectionId)
+                ?.classList
+                .add("active");
 
-          const sectionId =
-            tab.dataset.section;
+            }
 
+          }
+        );
 
-          $(sectionId)
-            ?.classList
-            .add("active");
-
-        }
-      );
-
-    });
+      }
+    );
 
 
   // ----------------------------------------------------------
@@ -2274,6 +3729,44 @@ function setupEvents() {
       loadOrders
     );
 
+
+  // ----------------------------------------------------------
+  // SELECT STATUT COMMANDE
+  // ----------------------------------------------------------
+
+  $("orderStatusSelect")
+    ?.addEventListener(
+      "change",
+      event => {
+
+        updateOrderStatus(
+          event.target.value
+        );
+
+      }
+    );
+
+
+  // ----------------------------------------------------------
+  // SELECT STATUT LITIGE
+  // ----------------------------------------------------------
+
+  $("disputeStatusSelect")
+    ?.addEventListener(
+      "change",
+      event => {
+
+        updateDisputeStatus(
+          event.target.value
+        );
+
+      }
+    );
+
+
+  // ----------------------------------------------------------
+  // ACTIONS TABLEAUX
+  // ----------------------------------------------------------
 
   document.addEventListener(
     "click",
@@ -2353,36 +3846,38 @@ function setupEvents() {
 
 
   // ----------------------------------------------------------
-  // MODAL COMMANDE
+  // FERMETURE COMMANDE
   // ----------------------------------------------------------
 
   $("closeOrderModalBtn")
     ?.addEventListener(
       "click",
-      () => {
+      closeOrderModal
+    );
 
-        $("orderModal")
-          ?.classList
-          .remove("show");
 
-      }
+  $("closeOrderModal")
+    ?.addEventListener(
+      "click",
+      closeOrderModal
     );
 
 
   // ----------------------------------------------------------
-  // MODAL LITIGE
+  // FERMETURE LITIGE
   // ----------------------------------------------------------
 
   $("closeDisputeModalBtn")
     ?.addEventListener(
       "click",
-      () => {
+      closeDisputeModal
+    );
 
-        $("disputeModal")
-          ?.classList
-          .remove("show");
 
-      }
+  $("closeDisputeModal")
+    ?.addEventListener(
+      "click",
+      closeDisputeModal
     );
 
 
@@ -2416,7 +3911,7 @@ function setupEvents() {
 
 
   // ----------------------------------------------------------
-  // FERMETURE MODALS EN CLIQUANT DEHORS
+  // FERMETURE MODALS EN DEHORS
   // ----------------------------------------------------------
 
   $("orderModal")
@@ -2429,9 +3924,7 @@ function setupEvents() {
           $("orderModal")
         ) {
 
-          $("orderModal")
-            .classList
-            .remove("show");
+          closeOrderModal();
 
         }
 
@@ -2449,14 +3942,34 @@ function setupEvents() {
           $("disputeModal")
         ) {
 
-          $("disputeModal")
-            .classList
-            .remove("show");
+          closeDisputeModal();
 
         }
 
       }
     );
+
+
+  // ----------------------------------------------------------
+  // TOUCHE ECHAP
+  // ----------------------------------------------------------
+
+  document.addEventListener(
+    "keydown",
+    event => {
+
+      if (
+        event.key === "Escape"
+      ) {
+
+        closeOrderModal();
+
+        closeDisputeModal();
+
+      }
+
+    }
+  );
 
 }
 
@@ -2467,9 +3980,19 @@ function setupEvents() {
 
 function setupAuthListener() {
 
+  if (authListenerReady) {
+
+    return;
+
+  }
+
+
+  authListenerReady = true;
+
+
   supabaseClient.auth
     .onAuthStateChange(
-      async (
+      (
         event,
         session
       ) => {
@@ -2480,15 +4003,20 @@ function setupAuthListener() {
         );
 
 
+        // ----------------------------------------------------
+        // DECONNEXION
+        // ----------------------------------------------------
+
         if (
-          event === "SIGNED_OUT"
+          event ===
+          "SIGNED_OUT"
         ) {
 
-          currentUser =
-            null;
+          currentUser = null;
 
-          currentProfile =
-            null;
+          currentProfile = null;
+
+          currentSettings = null;
 
           showLoginPage();
 
@@ -2497,11 +4025,13 @@ function setupAuthListener() {
         }
 
 
+        // ----------------------------------------------------
+        // CONNEXION
+        // ----------------------------------------------------
+
         if (
-          (
-            event === "SIGNED_IN" ||
-            event === "TOKEN_REFRESHED"
-          ) &&
+          event ===
+            "SIGNED_IN" &&
           session?.user
         ) {
 
@@ -2509,28 +4039,46 @@ function setupAuthListener() {
             session.user;
 
 
-          const isAdmin =
-            await verifyAdmin();
+          // Ne pas bloquer le callback Supabase
+          setTimeout(
+            async () => {
+
+              const isAdmin =
+                await verifyAdmin();
 
 
-          if (!isAdmin) {
+              if (!isAdmin) {
 
-            await supabaseClient
-              .auth
-              .signOut();
-
-            showLoginPage();
-
-            showLoginMessage(
-              "Accès refusé. Ce compte n'est pas administrateur."
-            );
-
-            return;
-
-          }
+                await supabaseClient
+                  .auth
+                  .signOut();
 
 
-          showAdminPage();
+                currentUser = null;
+
+                currentProfile = null;
+
+
+                showLoginPage();
+
+
+                showLoginMessage(
+                  "Accès refusé. Ce compte n'est pas administrateur."
+                );
+
+
+                return;
+
+              }
+
+
+              showAdminPage();
+
+              await loadDashboard();
+
+            },
+            0
+          );
 
         }
 
@@ -2549,7 +4097,19 @@ document.addEventListener(
   async () => {
 
     console.log(
-      "NOA DIGIT TRADE ADMIN — démarrage..."
+      "================================================"
+    );
+
+    console.log(
+      "NOA DIGIT TRADE ADMIN"
+    );
+
+    console.log(
+      "Démarrage espace administrateur..."
+    );
+
+    console.log(
+      "================================================"
     );
 
 
