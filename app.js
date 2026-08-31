@@ -3,7 +3,6 @@
 // SUPABASE AUTH + ORDERS
 // ==========================================
 
-
 // ==========================================
 // CONFIGURATION SUPABASE
 // ==========================================
@@ -16,13 +15,36 @@ const SUPABASE_KEY =
 
 
 // ==========================================
+// TAUX DE CHANGE
+// ==========================================
+
+// Le client achète chez NOA DIGIT TRADE
+// 1 USDT = 600 FCFA
+
+const BUY_RATE = 600;
+
+// Le client vend à NOA DIGIT TRADE
+// 1 USDT = 570 FCFA
+
+const SELL_RATE = 570;
+
+
+// ==========================================
 // INITIALISATION SUPABASE
 // ==========================================
 
 if (!window.supabase) {
-  console.error('Supabase JS n’a pas été chargé.');
+
+  console.error(
+    'Supabase JS n’a pas été chargé.'
+  );
+
 } else {
-  console.log('Supabase JS chargé.');
+
+  console.log(
+    'Supabase JS chargé.'
+  );
+
 }
 
 const supabaseClient =
@@ -47,7 +69,9 @@ document.addEventListener(
   'DOMContentLoaded',
   async () => {
 
-    console.log('Noa Digit Trade démarré.');
+    console.log(
+      'Noa Digit Trade démarré.'
+    );
 
     setupTabs();
 
@@ -56,6 +80,8 @@ document.addEventListener(
     setupAuth();
 
     setupSubmitButton();
+
+    setupCalculation();
 
     await checkSession();
 
@@ -111,7 +137,7 @@ async function checkSession() {
 
 
 // ==========================================
-// SURVEILLER LES CHANGEMENTS DE SESSION
+// SURVEILLER LES CHANGEMENTS
 // ==========================================
 
 supabaseClient.auth.onAuthStateChange(
@@ -124,7 +150,7 @@ supabaseClient.auth.onAuthStateChange(
 
 
 // ==========================================
-// BOUTON SE CONNECTER / MON COMPTE
+// BOUTON CONNEXION / MON COMPTE
 // ==========================================
 
 function updateLoginButton(session) {
@@ -138,8 +164,6 @@ function updateLoginButton(session) {
   }
 
 
-  // Retirer les anciens événements
-  // ajoutés par addEventListener dans setupAuth
   login.onclick = null;
 
 
@@ -213,6 +237,9 @@ function setupTabs() {
           type
         );
 
+
+        updateCalculationMode();
+
       }
     );
 
@@ -263,21 +290,288 @@ function setupStartButton() {
 
 
 // ==========================================
-// OUVRIR FENÊTRE AUTH
+// CALCUL EN TEMPS RÉEL
+// ==========================================
+
+function setupCalculation() {
+
+  const amountInput =
+    document.getElementById('amount');
+
+
+  if (!amountInput) {
+    return;
+  }
+
+
+  amountInput.addEventListener(
+    'input',
+    updateCalculation
+  );
+
+
+  updateCalculationMode();
+
+  updateCalculation();
+
+}
+
+
+// ==========================================
+// ADAPTER LE CHAMP AU TYPE
+// ==========================================
+
+function updateCalculationMode() {
+
+  const amountInput =
+    document.getElementById('amount');
+
+  const amountLabel =
+    document.getElementById('amountLabel');
+
+  const walletLabel =
+    document.getElementById('walletLabel');
+
+  const calculation =
+    document.getElementById('calculation');
+
+  const rateText =
+    document.getElementById('rateText');
+
+  if (!amountInput) {
+    return;
+  }
+
+
+  if (type === 'buy') {
+
+    if (amountLabel) {
+
+      amountLabel.textContent =
+        'Montant à payer (FCFA)';
+
+    }
+
+
+    amountInput.placeholder =
+      'Ex. 10000';
+
+    amountInput.inputMode =
+      'decimal';
+
+
+    if (walletLabel) {
+
+      walletLabel.textContent =
+        'Adresse du portefeuille USDT';
+
+    }
+
+
+    if (rateText) {
+
+      rateText.textContent =
+        `Taux d'achat : 1 USDT = ${BUY_RATE.toLocaleString('fr-FR')} FCFA`;
+
+    }
+
+
+    if (calculation) {
+
+      calculation.innerHTML = `
+        <span>Vous recevrez</span>
+        <strong id="resultAmount">0 USDT</strong>
+        <small id="resultDetail">
+          1 USDT = ${BUY_RATE.toLocaleString('fr-FR')} FCFA
+        </small>
+      `;
+
+    }
+
+  } else {
+
+    if (amountLabel) {
+
+      amountLabel.textContent =
+        'Montant à vendre (USDT)';
+
+    }
+
+
+    amountInput.placeholder =
+      'Ex. 10';
+
+    amountInput.inputMode =
+      'decimal';
+
+
+    if (walletLabel) {
+
+      walletLabel.textContent =
+        'Adresse du portefeuille USDT';
+
+    }
+
+
+    if (rateText) {
+
+      rateText.textContent =
+        `Taux de vente : 1 USDT = ${SELL_RATE.toLocaleString('fr-FR')} FCFA`;
+
+    }
+
+
+    if (calculation) {
+
+      calculation.innerHTML = `
+        <span>Vous recevrez</span>
+        <strong id="resultAmount">0 FCFA</strong>
+        <small id="resultDetail">
+          1 USDT = ${SELL_RATE.toLocaleString('fr-FR')} FCFA
+        </small>
+      `;
+
+    }
+
+  }
+
+
+  updateCalculation();
+
+}
+
+
+// ==========================================
+// EFFECTUER LE CALCUL
+// ==========================================
+
+function updateCalculation() {
+
+  const amountInput =
+    document.getElementById('amount');
+
+
+  const resultAmount =
+    document.getElementById('resultAmount');
+
+
+  const resultDetail =
+    document.getElementById('resultDetail');
+
+
+  if (
+    !amountInput ||
+    !resultAmount
+  ) {
+
+    return;
+
+  }
+
+
+  const value =
+    Number(
+      amountInput.value
+    );
+
+
+  if (
+    !Number.isFinite(value) ||
+    value <= 0
+  ) {
+
+    resultAmount.textContent =
+      type === 'buy'
+        ? '0 USDT'
+        : '0 FCFA';
+
+    return;
+
+  }
+
+
+  if (type === 'buy') {
+
+    const usdt =
+      value / BUY_RATE;
+
+
+    resultAmount.textContent =
+      `${formatNumber(usdt, 6)} USDT`;
+
+
+    if (resultDetail) {
+
+      resultDetail.textContent =
+        `${formatNumber(value, 0)} FCFA ÷ ${BUY_RATE} = ${formatNumber(usdt, 6)} USDT`;
+
+    }
+
+  } else {
+
+    const fcfa =
+      value * SELL_RATE;
+
+
+    resultAmount.textContent =
+      `${formatNumber(fcfa, 0)} FCFA`;
+
+
+    if (resultDetail) {
+
+      resultDetail.textContent =
+        `${formatNumber(value, 6)} USDT × ${SELL_RATE} = ${formatNumber(fcfa, 0)} FCFA`;
+
+    }
+
+  }
+
+}
+
+
+// ==========================================
+// FORMAT NOMBRE
+// ==========================================
+
+function formatNumber(
+  value,
+  maximumFractionDigits = 2
+) {
+
+  return Number(value).toLocaleString(
+    'fr-FR',
+    {
+      minimumFractionDigits: 0,
+      maximumFractionDigits:
+        maximumFractionDigits
+    }
+  );
+
+}
+
+
+// ==========================================
+// OUVRIR AUTH
 // ==========================================
 
 function showAuthModal() {
 
   const modal =
-    document.getElementById('authModal');
+    document.getElementById(
+      'authModal'
+    );
 
 
   const loginForm =
-    document.getElementById('loginForm');
+    document.getElementById(
+      'loginForm'
+    );
 
 
   const signupForm =
-    document.getElementById('signupForm');
+    document.getElementById(
+      'signupForm'
+    );
 
 
   if (!modal) {
@@ -348,13 +642,15 @@ function showAuthModal() {
 
 
 // ==========================================
-// FERMER FENÊTRE AUTH
+// FERMER AUTH
 // ==========================================
 
 function closeAuthModal() {
 
   const modal =
-    document.getElementById('authModal');
+    document.getElementById(
+      'authModal'
+    );
 
 
   if (!modal) {
@@ -375,38 +671,46 @@ function closeAuthModal() {
 
 
 // ==========================================
-// CONFIGURATION AUTHENTIFICATION
+// CONFIGURATION AUTH
 // ==========================================
 
 function setupAuth() {
 
   const modal =
-    document.getElementById('authModal');
+    document.getElementById(
+      'authModal'
+    );
 
 
   const closeAuth =
-    document.getElementById('closeAuth');
+    document.getElementById(
+      'closeAuth'
+    );
 
 
   const showSignup =
-    document.getElementById('showSignup');
+    document.getElementById(
+      'showSignup'
+    );
 
 
   const showLogin =
-    document.getElementById('showLogin');
+    document.getElementById(
+      'showLogin'
+    );
 
 
   const loginSubmit =
-    document.getElementById('loginSubmit');
+    document.getElementById(
+      'loginSubmit'
+    );
 
 
   const signupSubmit =
-    document.getElementById('signupSubmit');
+    document.getElementById(
+      'signupSubmit'
+    );
 
-
-  // --------------------------------------
-  // FERMER
-  // --------------------------------------
 
   if (closeAuth) {
 
@@ -417,10 +721,6 @@ function setupAuth() {
 
   }
 
-
-  // --------------------------------------
-  // CLIQUER À L'EXTÉRIEUR
-  // --------------------------------------
 
   if (modal) {
 
@@ -441,10 +741,6 @@ function setupAuth() {
 
   }
 
-
-  // --------------------------------------
-  // PASSER À L'INSCRIPTION
-  // --------------------------------------
 
   if (showSignup) {
 
@@ -479,43 +775,11 @@ function setupAuth() {
 
         }
 
-
-        const loginMessage =
-          document.getElementById(
-            'loginMessage'
-          );
-
-
-        const signupMessage =
-          document.getElementById(
-            'signupMessage'
-          );
-
-
-        if (loginMessage) {
-
-          loginMessage.textContent =
-            '';
-
-        }
-
-
-        if (signupMessage) {
-
-          signupMessage.textContent =
-            '';
-
-        }
-
       }
     );
 
   }
 
-
-  // --------------------------------------
-  // PASSER À LA CONNEXION
-  // --------------------------------------
 
   if (showLogin) {
 
@@ -550,43 +814,11 @@ function setupAuth() {
 
         }
 
-
-        const loginMessage =
-          document.getElementById(
-            'loginMessage'
-          );
-
-
-        const signupMessage =
-          document.getElementById(
-            'signupMessage'
-          );
-
-
-        if (loginMessage) {
-
-          loginMessage.textContent =
-            '';
-
-        }
-
-
-        if (signupMessage) {
-
-          signupMessage.textContent =
-            '';
-
-        }
-
       }
     );
 
   }
 
-
-  // --------------------------------------
-  // CONNEXION
-  // --------------------------------------
 
   if (loginSubmit) {
 
@@ -597,10 +829,6 @@ function setupAuth() {
 
   }
 
-
-  // --------------------------------------
-  // INSCRIPTION
-  // --------------------------------------
 
   if (signupSubmit) {
 
@@ -615,7 +843,7 @@ function setupAuth() {
 
 
 // ==========================================
-// CONNEXION UTILISATEUR
+// CONNEXION
 // ==========================================
 
 async function loginUser() {
@@ -650,10 +878,6 @@ async function loginUser() {
     !message ||
     !button
   ) {
-
-    console.error(
-      'Éléments de connexion manquants.'
-    );
 
     return;
 
@@ -698,11 +922,8 @@ async function loginUser() {
     } =
       await supabaseClient.auth.signInWithPassword({
 
-        email:
-          email,
-
-        password:
-          password
+        email,
+        password
 
       });
 
@@ -714,22 +935,18 @@ async function loginUser() {
     }
 
 
+    message.textContent =
+      'Connexion réussie.';
+
+
     console.log(
       'Connexion réussie :',
       data.user
     );
 
 
-    message.textContent =
-      'Connexion réussie.';
-
-
     setTimeout(
-      () => {
-
-        closeAuthModal();
-
-      },
+      closeAuthModal,
       700
     );
 
@@ -761,7 +978,7 @@ async function loginUser() {
 
 
 // ==========================================
-// CRÉATION DE COMPTE
+// INSCRIPTION
 // ==========================================
 
 async function signupUser() {
@@ -804,10 +1021,6 @@ async function signupUser() {
     !button
   ) {
 
-    console.error(
-      'Éléments inscription manquants.'
-    );
-
     return;
 
   }
@@ -828,10 +1041,6 @@ async function signupUser() {
   message.textContent =
     '';
 
-
-  // --------------------------------------
-  // VALIDATION
-  // --------------------------------------
 
   if (
     !email ||
@@ -877,40 +1086,24 @@ async function signupUser() {
 
   try {
 
-    // ------------------------------------
-    // CRÉER LE COMPTE SUPABASE AUTH
-    // ------------------------------------
-
     const {
-  data,
-  error
-} =
-  await supabaseClient.auth.signUp({
+      data,
+      error
+    } =
+      await supabaseClient.auth.signUp({
 
-    email:
-      email,
+        email,
 
-    password:
-      password,
+        password,
 
-    options: {
-      emailRedirectTo:
-        'https://noadigittrade.github.io'
-    }
+        options: {
 
-  });
-      
-      
-    
+          emailRedirectTo:
+            'https://noadigittrade.github.io'
 
+        }
 
-        
-          
-
-        
-          
-
-    
+      });
 
 
     if (error) {
@@ -926,10 +1119,6 @@ async function signupUser() {
     );
 
 
-    // ------------------------------------
-    // SI SUPABASE DEMANDE UNE CONFIRMATION
-    // ------------------------------------
-
     if (
       data.user &&
       !data.session
@@ -942,10 +1131,6 @@ async function signupUser() {
 
     }
 
-
-    // ------------------------------------
-    // SI L'UTILISATEUR EST CONNECTÉ
-    // ------------------------------------
 
     if (data.user) {
 
@@ -976,15 +1161,12 @@ async function signupUser() {
     }
 
 
-    // ------------------------------------
-    // NETTOYAGE
-    // ------------------------------------
-
     passwordInput.value =
       '';
 
     confirmInput.value =
       '';
+
 
   } catch (error) {
 
@@ -1013,7 +1195,7 @@ async function signupUser() {
 
 
 // ==========================================
-// CRÉER LE PROFIL DANS "Users"
+// CRÉER PROFIL USERS
 // ==========================================
 
 async function createUserProfile(user) {
@@ -1026,8 +1208,6 @@ async function createUserProfile(user) {
 
   }
 
-
-  // Vérifier si le profil existe déjà
 
   const {
     data: existingUsers,
@@ -1042,35 +1222,20 @@ async function createUserProfile(user) {
 
   if (searchError) {
 
-    console.error(
-      'Erreur recherche profil :',
-      searchError
-    );
-
     throw searchError;
 
   }
 
-
-  // Profil déjà existant
 
   if (
     existingUsers &&
     existingUsers.length > 0
   ) {
 
-    console.log(
-      'Profil utilisateur déjà existant.'
-    );
-
     return existingUsers[0];
 
   }
 
-
-  // --------------------------------------
-  // CRÉER LE PROFIL
-  // --------------------------------------
 
   const {
     data: newUser,
@@ -1093,20 +1258,9 @@ async function createUserProfile(user) {
 
   if (insertError) {
 
-    console.error(
-      'Erreur création profil :',
-      insertError
-    );
-
     throw insertError;
 
   }
-
-
-  console.log(
-    'Profil créé :',
-    newUser
-  );
 
 
   return newUser;
@@ -1134,7 +1288,9 @@ function showAccountModal(user) {
 
 
   const modal =
-    document.createElement('div');
+    document.createElement(
+      'div'
+    );
 
 
   modal.id =
@@ -1165,9 +1321,7 @@ function showAccountModal(user) {
       box-shadow:0 20px 50px rgba(0,0,0,.25);
     ">
 
-      <h2>
-        Mon compte
-      </h2>
+      <h2>Mon compte</h2>
 
       <p>
         <strong>Email :</strong><br>
@@ -1196,10 +1350,7 @@ function showAccountModal(user) {
         Fermer
       </button>
 
-      <p
-        id="accountMessage"
-        style="line-height:1.5;">
-      </p>
+      <p id="accountMessage"></p>
 
     </div>
 
@@ -1211,23 +1362,15 @@ function showAccountModal(user) {
   );
 
 
-  // Fermer
-
   document
     .getElementById(
       'closeAccountButton'
     )
     .addEventListener(
       'click',
-      () => {
-
-        modal.remove();
-
-      }
+      () => modal.remove()
     );
 
-
-  // Fermer en cliquant à l'extérieur
 
   modal.addEventListener(
     'click',
@@ -1244,8 +1387,6 @@ function showAccountModal(user) {
     }
   );
 
-
-  // Déconnexion
 
   document
     .getElementById(
@@ -1276,12 +1417,6 @@ function showAccountModal(user) {
 
 
         if (error) {
-
-          console.error(
-            'Erreur déconnexion :',
-            error
-          );
-
 
           const accountMessage =
             document.getElementById(
@@ -1327,36 +1462,21 @@ function escapeHtml(value) {
 
   return String(value)
 
-    .replaceAll(
-      '&',
-      '&amp;'
-    )
+    .replaceAll('&', '&amp;')
 
-    .replaceAll(
-      '<',
-      '&lt;'
-    )
+    .replaceAll('<', '&lt;')
 
-    .replaceAll(
-      '>',
-      '&gt;'
-    )
+    .replaceAll('>', '&gt;')
 
-    .replaceAll(
-      '"',
-      '&quot;'
-    )
+    .replaceAll('"', '&quot;')
 
-    .replaceAll(
-      "'",
-      '&#039;'
-    );
+    .replaceAll("'", '&#039;');
 
 }
 
 
 // ==========================================
-// CONFIGURATION BOUTON COMMANDE
+// BOUTON ENVOI
 // ==========================================
 
 function setupSubmitButton() {
@@ -1368,10 +1488,6 @@ function setupSubmitButton() {
 
 
   if (!submit) {
-
-    console.error(
-      'Bouton submit introuvable.'
-    );
 
     return;
 
@@ -1387,7 +1503,7 @@ function setupSubmitButton() {
 
 
 // ==========================================
-// ENVOYER UNE COMMANDE
+// ENVOYER LA COMMANDE
 // ==========================================
 
 async function sendOrder() {
@@ -1430,10 +1546,6 @@ async function sendOrder() {
     !submit
   ) {
 
-    console.error(
-      'Éléments de commande manquants.'
-    );
-
     return;
 
   }
@@ -1455,14 +1567,10 @@ async function sendOrder() {
     '';
 
 
-  // --------------------------------------
-  // VALIDATION
-  // --------------------------------------
-
   if (!amount || !wallet) {
 
     message.textContent =
-      'Veuillez remplir le montant et l’adresse du portefeuille.';
+      'Veuillez remplir tous les champs.';
 
     return;
 
@@ -1486,9 +1594,51 @@ async function sendOrder() {
   }
 
 
-  // --------------------------------------
+  // ========================================
+  // CALCULER LES MONTANTS
+  // ========================================
+
+  let cryptoAmount;
+
+  let fiatAmount;
+
+  let rate;
+
+
+  if (type === 'buy') {
+
+    // Le client paie en FCFA
+    // et reçoit des USDT.
+
+    fiatAmount =
+      numericAmount;
+
+    rate =
+      BUY_RATE;
+
+    cryptoAmount =
+      numericAmount / BUY_RATE;
+
+  } else {
+
+    // Le client vend des USDT
+    // et reçoit des FCFA.
+
+    cryptoAmount =
+      numericAmount;
+
+    rate =
+      SELL_RATE;
+
+    fiatAmount =
+      numericAmount * SELL_RATE;
+
+  }
+
+
+  // ========================================
   // UTILISATEUR CONNECTÉ
-  // --------------------------------------
+  // ========================================
 
   let user;
 
@@ -1536,10 +1686,6 @@ async function sendOrder() {
   }
 
 
-  // --------------------------------------
-  // DÉSACTIVER BOUTON
-  // --------------------------------------
-
   submit.disabled =
     true;
 
@@ -1550,9 +1696,9 @@ async function sendOrder() {
 
   try {
 
-    // ------------------------------------
-    // RÉCUPÉRER / CRÉER LE PROFIL
-    // ------------------------------------
+    // ======================================
+    // RÉCUPÉRER LE PROFIL
+    // ======================================
 
     let userId;
 
@@ -1569,11 +1715,6 @@ async function sendOrder() {
 
 
     if (userError) {
-
-      console.error(
-        'Erreur recherche utilisateur :',
-        userError
-      );
 
       throw new Error(
         userError.message
@@ -1592,10 +1733,6 @@ async function sendOrder() {
 
     } else {
 
-      // ----------------------------------
-      // CRÉER PROFIL SI ABSENT
-      // ----------------------------------
-
       const newProfile =
         await createUserProfile(
           user
@@ -1608,9 +1745,9 @@ async function sendOrder() {
     }
 
 
-    // ------------------------------------
+    // ======================================
     // CRÉER LA COMMANDE
-    // ------------------------------------
+    // ======================================
 
     const {
       data: order,
@@ -1627,7 +1764,13 @@ async function sendOrder() {
             type,
 
           crypto_amount:
-            numericAmount,
+            cryptoAmount,
+
+          fiat_amount:
+            fiatAmount,
+
+          rate:
+            rate,
 
           network:
             network,
@@ -1645,12 +1788,6 @@ async function sendOrder() {
 
     if (orderError) {
 
-      console.error(
-        'Erreur création commande :',
-        orderError
-      );
-
-
       throw new Error(
         orderError.message
       );
@@ -1664,16 +1801,21 @@ async function sendOrder() {
     );
 
 
-    // ------------------------------------
-    // SUCCÈS
-    // ------------------------------------
+    // ======================================
+    // MESSAGE DE SUCCÈS
+    // ======================================
 
-    message.textContent =
-      `Demande ${
-        type === 'buy'
-          ? 'd’achat'
-          : 'de vente'
-      } envoyée avec succès : ${numericAmount} USDT (${network}).`;
+    if (type === 'buy') {
+
+      message.textContent =
+        `Demande d’achat envoyée avec succès : ${formatNumber(cryptoAmount, 6)} USDT pour ${formatNumber(fiatAmount, 0)} FCFA.`;
+
+    } else {
+
+      message.textContent =
+        `Demande de vente envoyée avec succès : ${formatNumber(cryptoAmount, 6)} USDT pour ${formatNumber(fiatAmount, 0)} FCFA.`;
+
+    }
 
 
     amountInput.value =
@@ -1683,6 +1825,8 @@ async function sendOrder() {
     walletInput.value =
       '';
 
+
+    updateCalculation();
 
   } catch (error) {
 
