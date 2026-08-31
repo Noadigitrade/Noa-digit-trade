@@ -1,134 +1,188 @@
 <!doctype html>
 <html lang="fr">
+
 <head>
+
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="NOA DIGIT TRADE - Achat et vente de USDT">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0"
+  >
+
+  <meta
+    name="description"
+    content="NOA DIGIT TRADE - Achat et vente de USDT"
+  >
+
   <title>NOA DIGIT TRADE</title>
 
   <style>
-    * { box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
     body {
       margin: 0;
-      font-family: Georgia, "Times New Roman", serif;
-      background: #f6f7fb;
-      color: #101828;
+      background: #f5f7fb;
+      color: #111827;
+      font-family:
+        Georgia,
+        "Times New Roman",
+        serif;
+      padding-bottom: 90px;
     }
-    button, input, select { font: inherit; }
-    button { cursor: pointer; }
-    .container { width: min(1100px, 92%); margin: auto; }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .container {
+      width: min(680px, 92%);
+      margin: auto;
+    }
+
+    /* ==============================
+       HEADER
+       ============================== */
 
     header {
       position: sticky;
       top: 0;
       z-index: 100;
-      background: white;
+      background: rgba(255,255,255,.95);
+      backdrop-filter: blur(12px);
       border-bottom: 1px solid #e5e7eb;
     }
+
     .header-inner {
-      min-height: 82px;
+      min-height: 76px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 20px;
-    }
-    .brand { font-size: 22px; letter-spacing: 1px; font-weight: 500; }
-    .account-btn {
-      border: 1px solid #101828;
-      background: white;
-      color: #101828;
-      border-radius: 12px;
-      padding: 13px 22px;
+      gap: 12px;
     }
 
-    .hero { padding: 70px 0 50px; }
+    .brand {
+      font-size: 20px;
+      letter-spacing: .8px;
+      font-weight: 600;
+    }
+
+    .account-btn {
+      border: 1px solid #111827;
+      background: white;
+      color: #111827;
+      border-radius: 14px;
+      padding: 11px 18px;
+      font-size: 15px;
+    }
+
+    /* ==============================
+       HERO
+       ============================== */
+
+    .hero {
+      padding: 32px 0 20px;
+    }
+
     .hero h1 {
       margin: 0;
-      font-size: clamp(45px, 8vw, 78px);
-      line-height: .95;
-      max-width: 750px;
+      font-size: 42px;
+      line-height: 1.05;
+      letter-spacing: -.8px;
     }
-    .hero p {
-      max-width: 700px;
-      font-size: 22px;
-      line-height: 1.7;
-      color: #667085;
-    }
-    .primary {
-      background: #101828;
-      color: white;
-      border: none;
-      border-radius: 14px;
-      padding: 16px 28px;
-    }
-    .primary:disabled { opacity: .65; cursor: not-allowed; }
-    .full { width: 100%; }
 
-    .hero-card {
-      margin-top: 40px;
-      min-height: 260px;
-      border-radius: 40px;
-      background: #101828;
-      color: white;
-      padding: 45px;
+    .hero p {
+      margin: 12px 0 20px;
+      color: #667085;
+      font-size: 18px;
+      line-height: 1.55;
+    }
+
+    .history-btn {
+      width: 48px;
+      height: 48px;
+      border: 1px solid #e4e7ec;
+      background: white;
+      border-radius: 15px;
+      font-size: 21px;
       display: flex;
-      flex-direction: column;
+      align-items: center;
       justify-content: center;
     }
-    .online {
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      background: #20c76a;
-      margin-bottom: 20px;
-    }
-    .hero-card h2 { margin: 0 0 10px; font-size: 28px; }
-    .hero-card p { margin: 0; color: #b8c0ce; font-size: 20px; }
 
-    .order-section {
-      margin: 30px 0 70px;
+    .hero-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 15px;
+    }
+
+    /* ==============================
+       EXCHANGE
+       ============================== */
+
+    .exchange-card {
       background: white;
       border: 1px solid #e5e7eb;
-      border-radius: 32px;
-      padding: 38px;
+      border-radius: 28px;
+      padding: 18px;
+      margin-top: 20px;
+      box-shadow: 0 8px 30px rgba(16,24,40,.05);
     }
-    .order-section h2 { font-size: 36px; margin-top: 0; }
+
     .tabs {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-bottom: 28px;
-    }
-    .tab {
-      padding: 16px;
-      border-radius: 14px;
-      border: 1px solid #d0d5dd;
-      background: white;
-      color: #101828;
-    }
-    .tab.active {
-      background: #101828;
-      color: white;
-      border-color: #101828;
+      gap: 6px;
+      background: #eef2f7;
+      padding: 5px;
+      border-radius: 16px;
+      margin-bottom: 18px;
     }
 
-    .field { margin-bottom: 22px; }
-    .field label {
-      display: block;
-      margin-bottom: 9px;
-      font-size: 18px;
+    .tab {
+      border: none;
+      background: transparent;
+      border-radius: 12px;
+      padding: 13px 8px;
+      color: #667085;
+      font-weight: 600;
+      font-size: 16px;
     }
-    .field input, .field select {
-      width: 100%;
-      padding: 17px;
-      border-radius: 14px;
-      border: 1px solid #d0d5dd;
+
+    .tab.active {
       background: white;
-      outline: none;
+      color: #111827;
+      box-shadow: 0 2px 8px rgba(16,24,40,.08);
     }
-    .field input:focus, .field select:focus {
-      border-color: #101828;
+
+    .exchange-label {
+      color: #667085;
+      font-size: 17px;
+      margin-bottom: 9px;
+    }
+
+    /* ==============================
+       PAYMENT
+       ============================== */
+
+    .payment-title {
+      color: #667085;
+      font-size: 17px;
+      margin: 18px 0 9px;
     }
 
     .payment-options {
@@ -136,74 +190,387 @@
       grid-template-columns: 1fr 1fr;
       gap: 10px;
     }
+
     .payment-option {
-      position: relative;
+      border: 1px solid #e4e7ec;
+      border-radius: 16px;
+      padding: 13px;
+      background: #fff;
       display: flex;
       align-items: center;
       gap: 10px;
-      min-height: 56px;
-      padding: 14px 16px;
-      border: 1px solid #d0d5dd;
-      border-radius: 14px;
-      background: white;
-      cursor: pointer;
+      transition: .2s;
     }
-    .payment-option:has(input:checked) {
-      border-color: #101828;
+
+    .payment-option.selected {
+      border-color: #111827;
       background: #f8fafc;
     }
+
     .payment-option input {
       width: 18px;
       height: 18px;
-      margin: 0;
-      accent-color: #101828;
+      accent-color: #111827;
+    }
+
+    .payment-name {
+      font-weight: 600;
+    }
+
+    /* ==============================
+       INPUT CARDS
+       ============================== */
+
+    .money-card {
+      border: 1px solid #e5e7eb;
+      border-radius: 22px;
+      padding: 18px;
+      margin-top: 12px;
+      background: #fff;
+    }
+
+    .money-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 13px;
+    }
+
+    .money-title {
+      color: #667085;
+      font-size: 18px;
+    }
+
+    .currency-badge {
+      padding: 8px 11px;
+      border-radius: 12px;
+      background: #f1f4f8;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .amount-input {
+      width: 100%;
+      border: none;
+      outline: none;
+      font-size: 36px;
+      font-weight: 600;
+      color: #111827;
+      background: transparent;
+    }
+
+    .amount-input::placeholder {
+      color: #c5cad3;
+    }
+
+    .amount-info {
+      margin-top: 8px;
+      color: #667085;
+      font-size: 14px;
+    }
+
+    /* ==============================
+       NETWORK
+       ============================== */
+
+    .network-box {
+      margin-top: 15px;
+    }
+
+    .network-box label {
+      display: block;
+      margin-bottom: 8px;
+      color: #667085;
+    }
+
+    .network-box select {
+      width: 100%;
+      padding: 15px;
+      border: 1px solid #d0d5dd;
+      border-radius: 15px;
+      background: white;
+      outline: none;
+    }
+
+    /* ==============================
+       CALCULATION
+       ============================== */
+
+    .swap-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 16px;
+      background: #111827;
+      color: white;
+      margin: 12px auto;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 24px;
     }
 
     .calculation {
-      margin: 24px 0;
-      padding: 25px;
-      border-radius: 20px;
+      margin-top: 15px;
       background: #f1f3f7;
-      border: 1px solid #e4e7ec;
+      border-radius: 20px;
+      padding: 17px;
     }
-    .calculation span {
+
+    .calculation-label {
+      color: #667085;
+      font-size: 16px;
+      margin-bottom: 5px;
+    }
+
+    #resultAmount {
+      display: block;
+      font-size: 30px;
+      font-weight: 700;
+      margin-bottom: 5px;
+    }
+
+    #resultDetail {
+      color: #667085;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    #rateText {
+      margin: 15px 0 0;
+      color: #475467;
+      font-size: 15px;
+    }
+
+    #minAmountText {
+      margin: 6px 0 0;
+      color: #667085;
+      font-size: 14px;
+    }
+
+    /* ==============================
+       WALLET
+       ============================== */
+
+    .wallet-box {
+      margin-top: 16px;
+    }
+
+    .wallet-box label {
       display: block;
       color: #667085;
-      font-size: 17px;
-      margin-bottom: 7px;
+      margin-bottom: 8px;
     }
-    .calculation strong {
-      display: block;
-      font-size: 34px;
-      margin-bottom: 7px;
-    }
-    .calculation small { color: #667085; line-height: 1.5; }
-    #rateText { margin: 0 0 20px; color: #475467; }
-    #msg { margin: 20px 0 0; line-height: 1.5; font-size: 17px; }
 
-    .info {
-      margin-top: 25px;
-      padding: 20px;
-      border-radius: 18px;
-      background: #f8fafc;
-      color: #475467;
-      line-height: 1.6;
+    .wallet-box input {
+      width: 100%;
+      padding: 15px;
+      border: 1px solid #d0d5dd;
+      border-radius: 15px;
+      outline: none;
+      background: white;
     }
-    .section-card {
+
+    /* ==============================
+       BUTTON
+       ============================== */
+
+    .primary {
+      width: 100%;
+      margin-top: 18px;
+      border: none;
+      border-radius: 17px;
+      padding: 17px;
+      background: #111827;
+      color: white;
+      font-weight: 600;
+      font-size: 17px;
+    }
+
+    .primary:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+    }
+
+    #msg {
+      min-height: 25px;
+      line-height: 1.5;
+      font-size: 15px;
+      margin: 14px 2px 0;
+    }
+
+    /* ==============================
+       ACTIVE ORDERS
+       ============================== */
+
+    .active-section {
+      margin-top: 35px;
+    }
+
+    .section-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 13px;
+    }
+
+    .section-heading h2 {
+      margin: 0;
+      font-size: 28px;
+    }
+
+    .section-heading span {
+      color: #667085;
+      font-size: 14px;
+    }
+
+    .order-card {
       background: white;
       border: 1px solid #e5e7eb;
-      border-radius: 28px;
-      padding: 35px;
-      margin-bottom: 25px;
+      border-radius: 22px;
+      padding: 18px;
+      margin-bottom: 12px;
     }
-    .section-number { font-size: 18px; margin-bottom: 15px; }
 
-    footer {
-      padding: 50px 0;
-      background: #101828;
-      color: white;
-      text-align: center;
+    .order-card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 14px;
     }
+
+    .order-type {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .order-dot {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .buy-dot {
+      background: #68b735;
+    }
+
+    .sell-dot {
+      background: #f59e0b;
+    }
+
+    .status {
+      background: #fff3c4;
+      color: #946200;
+      padding: 7px 11px;
+      border-radius: 20px;
+      font-size: 13px;
+    }
+
+    .status.approved {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .status.cancelled {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .amount-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 13px;
+    }
+
+    .amount-box {
+      background: #f8fafc;
+      border-radius: 15px;
+      padding: 13px;
+    }
+
+    .amount-box span {
+      display: block;
+      color: #667085;
+      font-size: 13px;
+      margin-bottom: 5px;
+    }
+
+    .amount-box strong {
+      font-size: 18px;
+    }
+
+    .order-meta {
+      color: #667085;
+      font-size: 14px;
+      line-height: 1.55;
+      margin-top: 5px;
+      overflow-wrap: anywhere;
+    }
+
+    .order-meta strong {
+      color: #111827;
+    }
+
+    .orders-empty {
+      color: #667085;
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 18px;
+      padding: 18px;
+    }
+
+    /* ==============================
+       BOTTOM NAV
+       ============================== */
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 500;
+      background: rgba(255,255,255,.96);
+      backdrop-filter: blur(14px);
+      border-top: 1px solid #e5e7eb;
+      padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+    }
+
+    .bottom-nav-inner {
+      width: min(680px, 100%);
+      margin: auto;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 5px;
+    }
+
+    .nav-item {
+      border: none;
+      background: transparent;
+      color: #98a2b3;
+      padding: 8px 4px;
+      border-radius: 13px;
+      font-size: 12px;
+    }
+
+    .nav-item.active {
+      color: #111827;
+      background: #f1f3f7;
+      font-weight: 600;
+    }
+
+    .nav-icon {
+      display: block;
+      font-size: 21px;
+      margin-bottom: 3px;
+    }
+
+    /* ==============================
+       AUTH MODAL
+       ============================== */
 
     .modal {
       position: fixed;
@@ -212,10 +579,10 @@
       display: none;
       align-items: center;
       justify-content: center;
-      padding: 20px;
+      padding: 18px;
       background: rgba(0,0,0,.58);
-      overflow-y: auto;
     }
+
     .modal-box {
       width: 100%;
       max-width: 430px;
@@ -223,40 +590,69 @@
       overflow-y: auto;
       background: white;
       border-radius: 25px;
-      padding: 30px;
+      padding: 25px;
       box-shadow: 0 20px 60px rgba(0,0,0,.25);
     }
-    .modal-box h2 { margin-top: 0; font-size: 32px; }
-    .auth-form { display: block; }
-    .auth-form[hidden] { display: none; }
-    .auth-field { margin-bottom: 16px; }
-    .auth-field label { display: block; margin-bottom: 7px; }
+
+    .modal-box h2 {
+      margin-top: 0;
+      font-size: 31px;
+    }
+
+    .auth-form[hidden] {
+      display: none;
+    }
+
+    .auth-field {
+      margin-bottom: 15px;
+    }
+
+    .auth-field label {
+      display: block;
+      margin-bottom: 7px;
+    }
+
     .auth-field input {
       width: 100%;
       padding: 14px;
       border: 1px solid #d0d5dd;
       border-radius: 12px;
+      outline: none;
     }
-    .password-wrap { position: relative; }
-    .password-wrap input { padding-right: 80px; }
+
+    .password-wrap {
+      position: relative;
+    }
+
+    .password-wrap input {
+      padding-right: 80px;
+    }
+
     .show-password {
       position: absolute;
-      right: 8px;
+      right: 7px;
       top: 50%;
       transform: translateY(-50%);
       border: none;
       background: transparent;
-      padding: 8px;
       color: #344054;
+      padding: 8px;
       font-size: 13px;
     }
-    .auth-switch { margin-top: 18px; text-align: center; }
+
+    .auth-switch {
+      margin-top: 17px;
+      text-align: center;
+      color: #667085;
+    }
+
     .auth-switch button {
       border: none;
-      background: none;
+      background: transparent;
       text-decoration: underline;
-      color: #101828;
+      color: #111827;
     }
+
     .close-btn {
       width: 100%;
       margin-top: 10px;
@@ -265,404 +661,697 @@
       border-radius: 12px;
       background: white;
     }
-    .message { min-height: 24px; line-height: 1.5; }
 
-    .account-divider {
-      height: 1px;
-      background: #eaecf0;
-      margin: 25px 0;
-    }
-    .orders-title { font-size: 24px; margin: 0 0 18px; }
-    .orders-empty {
-      padding: 18px;
-      border-radius: 14px;
-      background: #f8fafc;
-      color: #667085;
-    }
-    .order-card {
-      border: 1px solid #e4e7ec;
-      border-radius: 18px;
-      padding: 18px;
-      margin-bottom: 14px;
-    }
-    .order-card-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      margin-bottom: 15px;
-    }
-    .order-type {
-      display: flex;
-      align-items: center;
-      gap: 9px;
-      font-size: 18px;
-    }
-    .order-dot {
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      display: inline-block;
-    }
-    .buy-dot { background: #72bf44; }
-    .sell-dot { background: #f2994a; }
-    .status {
-      display: inline-block;
-      padding: 8px 11px;
-      border-radius: 999px;
-      background: #fff7d6;
-      color: #8a6500;
-      font-size: 14px;
-      white-space: nowrap;
-    }
-    .status.approved { background: #e9f8ef; color: #18794e; }
-    .status.cancelled { background: #fdecec; color: #b42318; }
-    .amount-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-bottom: 15px;
-    }
-    .amount-box {
-      padding: 14px;
-      border-radius: 14px;
-      background: #f8fafc;
-    }
-    .amount-box span {
-      display: block;
-      color: #667085;
-      font-size: 14px;
-      margin-bottom: 6px;
-    }
-    .amount-box strong { font-size: 20px; }
-    .order-meta {
-      margin: 8px 0;
+    .message {
+      min-height: 24px;
       line-height: 1.5;
-      overflow-wrap: anywhere;
-      color: #475467;
     }
-    .order-meta strong { color: #101828; }
 
-    @media (max-width: 600px) {
-      .header-inner { min-height: 72px; }
-      .brand { font-size: 18px; }
-      .account-btn { padding: 11px 15px; }
-      .hero { padding-top: 45px; }
-      .hero p { font-size: 18px; }
-      .hero-card { padding: 30px; border-radius: 30px; }
-      .order-section { padding: 25px; border-radius: 25px; }
-      .order-section h2 { font-size: 31px; }
-      .calculation strong { font-size: 28px; }
-      .payment-options { grid-template-columns: 1fr; }
-      .amount-grid { grid-template-columns: 1fr 1fr; }
-      .order-card-head { align-items: flex-start; }
+    /* ==============================
+       RESPONSIVE
+       ============================== */
+
+    @media (max-width: 520px) {
+
+      .brand {
+        font-size: 17px;
+      }
+
+      .account-btn {
+        padding: 10px 13px;
+      }
+
+      .hero h1 {
+        font-size: 37px;
+      }
+
+      .exchange-card {
+        padding: 14px;
+        border-radius: 23px;
+      }
+
+      .amount-input {
+        font-size: 32px;
+      }
+
+      .payment-options {
+        grid-template-columns: 1fr;
+      }
+
+      .section-heading h2 {
+        font-size: 25px;
+      }
+
     }
+
   </style>
+
 </head>
+
 
 <body>
 
+
+  <!-- HEADER -->
+
   <header>
+
     <div class="container header-inner">
-      <div class="brand">NOA DIGIT TRADE</div>
-      <button id="login" class="account-btn" type="button">Se connecter</button>
+
+      <div class="brand">
+        NOA DIGIT TRADE
+      </div>
+
+      <button
+        id="login"
+        class="account-btn"
+        type="button">
+        Se connecter
+      </button>
+
     </div>
+
   </header>
 
-  <main>
-    <section class="hero">
-      <div class="container">
-        <h1>USDT facilement.</h1>
-        <p>
-          Une interface simple et rapide
-          pour envoyer vos demandes
-          d’achat ou de vente d’USDT.
-        </p>
 
-        <button id="start" class="primary" type="button">
-          Commencer
+  <!-- CONTENU -->
+
+  <main class="container">
+
+
+    <!-- HERO -->
+
+    <section class="hero">
+
+      <div class="hero-top">
+
+        <div>
+
+          <h1>
+            Nouvel échange
+          </h1>
+
+          <p>
+            Achetez ou vendez vos USDT
+            simplement et rapidement.
+          </p>
+
+        </div>
+
+        <button
+          id="historyBtn"
+          class="history-btn"
+          type="button"
+          aria-label="Historique">
+          ↺
         </button>
 
-        <div class="hero-card">
-          <div class="online"></div>
-          <h2>Noa Digit Trade</h2>
-          <p>Service d’échange</p>
-        </div>
       </div>
+
     </section>
 
-    <section id="order" class="container order-section">
-      <h2>Nouvelle demande</h2>
+
+    <!-- ÉCHANGE -->
+
+    <section
+      id="order"
+      class="exchange-card">
+
+
+      <!-- ACHAT / VENTE -->
 
       <div class="tabs">
-        <button class="tab active" data-type="buy" type="button">
-          Acheter USDT
+
+        <button
+          class="tab active"
+          data-type="buy"
+          type="button">
+          Acheter
         </button>
-        <button class="tab" data-type="sell" type="button">
-          Vendre USDT
+
+        <button
+          class="tab"
+          data-type="sell"
+          type="button">
+          Vendre
         </button>
+
       </div>
 
-      <div class="field">
-        <label for="network">Réseau</label>
-        <select id="network">
-          <option value="BEP20">BEP20</option>
-          <option value="TRC20">TRC20</option>
-          <option value="ERC20">ERC20</option>
-        </select>
+
+      <!-- MOYEN DE PAIEMENT -->
+
+      <div>
+
+        <div class="payment-title">
+          Moyen de paiement mobile
+        </div>
+
+        <div class="payment-options">
+
+          <label class="payment-option">
+
+            <input
+              type="radio"
+              name="payment_method"
+              value="Orange Money">
+
+            <span class="payment-name">
+              Orange Money
+            </span>
+
+          </label>
+
+
+          <label class="payment-option">
+
+            <input
+              type="radio"
+              name="payment_method"
+              value="Moov Money">
+
+            <span class="payment-name">
+              Moov Money
+            </span>
+
+          </label>
+
+        </div>
+
       </div>
 
-      <div class="field">
-        <label id="amountLabel" for="amount">
-          Montant à payer (FCFA)
-        </label>
+
+      <!-- VOUS PAYEZ -->
+
+      <div class="money-card">
+
+        <div class="money-card-header">
+
+          <div class="money-title">
+            Vous payez
+          </div>
+
+          <div
+            id="inputCurrency"
+            class="currency-badge">
+            FCFA
+          </div>
+
+        </div>
+
         <input
           id="amount"
+          class="amount-input"
           type="number"
-          min="0"
+          min="2000"
           step="any"
-          placeholder="Ex. 10000"
-          autocomplete="off"
-        >
+          placeholder="0"
+          autocomplete="off">
+
+        <div
+          id="amountInfo"
+          class="amount-info">
+          Minimum : 2 000 FCFA
+        </div>
+
       </div>
+
+
+      <!-- TAUX -->
 
       <p id="rateText">
         Taux d'achat : 1 USDT = 600 FCFA
       </p>
 
-      <div id="calculation" class="calculation">
-        <span>Vous recevrez</span>
-        <strong id="resultAmount">0 USDT</strong>
-        <small id="resultDetail">1 USDT = 600 FCFA</small>
+
+      <p id="minAmountText">
+        Minimum : 2 000 FCFA
+      </p>
+
+
+      <!-- FLÈCHE -->
+
+      <div class="swap-icon">
+        ↕
       </div>
 
-      <!-- MOYEN DE PAIEMENT -->
-      <div class="field">
-        <label>Moyen de paiement mobile</label>
 
-        <div class="payment-options">
-          <label class="payment-option">
-            <input
-              type="radio"
-              name="payment_method"
-              value="Orange Money"
-            >
-            <span>Orange Money</span>
-          </label>
+      <!-- VOUS RECEVEZ -->
 
-          <label class="payment-option">
-            <input
-              type="radio"
-              name="payment_method"
-              value="Moov Money"
-            >
-            <span>Moov Money</span>
-          </label>
+      <div class="money-card">
+
+        <div class="money-card-header">
+
+          <div class="money-title">
+            Vous recevez
+          </div>
+
+          <div
+            id="outputCurrency"
+            class="currency-badge">
+            USDT
+          </div>
+
         </div>
+
+        <strong id="resultAmount">
+          0 USDT
+        </strong>
+
+        <div id="resultDetail">
+          1 USDT = 600 FCFA
+        </div>
+
       </div>
 
-      <div class="field">
-        <label id="walletLabel" for="wallet">
+
+      <!-- RÉSEAU -->
+
+      <div class="network-box">
+
+        <label for="network">
+          Réseau USDT
+        </label>
+
+        <select id="network">
+
+          <option value="BEP20">
+            BEP20
+          </option>
+
+          <option value="TRC20">
+            TRC20
+          </option>
+
+          <option value="ERC20">
+            ERC20
+          </option>
+
+        </select>
+
+      </div>
+
+
+      <!-- PORTEFEUILLE -->
+
+      <div class="wallet-box">
+
+        <label
+          id="walletLabel"
+          for="wallet">
           Adresse du portefeuille USDT
         </label>
+
         <input
           id="wallet"
           type="text"
           placeholder="Adresse USDT"
-          autocomplete="off"
-        >
+          autocomplete="off">
+
       </div>
 
-      <button id="submit" class="primary full" type="button">
+
+      <!-- ENVOI -->
+
+      <button
+        id="submit"
+        class="primary"
+        type="button">
+
         Envoyer la demande
+
       </button>
 
-      <p id="msg" class="message"></p>
 
-      <div class="info">
-        Votre demande sera enregistrée
-        avec le montant en FCFA,
-        le montant en USDT, le taux
-        appliqué et votre moyen de paiement.
-        <br><br>
-        Votre ordre sera traité après
-        validation par notre équipe.
-      </div>
+      <p
+        id="msg"
+        class="message">
+      </p>
+
     </section>
 
-    <section class="container">
-      <div class="section-card">
-        <div class="section-number">01</div>
-        <h2>Connexion</h2>
-        <p>Espace personnel pour chaque client.</p>
+
+    <!-- DEMANDES ACTIVES -->
+
+    <section
+      id="activeOrders"
+      class="active-section">
+
+      <div class="section-heading">
+
+        <h2>
+          Mes demandes
+        </h2>
+
+        <span>
+          Historique
+        </span>
+
       </div>
 
-      <div class="section-card">
-        <div class="section-number">02</div>
-        <h2>Demande</h2>
-        <p>
-          Choisissez votre opération,
-          indiquez le montant et envoyez
-          votre demande.
+      <div id="ordersPreview">
+
+        <p class="orders-empty">
+          Connectez-vous pour voir vos demandes.
         </p>
+
       </div>
 
-      <div class="section-card">
-        <div class="section-number">03</div>
-        <h2>Validation</h2>
-        <p>
-          Chaque demande est enregistrée
-          et reste en attente de validation.
-        </p>
-      </div>
     </section>
+
   </main>
 
-  <footer>
-    NOA DIGIT TRADE
-    <br><br>
-    Achat et vente de USDT
-  </footer>
 
-  <div id="authModal" class="modal" aria-hidden="true">
+  <!-- NAVIGATION BAS -->
+
+  <nav class="bottom-nav">
+
+    <div class="bottom-nav-inner">
+
+      <button
+        class="nav-item"
+        id="homeNav"
+        type="button">
+
+        <span class="nav-icon">
+          ⌂
+        </span>
+
+        Accueil
+
+      </button>
+
+
+      <button
+        class="nav-item active"
+        id="exchangeNav"
+        type="button">
+
+        <span class="nav-icon">
+          ⇄
+        </span>
+
+        Échange
+
+      </button>
+
+
+      <button
+        class="nav-item"
+        id="historyNav"
+        type="button">
+
+        <span class="nav-icon">
+          ◷
+        </span>
+
+        Demandes
+
+      </button>
+
+
+      <button
+        class="nav-item"
+        id="profileNav"
+        type="button">
+
+        <span class="nav-icon">
+          ◯
+        </span>
+
+        Profil
+
+      </button>
+
+    </div>
+
+  </nav>
+
+
+  <!-- MODAL AUTH -->
+
+  <div
+    id="authModal"
+    class="modal"
+    aria-hidden="true">
+
     <div class="modal-box">
-      <h2>Connexion</h2>
 
-      <div id="loginForm" class="auth-form">
+      <!-- CONNEXION -->
+
+      <div
+        id="loginForm"
+        class="auth-form">
+
+        <h2>
+          Connexion
+        </h2>
+
         <div class="auth-field">
-          <label for="loginEmail">Email</label>
+
+          <label for="loginEmail">
+            Email
+          </label>
+
           <input
             id="loginEmail"
             type="email"
             placeholder="Votre email"
-            autocomplete="email"
-          >
+            autocomplete="email">
+
         </div>
 
+
         <div class="auth-field">
-          <label for="loginPassword">Mot de passe</label>
+
+          <label for="loginPassword">
+            Mot de passe
+          </label>
+
           <div class="password-wrap">
+
             <input
               id="loginPassword"
               type="password"
               placeholder="Votre mot de passe"
-              autocomplete="current-password"
-            >
+              autocomplete="current-password">
+
             <button
               type="button"
               class="show-password"
               data-target="loginPassword">
               Afficher
             </button>
+
           </div>
+
         </div>
 
-        <button id="loginSubmit" type="button" class="primary full">
+
+        <button
+          id="loginSubmit"
+          type="button"
+          class="primary">
+
           Se connecter
+
         </button>
 
-        <p id="loginMessage" class="message"></p>
+
+        <p
+          id="loginMessage"
+          class="message">
+        </p>
+
 
         <div class="auth-switch">
+
           Pas encore de compte ?
-          <button id="showSignup" type="button">
+
+          <button
+            id="showSignup"
+            type="button">
             Créer un compte
           </button>
+
         </div>
+
       </div>
 
-      <div id="signupForm" class="auth-form" hidden>
-        <h2>Créer un compte</h2>
+
+      <!-- INSCRIPTION -->
+
+      <div
+        id="signupForm"
+        class="auth-form"
+        hidden>
+
+        <h2>
+          Créer un compte
+        </h2>
+
 
         <div class="auth-field">
-          <label for="signupEmail">Email</label>
+
+          <label for="signupEmail">
+            Email
+          </label>
+
           <input
             id="signupEmail"
             type="email"
             placeholder="Votre email"
-            autocomplete="email"
-          >
+            autocomplete="email">
+
         </div>
 
+
         <div class="auth-field">
-          <label for="signupPassword">Mot de passe</label>
+
+          <label for="signupPassword">
+            Mot de passe
+          </label>
+
           <div class="password-wrap">
+
             <input
               id="signupPassword"
               type="password"
               placeholder="6 caractères minimum"
-              autocomplete="new-password"
-            >
+              autocomplete="new-password">
+
             <button
               type="button"
               class="show-password"
               data-target="signupPassword">
               Afficher
             </button>
+
           </div>
+
         </div>
 
+
         <div class="auth-field">
+
           <label for="signupPasswordConfirm">
             Confirmer le mot de passe
           </label>
+
           <div class="password-wrap">
+
             <input
               id="signupPasswordConfirm"
               type="password"
               placeholder="Confirmez le mot de passe"
-              autocomplete="new-password"
-            >
+              autocomplete="new-password">
+
             <button
               type="button"
               class="show-password"
               data-target="signupPasswordConfirm">
               Afficher
             </button>
+
           </div>
+
         </div>
 
-        <button id="signupSubmit" type="button" class="primary full">
+
+        <button
+          id="signupSubmit"
+          type="button"
+          class="primary">
+
           Créer mon compte
+
         </button>
 
-        <p id="signupMessage" class="message"></p>
+
+        <p
+          id="signupMessage"
+          class="message">
+        </p>
+
 
         <div class="auth-switch">
+
           Déjà un compte ?
-          <button id="showLogin" type="button">
+
+          <button
+            id="showLogin"
+            type="button">
             Se connecter
           </button>
+
         </div>
+
       </div>
 
-      <button id="closeAuth" type="button" class="close-btn">
+
+      <button
+        id="closeAuth"
+        type="button"
+        class="close-btn">
+
         Fermer
+
       </button>
+
     </div>
+
   </div>
+
+
+  <!-- SUPABASE -->
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      document.querySelectorAll('.show-password').forEach(button => {
-        button.addEventListener('click', () => {
-          const input = document.getElementById(button.dataset.target);
-          if (!input) return;
 
-          if (input.type === 'password') {
-            input.type = 'text';
-            button.textContent = 'Masquer';
-          } else {
-            input.type = 'password';
-            button.textContent = 'Afficher';
+  <!-- AFFICHAGE MOT DE PASSE -->
+
+  <script>
+
+    document
+      .querySelectorAll('.show-password')
+      .forEach(button => {
+
+        button.addEventListener(
+          'click',
+          () => {
+
+            const input =
+              document.getElementById(
+                button.dataset.target
+              );
+
+            if (!input) return;
+
+            if (input.type === 'password') {
+
+              input.type = 'text';
+              button.textContent = 'Masquer';
+
+            } else {
+
+              input.type = 'password';
+              button.textContent = 'Afficher';
+
+            }
+
           }
-        });
+        );
+
       });
-    });
+
   </script>
 
+
+  <!-- APP -->
+
   <script src="app.js"></script>
+
+
 </body>
+
 </html>
