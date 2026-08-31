@@ -1,6 +1,6 @@
 // ============================================================
 // NOA DIGIT TRADE
-// APP.JS COMPLET - VERSION STABLE
+// APP.JS COMPLET - VERSION CORRIGÉE
 //
 // SUPABASE AUTH
 // PROFILES
@@ -8,6 +8,7 @@
 // HISTORIQUE
 // CONFIRMATION COMMANDE
 // ORANGE MONEY
+// PAIEMENTS
 // LITIGES
 // RLS
 // ADMIN / ROLE
@@ -23,6 +24,16 @@ const SUPABASE_URL =
 
 const SUPABASE_KEY =
   "sb_publishable_umIa4749av8722xus6aQHw_1nf8b-PC";
+
+
+if (
+  !window.supabase ||
+  typeof window.supabase.createClient !== "function"
+) {
+  console.error(
+    "Supabase JS n'est pas chargé."
+  );
+}
 
 
 const supabaseClient =
@@ -50,15 +61,22 @@ const CONFIG = {
   networks: {
 
     trc20: {
+
       name: "USDT TRC20",
+
       fee: 2
+
     },
 
-    // Clé interne conservée pour compatibilité
-    // avec la base de données
+
+    // Clé interne utilisée par la base
+    // pour représenter le réseau BEP20.
     bp20: {
+
       name: "USDT BEP20",
+
       fee: 0
+
     }
 
   },
@@ -113,29 +131,43 @@ function $(id) {
 // MESSAGE GLOBAL
 // ============================================================
 
-function showMessage(message, type = "info") {
+function showMessage(
+  message,
+  type = "info"
+) {
 
-  const box = $("appMessage");
+  const box =
+    $("appMessage");
 
-  if (!box) return;
+  if (!box) {
+
+    console.log(
+      `[${type}]`,
+      message
+    );
+
+    return;
+
+  }
+
 
   box.textContent =
     String(message || "");
 
+
   box.className =
     "app-message " + type;
-
-  box.id =
-    "appMessage";
 
 }
 
 
 function hideMessage() {
 
-  const box = $("appMessage");
+  const box =
+    $("appMessage");
 
   if (!box) return;
+
 
   box.textContent = "";
 
@@ -154,6 +186,7 @@ function formatNumber(value) {
   const number =
     Number(value) || 0;
 
+
   return number.toLocaleString(
     "fr-FR"
   );
@@ -161,12 +194,18 @@ function formatNumber(value) {
 }
 
 
-function formatDecimal(value, decimals = 6) {
+function formatDecimal(
+  value,
+  decimals = 6
+) {
 
   const number =
     Number(value) || 0;
 
-  return number.toFixed(decimals);
+
+  return number.toFixed(
+    decimals
+  );
 
 }
 
@@ -174,11 +213,15 @@ function formatDecimal(value, decimals = 6) {
 function formatDate(value) {
 
   if (!value) {
+
     return "-";
+
   }
+
 
   const date =
     new Date(value);
+
 
   if (
     Number.isNaN(
@@ -189,6 +232,7 @@ function formatDate(value) {
     return "-";
 
   }
+
 
   return date.toLocaleString(
     "fr-FR",
@@ -216,11 +260,26 @@ function normalizePhone(phone) {
 function escapeHtml(value) {
 
   return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+    .replace(
+      /&/g,
+      "&amp;"
+    )
+    .replace(
+      /</g,
+      "&lt;"
+    )
+    .replace(
+      />/g,
+      "&gt;"
+    )
+    .replace(
+      /"/g,
+      "&quot;"
+    )
+    .replace(
+      /'/g,
+      "&#039;"
+    );
 
 }
 
@@ -232,6 +291,7 @@ function getSupabaseErrorMessage(error) {
     return "Erreur inconnue.";
 
   }
+
 
   return (
     error.message ||
@@ -264,9 +324,11 @@ function showAuthPage() {
     ?.classList
     .add("active");
 
+
   $("appPage")
     ?.classList
     .remove("active");
+
 
   $("bottomNav")
     ?.classList
@@ -281,9 +343,11 @@ function showAppPage() {
     ?.classList
     .remove("active");
 
+
   $("appPage")
     ?.classList
     .add("active");
+
 
   $("bottomNav")
     ?.classList
@@ -306,9 +370,13 @@ function showSubPage(pageId) {
 
   pages.forEach(page => {
 
-    page.classList.add("hidden");
+    page.classList.add(
+      "hidden"
+    );
 
-    page.classList.remove("active");
+    page.classList.remove(
+      "active"
+    );
 
   });
 
@@ -319,9 +387,13 @@ function showSubPage(pageId) {
 
   if (target) {
 
-    target.classList.remove("hidden");
+    target.classList.remove(
+      "hidden"
+    );
 
-    target.classList.add("active");
+    target.classList.add(
+      "active"
+    );
 
   }
 
@@ -334,14 +406,19 @@ function showSubPage(pageId) {
 
   navButtons.forEach(button => {
 
-    button.classList.remove("active");
+    button.classList.remove(
+      "active"
+    );
 
 
     if (
-      button.dataset.page === pageId
+      button.dataset.page ===
+      pageId
     ) {
 
-      button.classList.add("active");
+      button.classList.add(
+        "active"
+      );
 
     }
 
@@ -386,13 +463,16 @@ function showLoginForm() {
     ?.classList
     .add("active");
 
+
   $("registerTab")
     ?.classList
     .remove("active");
 
+
   $("loginForm")
     ?.classList
     .add("active");
+
 
   $("registerForm")
     ?.classList
@@ -407,13 +487,16 @@ function showRegisterForm() {
     ?.classList
     .remove("active");
 
+
   $("registerTab")
     ?.classList
     .add("active");
 
+
   $("loginForm")
     ?.classList
     .remove("active");
+
 
   $("registerForm")
     ?.classList
@@ -530,7 +613,8 @@ async function registerUser(event) {
 
 
   if (
-    password !== confirmPassword
+    password !==
+    confirmPassword
   ) {
 
     showMessage(
@@ -544,7 +628,8 @@ async function registerUser(event) {
 
 
   if (
-    country !== "Burkina Faso"
+    country !==
+    "Burkina Faso"
   ) {
 
     showMessage(
@@ -595,11 +680,14 @@ async function registerUser(event) {
 
           data: {
 
-            full_name: name,
+            full_name:
+              name,
 
-            phone: phone,
+            phone:
+              phone,
 
-            country: country
+            country:
+              country
 
           }
 
@@ -641,7 +729,7 @@ async function registerUser(event) {
       if (!profile) {
 
         throw new Error(
-          "Le profil utilisateur n'a pas pu être créé."
+          "Le profil utilisateur n'a pas pu être chargé."
         );
 
       }
@@ -706,9 +794,15 @@ async function registerUser(event) {
 
 
     if (
-      lower.includes("already registered") ||
-      lower.includes("user already registered") ||
-      lower.includes("already exists")
+      lower.includes(
+        "already registered"
+      ) ||
+      lower.includes(
+        "user already registered"
+      ) ||
+      lower.includes(
+        "already exists"
+      )
     ) {
 
       message =
@@ -776,11 +870,9 @@ async function loadUserProfile() {
 
     if (!session?.user) {
 
-      currentUser =
-        null;
+      currentUser = null;
 
-      currentProfile =
-        null;
+      currentProfile = null;
 
       return null;
 
@@ -792,8 +884,7 @@ async function loadUserProfile() {
 
 
     // --------------------------------------------------------
-    // RECHERCHE PROFIL
-    // profiles.id = auth.users.id
+    // LECTURE PROFIL
     // --------------------------------------------------------
 
     const {
@@ -819,10 +910,6 @@ async function loadUserProfile() {
     }
 
 
-    // --------------------------------------------------------
-    // PROFIL EXISTANT
-    // --------------------------------------------------------
-
     if (profile) {
 
       currentProfile =
@@ -837,10 +924,15 @@ async function loadUserProfile() {
 
     // --------------------------------------------------------
     // PROFIL ABSENT
+    //
+    // On tente de le créer.
+    // Le trigger SQL peut également l'avoir
+    // créé automatiquement.
     // --------------------------------------------------------
 
     const metadata =
-      currentUser.user_metadata || {};
+      currentUser.user_metadata ||
+      {};
 
 
     const profilePayload = {
@@ -879,67 +971,65 @@ async function loadUserProfile() {
         .single();
 
 
-    if (insertError) {
+    if (!insertError) {
 
-      // ------------------------------------------------------
-      // Si le profil vient d'être créé ailleurs,
-      // on tente simplement de le relire.
-      // ------------------------------------------------------
+      currentProfile =
+        insertedProfile;
 
-      if (
-        insertError.code === "23505"
-      ) {
+      updateUserInterface();
 
-        const {
-          data: existingProfile,
-          error: reloadError
-        } =
-          await supabaseClient
-            .from("profiles")
-            .select(
-              "id,full_name,phone,country,role"
-            )
-            .eq(
-              "id",
-              currentUser.id
-            )
-            .maybeSingle();
-
-
-        if (reloadError) {
-
-          throw reloadError;
-
-        }
-
-
-        if (existingProfile) {
-
-          currentProfile =
-            existingProfile;
-
-          updateUserInterface();
-
-          return currentProfile;
-
-        }
-
-      }
-
-
-      throw insertError;
+      return currentProfile;
 
     }
 
 
-    currentProfile =
-      insertedProfile;
+    // --------------------------------------------------------
+    // PROFIL DÉJÀ CRÉÉ ENTRE-TEMPS
+    // --------------------------------------------------------
+
+    if (
+      insertError.code ===
+      "23505"
+    ) {
+
+      const {
+        data: existingProfile,
+        error: reloadError
+      } =
+        await supabaseClient
+          .from("profiles")
+          .select(
+            "id,full_name,phone,country,role"
+          )
+          .eq(
+            "id",
+            currentUser.id
+          )
+          .maybeSingle();
 
 
-    updateUserInterface();
+      if (reloadError) {
+
+        throw reloadError;
+
+      }
 
 
-    return currentProfile;
+      if (existingProfile) {
+
+        currentProfile =
+          existingProfile;
+
+        updateUserInterface();
+
+        return currentProfile;
+
+      }
+
+    }
+
+
+    throw insertError;
 
   }
 
@@ -987,7 +1077,8 @@ function updateUserInterface() {
 
 
   const metadata =
-    currentUser.user_metadata || {};
+    currentUser.user_metadata ||
+    {};
 
 
   const name =
@@ -1048,6 +1139,28 @@ function updateUserInterface() {
 
   }
 
+
+  // ----------------------------------------------------------
+  // ROLE ADMIN
+  // ----------------------------------------------------------
+
+  if (
+    $("adminBadge")
+  ) {
+
+    const isAdmin =
+      profile.role ===
+      "admin";
+
+    $("adminBadge")
+      .classList
+      .toggle(
+        "hidden",
+        !isAdmin
+      );
+
+  }
+
 }
 
 
@@ -1079,7 +1192,7 @@ async function initializeApplication() {
 
 
         // ----------------------------------------------------
-        // RECUPERATION SESSION SI NECESSAIRE
+        // SESSION
         // ----------------------------------------------------
 
         if (!currentUser) {
@@ -1088,7 +1201,8 @@ async function initializeApplication() {
             data,
             error
           } =
-            await supabaseClient.auth.getUser();
+            await supabaseClient.auth
+              .getUser();
 
 
           if (error) {
@@ -1108,26 +1222,33 @@ async function initializeApplication() {
         }
 
 
+        if (!currentUser) {
+
+          throw new Error(
+            "Aucun utilisateur connecté."
+          );
+
+        }
+
+
         // ----------------------------------------------------
         // PROFIL
         // ----------------------------------------------------
 
-        if (currentUser) {
-
-          const profile =
-            await loadUserProfile();
+        const profile =
+          await loadUserProfile();
 
 
-          if (!profile) {
+        if (!profile) {
 
-            throw new Error(
-              "Impossible de charger votre profil."
-            );
-
-          }
+          throw new Error(
+            "Impossible de charger votre profil."
+          );
 
         }
 
+
+        updateUserInterface();
 
         updateCalculator();
 
@@ -1371,7 +1492,8 @@ async function logoutUser() {
     const {
       error
     } =
-      await supabaseClient.auth.signOut();
+      await supabaseClient.auth
+        .signOut();
 
 
     if (error) {
@@ -1467,7 +1589,9 @@ function updateRatesUI() {
   if ($("homeTrc20Fee")) {
 
     $("homeTrc20Fee").textContent =
-      CONFIG.networks.trc20.fee;
+      CONFIG.networks
+        .trc20
+        .fee;
 
   }
 
@@ -1475,7 +1599,9 @@ function updateRatesUI() {
   if ($("homeBp20Fee")) {
 
     $("homeBp20Fee").textContent =
-      CONFIG.networks.bp20.fee;
+      CONFIG.networks
+        .bp20
+        .fee;
 
   }
 
@@ -1483,7 +1609,9 @@ function updateRatesUI() {
   if ($("trc20Fee")) {
 
     $("trc20Fee").textContent =
-      CONFIG.networks.trc20.fee;
+      CONFIG.networks
+        .trc20
+        .fee;
 
   }
 
@@ -1491,7 +1619,9 @@ function updateRatesUI() {
   if ($("bp20Fee")) {
 
     $("bp20Fee").textContent =
-      CONFIG.networks.bp20.fee;
+      CONFIG.networks
+        .bp20
+        .fee;
 
   }
 
@@ -1647,18 +1777,25 @@ function calculateOrder() {
     ) || 0;
 
 
-  let usdt = 0;
+  let cryptoAmount = 0;
 
   let result = 0;
 
 
   if (amount > 0) {
 
-    usdt =
+    cryptoAmount =
       amount / rate;
 
   }
 
+
+  // ----------------------------------------------------------
+  // ACHAT
+  //
+  // Le client paie des FCFA.
+  // Il reçoit les USDT après frais.
+  // ----------------------------------------------------------
 
   if (
     currentExchangeType === "buy"
@@ -1666,16 +1803,25 @@ function calculateOrder() {
 
     result =
       Math.max(
-        usdt - fee,
+        cryptoAmount - fee,
         0
       );
 
   }
 
+
+  // ----------------------------------------------------------
+  // VENTE
+  //
+  // Le client indique combien de FCFA
+  // il veut recevoir.
+  // Il doit envoyer l'équivalent en USDT.
+  // ----------------------------------------------------------
+
   else {
 
     result =
-      usdt;
+      cryptoAmount;
 
   }
 
@@ -1688,7 +1834,8 @@ function calculateOrder() {
 
     fee,
 
-    usdt,
+    usdt:
+      cryptoAmount,
 
     result
 
@@ -1734,7 +1881,7 @@ function updateCalculator() {
   if ($("summaryFee")) {
 
     $("summaryFee").textContent =
-      `${calc.fee} USDT`;
+      `${formatDecimal(calc.fee, 2)} USDT`;
 
   }
 
@@ -1790,7 +1937,8 @@ function getWalletAddress() {
 
     if (
       element &&
-      typeof element.value === "string" &&
+      typeof element.value ===
+        "string" &&
       element.value.trim()
     ) {
 
@@ -1849,8 +1997,10 @@ function reviewOrder() {
 
 
   if (
-    calc.amount < CONFIG.minOrder ||
-    calc.amount > CONFIG.maxOrder
+    calc.amount <
+      CONFIG.minOrder ||
+    calc.amount >
+      CONFIG.maxOrder
   ) {
 
     showMessage(
@@ -1894,6 +2044,14 @@ function reviewOrder() {
   }
 
 
+  // ----------------------------------------------------------
+  // COMMANDE EN MÉMOIRE
+  //
+  // crypto_amount = montant réellement échangé.
+  // Pour un achat : montant après frais.
+  // Pour une vente : montant USDT envoyé.
+  // ----------------------------------------------------------
+
   currentOrder = {
 
     type:
@@ -1903,6 +2061,9 @@ function reviewOrder() {
       calc.amount,
 
     crypto_amount:
+      calc.result,
+
+    gross_crypto_amount:
       calc.usdt,
 
     rate:
@@ -2047,8 +2208,9 @@ function renderConfirmation() {
       <span>Frais réseau</span>
 
       <strong>
-        ${Number(
-          currentOrder.fee
+        ${formatDecimal(
+          currentOrder.fee,
+          2
         )} USDT
       </strong>
 
@@ -2181,7 +2343,8 @@ async function placeOrder() {
       data: sessionData,
       error: sessionError
     } =
-      await supabaseClient.auth.getSession();
+      await supabaseClient.auth
+        .getSession();
 
 
     if (sessionError) {
@@ -2248,7 +2411,7 @@ async function placeOrder() {
 
 
     // --------------------------------------------------------
-    // VERIFICATION DES DONNEES
+    // VALIDATIONS
     // --------------------------------------------------------
 
     if (
@@ -2276,15 +2439,68 @@ async function placeOrder() {
     }
 
 
+    const fiatAmount =
+      Number(
+        currentOrder.fiat_amount
+      );
+
+
+    const cryptoAmount =
+      Number(
+        currentOrder.crypto_amount
+      );
+
+
+    const rate =
+      Number(
+        currentOrder.rate
+      );
+
+
+    const fee =
+      Number(
+        currentOrder.fee
+      );
+
+
     if (
-      Number(currentOrder.fiat_amount) <
+      !Number.isFinite(
+        fiatAmount
+      ) ||
+      fiatAmount <
         CONFIG.minOrder ||
-      Number(currentOrder.fiat_amount) >
+      fiatAmount >
         CONFIG.maxOrder
     ) {
 
       throw new Error(
         "Le montant de la commande est invalide."
+      );
+
+    }
+
+
+    if (
+      !Number.isFinite(
+        cryptoAmount
+      ) ||
+      cryptoAmount <= 0
+    ) {
+
+      throw new Error(
+        "Le montant USDT est invalide."
+      );
+
+    }
+
+
+    if (
+      !Number.isFinite(rate) ||
+      rate <= 0
+    ) {
+
+      throw new Error(
+        "Le taux de change est invalide."
       );
 
     }
@@ -2302,7 +2518,7 @@ async function placeOrder() {
 
 
     // --------------------------------------------------------
-    // PAYLOAD
+    // PAYLOAD ORDERS
     // --------------------------------------------------------
 
     const orderPayload = {
@@ -2314,24 +2530,16 @@ async function placeOrder() {
         currentOrder.type,
 
       fiat_amount:
-        Number(
-          currentOrder.fiat_amount
-        ),
+        fiatAmount,
 
       crypto_amount:
-        Number(
-          currentOrder.crypto_amount
-        ),
+        cryptoAmount,
 
       rate:
-        Number(
-          currentOrder.rate
-        ),
+        rate,
 
       fee:
-        Number(
-          currentOrder.fee
-        ),
+        fee,
 
       network:
         currentOrder.network,
@@ -2340,7 +2548,8 @@ async function placeOrder() {
         currentOrder.wallet_address,
 
       payment_method:
-        currentOrder.payment_method,
+        currentOrder.payment_method ||
+        CONFIG.payment.method,
 
       status:
         "pending"
@@ -2355,10 +2564,7 @@ async function placeOrder() {
 
 
     // --------------------------------------------------------
-    // INSERT
-    //
-    // IMPORTANT :
-    // user_id = auth.uid()
+    // INSERT COMMANDE
     // --------------------------------------------------------
 
     const {
@@ -2381,7 +2587,7 @@ async function placeOrder() {
     }
 
 
-    if (!data) {
+    if (!data?.id) {
 
       throw new Error(
         "La commande n'a pas été créée."
@@ -2500,6 +2706,14 @@ function renderPaymentPage() {
 
   }
 
+
+  if ($("paymentMethod")) {
+
+    $("paymentMethod").textContent =
+      "Orange Money";
+
+  }
+
 }
 
 
@@ -2568,7 +2782,8 @@ async function declarePayment() {
       data: sessionData,
       error: sessionError
     } =
-      await supabaseClient.auth.getSession();
+      await supabaseClient.auth
+        .getSession();
 
 
     if (sessionError) {
@@ -2578,7 +2793,11 @@ async function declarePayment() {
     }
 
 
-    if (!sessionData?.session?.user) {
+    const session =
+      sessionData?.session;
+
+
+    if (!session?.user) {
 
       throw new Error(
         "Votre session a expiré."
@@ -2588,11 +2807,14 @@ async function declarePayment() {
 
 
     currentUser =
-      sessionData.session.user;
+      session.user;
 
 
     // --------------------------------------------------------
-    // RPC
+    // RPC SUPABASE
+    //
+    // La fonction SQL vérifie que la commande
+    // appartient bien à l'utilisateur connecté.
     // --------------------------------------------------------
 
     const {
@@ -2620,6 +2842,10 @@ async function declarePayment() {
       data
     );
 
+
+    // --------------------------------------------------------
+    // RECUPERATION DU NOUVEAU STATUT
+    // --------------------------------------------------------
 
     if (
       data &&
@@ -2740,14 +2966,15 @@ async function loadOrderHistory() {
   try {
 
     // --------------------------------------------------------
-    // Vérification session
+    // SESSION
     // --------------------------------------------------------
 
     const {
       data: sessionData,
       error: sessionError
     } =
-      await supabaseClient.auth.getSession();
+      await supabaseClient.auth
+        .getSession();
 
 
     if (sessionError) {
@@ -2757,13 +2984,15 @@ async function loadOrderHistory() {
     }
 
 
-    if (!sessionData?.session?.user) {
+    const session =
+      sessionData?.session;
 
-      currentUser =
-        null;
 
-      currentProfile =
-        null;
+    if (!session?.user) {
+
+      currentUser = null;
+
+      currentProfile = null;
 
 
       throw new Error(
@@ -2774,11 +3003,11 @@ async function loadOrderHistory() {
 
 
     currentUser =
-      sessionData.session.user;
+      session.user;
 
 
     // --------------------------------------------------------
-    // Profil
+    // PROFIL
     // --------------------------------------------------------
 
     if (!currentProfile) {
@@ -2798,9 +3027,7 @@ async function loadOrderHistory() {
 
 
     // --------------------------------------------------------
-    // ORDERS
-    //
-    // On filtre directement par auth user.
+    // COMMANDES
     // --------------------------------------------------------
 
     const {
@@ -2993,7 +3220,7 @@ function renderOrderCard(order) {
 
 
 // ============================================================
-// STATUT
+// STATUT COMMANDE
 // ============================================================
 
 function getStatusLabel(status) {
@@ -3223,6 +3450,20 @@ async function submitDispute(event) {
   }
 
 
+  if (
+    !isValidUUID(orderId)
+  ) {
+
+    showMessage(
+      "Identifiant de commande invalide.",
+      "error"
+    );
+
+    return;
+
+  }
+
+
   const button =
     event.submitter ||
     $("disputeForm")
@@ -3246,6 +3487,38 @@ async function submitDispute(event) {
 
 
   try {
+
+    // --------------------------------------------------------
+    // SESSION
+    // --------------------------------------------------------
+
+    const {
+      data: sessionData,
+      error: sessionError
+    } =
+      await supabaseClient.auth
+        .getSession();
+
+
+    if (sessionError) {
+
+      throw sessionError;
+
+    }
+
+
+    if (!sessionData?.session?.user) {
+
+      throw new Error(
+        "Votre session a expiré."
+      );
+
+    }
+
+
+    currentUser =
+      sessionData.session.user;
+
 
     // --------------------------------------------------------
     // PROFIL
@@ -3876,7 +4149,8 @@ async function checkExistingSession() {
       data,
       error
     } =
-      await supabaseClient.auth.getSession();
+      await supabaseClient.auth
+        .getSession();
 
 
     if (error) {
@@ -3911,6 +4185,8 @@ async function checkExistingSession() {
 
       showAuthPage();
 
+      showLoginForm();
+
     }
 
   }
@@ -3931,6 +4207,8 @@ async function checkExistingSession() {
 
 
     showAuthPage();
+
+    showLoginForm();
 
 
     showMessage(
@@ -3975,7 +4253,8 @@ function setupAuthListener() {
         // ----------------------------------------------------
 
         if (
-          event === "SIGNED_OUT"
+          event ===
+          "SIGNED_OUT"
         ) {
 
           currentUser =
@@ -3990,6 +4269,8 @@ function setupAuthListener() {
 
           showAuthPage();
 
+          showLoginForm();
+
 
           return;
 
@@ -4001,7 +4282,8 @@ function setupAuthListener() {
         // ----------------------------------------------------
 
         if (
-          event === "SIGNED_IN" &&
+          event ===
+            "SIGNED_IN" &&
           session?.user
         ) {
 
@@ -4029,13 +4311,31 @@ function setupAuthListener() {
         // ----------------------------------------------------
 
         if (
-          event === "TOKEN_REFRESHED" &&
+          event ===
+            "TOKEN_REFRESHED" &&
           session?.user
         ) {
 
           currentUser =
             session.user;
 
+          return;
+
+        }
+
+
+        // ----------------------------------------------------
+        // USER UPDATED
+        // ----------------------------------------------------
+
+        if (
+          event ===
+            "USER_UPDATED" &&
+          session?.user
+        ) {
+
+          currentUser =
+            session.user;
 
           return;
 
