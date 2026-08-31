@@ -1,410 +1,835 @@
-<!doctype html>
-<html lang="fr">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+// =====================================
+// NOA DIGIT TRADE
+// APPLICATION + SUPABASE AUTH
+// =====================================
 
-  <title>Noa Digit Trade</title>
+const SUPABASE_URL =
+  'https://vowafwsvrjpkhkocptih.supabase.co';
 
-  <link rel="stylesheet" href="styles.css">
-</head>
+const SUPABASE_KEY =
+  'sb_publishable_umIa4749av8722xus6aQHw_1nf8b-PC';
 
-<body>
 
-<header>
+// =====================================
+// CLIENT SUPABASE
+// =====================================
 
-  <div class="brand">
-    NOA <span>DIGIT TRADE</span>
-  </div>
+const supabaseClient =
+  window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+  );
 
-  <button id="login" type="button">
-    Se connecter
-  </button>
 
-</header>
+// =====================================
+// VARIABLES
+// =====================================
 
+let type = 'buy';
 
-<main>
 
-  <!-- ========================= -->
-  <!-- HERO -->
-  <!-- ========================= -->
+// =====================================
+// ATTENDRE LE CHARGEMENT
+// =====================================
 
-  <section class="hero">
+document.addEventListener('DOMContentLoaded', () => {
 
-    <div>
+  // ===================================
+  // ÉLÉMENTS AUTHENTIFICATION
+  // ===================================
 
-      <small>ÉCHANGE DIGITAL SIMPLE</small>
+  const authModal =
+    document.getElementById('authModal');
 
-      <h1>
-        Achetez ou vendez vos USDT facilement.
-      </h1>
+  const closeAuth =
+    document.getElementById('closeAuth');
 
-      <p>
-        Une interface simple et rapide pour envoyer
-        vos demandes d'achat ou de vente d'USDT.
-      </p>
+  const login =
+    document.getElementById('login');
 
-      <button class="primary" id="start" type="button">
-        Commencer
-      </button>
+  const loginForm =
+    document.getElementById('loginForm');
 
-    </div>
+  const signupForm =
+    document.getElementById('signupForm');
 
+  const showSignup =
+    document.getElementById('showSignup');
 
-    <div class="card">
+  const showLogin =
+    document.getElementById('showLogin');
 
-      <i></i>
+  const loginSubmit =
+    document.getElementById('loginSubmit');
 
-      <b>Noa Digit Trade</b>
+  const signupSubmit =
+    document.getElementById('signupSubmit');
 
-      <span>Service d'échange</span>
+  const loginMessage =
+    document.getElementById('loginMessage');
 
-    </div>
+  const signupMessage =
+    document.getElementById('signupMessage');
 
-  </section>
 
+  // ===================================
+  // OUVRIR FENÊTRE CONNEXION
+  // ===================================
 
+  if (login) {
 
-  <!-- ========================= -->
-  <!-- FORMULAIRE DE COMMANDE -->
-  <!-- ========================= -->
+    login.addEventListener('click', () => {
 
-  <section id="order" class="panel">
+      authModal.style.display = 'flex';
+      authModal.setAttribute(
+        'aria-hidden',
+        'false'
+      );
 
-    <h2>Nouvelle demande</h2>
+      loginForm.hidden = false;
+      signupForm.hidden = true;
 
+      loginMessage.textContent = '';
+      signupMessage.textContent = '';
 
-    <div class="tabs">
+    });
 
-      <button
-        class="tab active"
-        data-type="buy"
-        type="button">
-        Acheter USDT
-      </button>
+  }
 
-      <button
-        class="tab"
-        data-type="sell"
-        type="button">
-        Vendre USDT
-      </button>
 
-    </div>
+  // ===================================
+  // FERMER FENÊTRE
+  // ===================================
 
+  if (closeAuth) {
 
-    <label for="network">
-      Réseau
-    </label>
+    closeAuth.addEventListener('click', () => {
 
-    <select id="network">
+      authModal.style.display = 'none';
 
-      <option value="BEP20">
-        BEP20
-      </option>
+      authModal.setAttribute(
+        'aria-hidden',
+        'true'
+      );
 
-      <option value="TRC20">
-        TRC20
-      </option>
+    });
 
-      <option value="ERC20">
-        ERC20
-      </option>
+  }
 
-    </select>
 
+  // Fermer en cliquant à l'extérieur
 
-    <label for="amount">
-      Montant (USDT)
-    </label>
+  if (authModal) {
 
-    <input
-      id="amount"
-      type="number"
-      min="1"
-      step="0.01"
-      placeholder="Ex. 100"
-      autocomplete="off"
-    >
+    authModal.addEventListener('click', (event) => {
 
+      if (event.target === authModal) {
 
-    <label for="wallet">
-      Adresse du portefeuille
-    </label>
+        authModal.style.display = 'none';
 
-    <input
-      id="wallet"
-      type="text"
-      placeholder="Adresse USDT"
-      autocomplete="off"
-    >
+        authModal.setAttribute(
+          'aria-hidden',
+          'true'
+        );
 
+      }
 
-    <button
-      class="primary full"
-      id="submit"
-      type="button">
-      Envoyer la demande
-    </button>
+    });
 
+  }
 
-    <p id="msg" role="status"></p>
 
-  </section>
+  // ===================================
+  // AFFICHER INSCRIPTION
+  // ===================================
 
+  if (showSignup) {
 
+    showSignup.addEventListener('click', () => {
 
-  <!-- ========================= -->
-  <!-- FONCTIONNEMENT -->
-  <!-- ========================= -->
+      loginForm.hidden = true;
+      signupForm.hidden = false;
 
-  <section class="features">
+      loginMessage.textContent = '';
+      signupMessage.textContent = '';
 
-    <div>
+    });
 
-      <b>01</b>
+  }
 
-      <h3>
-        Connexion
-      </h3>
 
-      <p>
-        Espace personnel pour chaque client.
-      </p>
+  // ===================================
+  // AFFICHER CONNEXION
+  // ===================================
 
-    </div>
+  if (showLogin) {
 
+    showLogin.addEventListener('click', () => {
 
-    <div>
+      signupForm.hidden = true;
+      loginForm.hidden = false;
 
-      <b>02</b>
+      loginMessage.textContent = '';
+      signupMessage.textContent = '';
 
-      <h3>
-        Demande
-      </h3>
+    });
 
-      <p>
-        Achat ou vente avec le réseau choisi.
-      </p>
+  }
 
-    </div>
 
+  // ===================================
+  // INSCRIPTION
+  // ===================================
 
-    <div>
+  if (signupSubmit) {
 
-      <b>03</b>
+    signupSubmit.addEventListener(
+      'click',
+      async () => {
 
-      <h3>
-        Validation
-      </h3>
+        const email =
+          document
+            .getElementById('signupEmail')
+            .value
+            .trim();
 
-      <p>
-        Traitement depuis l'espace administrateur.
-      </p>
+        const password =
+          document
+            .getElementById('signupPassword')
+            .value;
 
-    </div>
+        const passwordConfirm =
+          document
+            .getElementById('signupPasswordConfirm')
+            .value;
 
-  </section>
 
-</main>
+        signupMessage.textContent = '';
 
 
+        // Vérifications
 
-<!-- ========================= -->
-<!-- FENÊTRE AUTHENTIFICATION -->
-<!-- ========================= -->
+        if (!email || !password || !passwordConfirm) {
 
-<div
-  id="authModal"
-  class="modal"
-  aria-hidden="true">
+          signupMessage.textContent =
+            'Veuillez remplir tous les champs.';
 
-  <div class="modal-content">
+          return;
 
-    <button
-      id="closeAuth"
-      class="close"
-      type="button"
-      aria-label="Fermer">
-      ×
-    </button>
+        }
 
 
-    <!-- CONNEXION -->
+        if (password.length < 6) {
 
-    <div id="loginForm">
+          signupMessage.textContent =
+            'Le mot de passe doit contenir au moins 6 caractères.';
 
-      <h2>
-        Se connecter
-      </h2>
+          return;
 
-      <p class="auth-subtitle">
-        Accédez à votre espace personnel.
-      </p>
+        }
 
 
-      <label for="loginEmail">
-        Email
-      </label>
+        if (password !== passwordConfirm) {
 
-      <input
-        id="loginEmail"
-        type="email"
-        placeholder="Votre adresse email"
-        autocomplete="email"
-      >
+          signupMessage.textContent =
+            'Les mots de passe ne correspondent pas.';
 
+          return;
 
-      <label for="loginPassword">
-        Mot de passe
-      </label>
+        }
 
-      <input
-        id="loginPassword"
-        type="password"
-        placeholder="Votre mot de passe"
-        autocomplete="current-password"
-      >
 
+        signupSubmit.disabled = true;
 
-      <button
-        id="loginSubmit"
-        class="primary full"
-        type="button">
-        Se connecter
-      </button>
+        signupSubmit.textContent =
+          'Création en cours...';
 
 
-      <p
-        id="loginMessage"
-        class="auth-message"
-        role="status">
-      </p>
+        try {
 
+          const {
+            data,
+            error
+          } =
+            await supabaseClient.auth.signUp({
 
-      <p class="switch-auth">
+              email: email,
 
-        Vous n'avez pas encore de compte ?
+              password: password
 
-        <button
-          id="showSignup"
-          type="button">
-          Créer un compte
-        </button>
+            });
 
-      </p>
 
-    </div>
+          if (error) {
 
+            throw error;
 
+          }
 
-    <!-- INSCRIPTION -->
 
-    <div
-      id="signupForm"
-      hidden>
+          console.log(
+            'Compte créé :',
+            data
+          );
 
-      <h2>
-        Créer un compte
-      </h2>
 
-      <p class="auth-subtitle">
-        Créez votre compte Noa Digit Trade.
-      </p>
+          signupMessage.textContent =
+            'Compte créé avec succès. Vérifiez votre email pour confirmer votre compte.';
 
 
-      <label for="signupEmail">
-        Email
-      </label>
+          document
+            .getElementById('signupEmail')
+            .value = '';
 
-      <input
-        id="signupEmail"
-        type="email"
-        placeholder="Votre adresse email"
-        autocomplete="email"
-      >
+          document
+            .getElementById('signupPassword')
+            .value = '';
 
+          document
+            .getElementById('signupPasswordConfirm')
+            .value = '';
 
-      <label for="signupPassword">
-        Mot de passe
-      </label>
 
-      <input
-        id="signupPassword"
-        type="password"
-        placeholder="Minimum 6 caractères"
-        autocomplete="new-password"
-      >
+        } catch (error) {
 
+          console.error(
+            'Erreur inscription :',
+            error
+          );
 
-      <label for="signupPasswordConfirm">
-        Confirmer le mot de passe
-      </label>
+          signupMessage.textContent =
+            'Erreur : ' + error.message;
 
-      <input
-        id="signupPasswordConfirm"
-        type="password"
-        placeholder="Confirmez votre mot de passe"
-        autocomplete="new-password"
-      >
+        } finally {
 
+          signupSubmit.disabled = false;
 
-      <button
-        id="signupSubmit"
-        class="primary full"
-        type="button">
-        Créer mon compte
-      </button>
+          signupSubmit.textContent =
+            'Créer mon compte';
 
+        }
 
-      <p
-        id="signupMessage"
-        class="auth-message"
-        role="status">
-      </p>
+      }
+    );
 
+  }
 
-      <p class="switch-auth">
 
-        Vous avez déjà un compte ?
+  // ===================================
+  // CONNEXION
+  // ===================================
 
-        <button
-          id="showLogin"
-          type="button">
-          Se connecter
-        </button>
+  if (loginSubmit) {
 
-      </p>
+    loginSubmit.addEventListener(
+      'click',
+      async () => {
 
-    </div>
+        const email =
+          document
+            .getElementById('loginEmail')
+            .value
+            .trim();
 
-  </div>
+        const password =
+          document
+            .getElementById('loginPassword')
+            .value;
 
-</div>
 
+        loginMessage.textContent = '';
 
 
-<footer>
+        if (!email || !password) {
 
-  © 2026 Noa Digit Trade
+          loginMessage.textContent =
+            'Veuillez entrer votre email et votre mot de passe.';
 
-</footer>
+          return;
 
+        }
 
 
-<!-- ========================= -->
-<!-- SUPABASE -->
-<!-- ========================= -->
+        loginSubmit.disabled = true;
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+        loginSubmit.textContent =
+          'Connexion...';
 
 
-<!-- ========================= -->
-<!-- APPLICATION -->
-<!-- ========================= -->
+        try {
 
-<script src="app.js"></script>
+          const {
+            data,
+            error
+          } =
+            await supabaseClient.auth.signInWithPassword({
 
-</body>
-</html>
+              email: email,
+
+              password: password
+
+            });
+
+
+          if (error) {
+
+            throw error;
+
+          }
+
+
+          console.log(
+            'Utilisateur connecté :',
+            data
+          );
+
+
+          loginMessage.textContent =
+            'Connexion réussie.';
+
+
+          setTimeout(() => {
+
+            authModal.style.display = 'none';
+
+            authModal.setAttribute(
+              'aria-hidden',
+              'true'
+            );
+
+          }, 800);
+
+
+          updateLoginButton(
+            data.user
+          );
+
+
+        } catch (error) {
+
+          console.error(
+            'Erreur connexion :',
+            error
+          );
+
+          loginMessage.textContent =
+            'Erreur : ' + error.message;
+
+        } finally {
+
+          loginSubmit.disabled = false;
+
+          loginSubmit.textContent =
+            'Se connecter';
+
+        }
+
+      }
+    );
+
+  }
+
+
+  // ===================================
+  // ÉTAT DE CONNEXION
+  // ===================================
+
+  async function checkUser() {
+
+    const {
+      data,
+      error
+    } =
+      await supabaseClient.auth.getUser();
+
+
+    if (error) {
+
+      console.log(
+        'Aucun utilisateur connecté.'
+      );
+
+      return;
+
+    }
+
+
+    if (data.user) {
+
+      updateLoginButton(
+        data.user
+      );
+
+    }
+
+  }
+
+
+  // ===================================
+  // BOUTON CONNEXION / DÉCONNEXION
+  // ===================================
+
+  function updateLoginButton(user) {
+
+    if (!login) {
+      return;
+    }
+
+
+    if (user) {
+
+      login.textContent =
+        'Se déconnecter';
+
+
+      login.onclick = async () => {
+
+        const {
+          error
+        } =
+          await supabaseClient.auth.signOut();
+
+
+        if (error) {
+
+          console.error(
+            error
+          );
+
+          return;
+
+        }
+
+
+        login.textContent =
+          'Se connecter';
+
+        alert(
+          'Vous êtes déconnecté.'
+        );
+
+      };
+
+    } else {
+
+      login.textContent =
+        'Se connecter';
+
+    }
+
+  }
+
+
+  checkUser();
+
+
+  // ===================================
+  // ONGLET ACHETER / VENDRE
+  // ===================================
+
+  document
+    .querySelectorAll('.tab')
+    .forEach(button => {
+
+      button.addEventListener(
+        'click',
+        () => {
+
+          document
+            .querySelectorAll('.tab')
+            .forEach(item => {
+
+              item.classList.remove(
+                'active'
+              );
+
+            });
+
+
+          button.classList.add(
+            'active'
+          );
+
+
+          type =
+            button.dataset.type;
+
+        }
+      );
+
+    });
+
+
+  // ===================================
+  // BOUTON COMMENCER
+  // ===================================
+
+  const start =
+    document.getElementById('start');
+
+
+  if (start) {
+
+    start.addEventListener(
+      'click',
+      () => {
+
+        const order =
+          document.getElementById('order');
+
+
+        if (order) {
+
+          order.scrollIntoView({
+
+            behavior: 'smooth',
+
+            block: 'start'
+
+          });
+
+        }
+
+      }
+    );
+
+  }
+
+
+  // ===================================
+  // ENVOYER UNE COMMANDE
+  // ===================================
+
+  const submit =
+    document.getElementById('submit');
+
+
+  if (submit) {
+
+    submit.addEventListener(
+      'click',
+      async () => {
+
+        const amount =
+          document
+            .getElementById('amount')
+            .value
+            .trim();
+
+
+        const wallet =
+          document
+            .getElementById('wallet')
+            .value
+            .trim();
+
+
+        const network =
+          document
+            .getElementById('network')
+            .value;
+
+
+        const message =
+          document.getElementById('msg');
+
+
+        message.textContent = '';
+
+
+        // Vérification
+
+        if (!amount || !wallet) {
+
+          message.textContent =
+            'Veuillez remplir le montant et l’adresse du portefeuille.';
+
+          return;
+
+        }
+
+
+        if (Number(amount) <= 0) {
+
+          message.textContent =
+            'Le montant doit être supérieur à 0.';
+
+          return;
+
+        }
+
+
+        // Vérifier utilisateur
+
+        const {
+          data: userData
+        } =
+          await supabaseClient.auth.getUser();
+
+
+        const user =
+          userData.user;
+
+
+        if (!user) {
+
+          message.textContent =
+            'Veuillez vous connecter avant d’envoyer une demande.';
+
+          authModal.style.display =
+            'flex';
+
+          authModal.setAttribute(
+            'aria-hidden',
+            'false'
+          );
+
+          loginForm.hidden = false;
+          signupForm.hidden = true;
+
+          return;
+
+        }
+
+
+        submit.disabled = true;
+
+        submit.textContent =
+          'Envoi en cours...';
+
+
+        try {
+
+          // =================================
+          // CRÉER LA COMMANDE
+          // =================================
+
+          const response =
+            await fetch(
+
+              `${SUPABASE_URL}/rest/v1/orders`,
+
+              {
+
+                method: 'POST',
+
+                headers: {
+
+                  'apikey':
+                    SUPABASE_KEY,
+
+                  'Authorization':
+                    `Bearer ${SUPABASE_KEY}`,
+
+                  'Content-Type':
+                    'application/json',
+
+                  'Prefer':
+                    'return=minimal'
+
+                },
+
+
+                body:
+                  JSON.stringify({
+
+                    type:
+                      type,
+
+                    crypto_amount:
+                      Number(amount),
+
+                    network:
+                      network,
+
+                    wallet_address:
+                      wallet,
+
+                    status:
+                      'pending'
+
+                  })
+
+              }
+
+            );
+
+
+          // =================================
+          // ERREUR SUPABASE
+          // =================================
+
+          if (!response.ok) {
+
+            const errorText =
+              await response.text();
+
+
+            console.error(
+              'Erreur Supabase :',
+              errorText
+            );
+
+
+            throw new Error(
+              errorText ||
+              'Erreur lors de la création de la commande.'
+            );
+
+          }
+
+
+          // =================================
+          // SUCCÈS
+          // =================================
+
+          console.log(
+            'Commande créée avec succès'
+          );
+
+
+          message.textContent =
+            `Demande ${
+              type === 'buy'
+                ? 'd’achat'
+                : 'de vente'
+            } envoyée avec succès : ${amount} USDT (${network}).`;
+
+
+          document
+            .getElementById('amount')
+            .value = '';
+
+
+          document
+            .getElementById('wallet')
+            .value = '';
+
+
+        } catch (error) {
+
+          console.error(
+            'Erreur commande :',
+            error
+          );
+
+
+          message.textContent =
+            'Erreur : ' +
+            error.message;
+
+        } finally {
+
+          submit.disabled = false;
+
+          submit.textContent =
+            'Envoyer la demande';
+
+        }
+
+      }
+    );
+
+  }
+
+});
