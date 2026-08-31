@@ -2,7 +2,6 @@
 <html lang="fr">
 
 <head>
-
   <meta charset="utf-8">
 
   <meta
@@ -16,360 +15,344 @@
     rel="stylesheet"
     href="styles.css"
   >
-
 </head>
 
 
 <body>
 
 
-  <!-- ================================= -->
-  <!-- EN-TÊTE -->
-  <!-- ================================= -->
+<!-- ========================================= -->
+<!-- EN-TÊTE -->
+<!-- ========================================= -->
 
-  <header>
+<header>
 
-    <div class="brand">
-      NOA <span>DIGIT TRADE</span>
+  <div class="brand">
+    NOA <span>DIGIT TRADE</span>
+  </div>
+
+
+  <button
+    id="login"
+    type="button"
+  >
+    Se connecter
+  </button>
+
+</header>
+
+
+
+<main>
+
+
+  <!-- ========================================= -->
+  <!-- HERO -->
+  <!-- ========================================= -->
+
+  <section class="hero">
+
+    <div>
+
+      <small>
+        ÉCHANGE DIGITAL SIMPLE
+      </small>
+
+
+      <h1>
+        Achetez ou vendez vos USDT facilement.
+      </h1>
+
+
+      <p>
+        Une interface simple et rapide pour envoyer
+        vos demandes d'achat ou de vente d'USDT.
+      </p>
+
+
+      <button
+        class="primary"
+        id="start"
+        type="button"
+      >
+        Commencer
+      </button>
+
     </div>
 
 
+
+    <div class="card">
+
+      <i></i>
+
+      <b>
+        Noa Digit Trade
+      </b>
+
+      <span>
+        Service d'échange
+      </span>
+
+    </div>
+
+  </section>
+
+
+
+  <!-- ========================================= -->
+  <!-- FORMULAIRE DE COMMANDE -->
+  <!-- ========================================= -->
+
+  <section
+    id="order"
+    class="panel"
+  >
+
+    <h2>
+      Nouvelle demande
+    </h2>
+
+
+    <div class="tabs">
+
+      <button
+        class="tab active"
+        data-type="buy"
+        type="button"
+      >
+        Acheter USDT
+      </button>
+
+
+      <button
+        class="tab"
+        data-type="sell"
+        type="button"
+      >
+        Vendre USDT
+      </button>
+
+    </div>
+
+
+
+    <label for="network">
+      Réseau
+    </label>
+
+
+    <select id="network">
+
+      <option value="BEP20">
+        BEP20
+      </option>
+
+
+      <option value="TRC20">
+        TRC20
+      </option>
+
+
+      <option value="ERC20">
+        ERC20
+      </option>
+
+    </select>
+
+
+
+    <label for="amount">
+      Montant (USDT)
+    </label>
+
+
+    <input
+      id="amount"
+      type="number"
+      min="1"
+      step="0.01"
+      placeholder="Ex. 100"
+      autocomplete="off"
+    >
+
+
+
+    <label for="wallet">
+      Adresse du portefeuille
+    </label>
+
+
+    <input
+      id="wallet"
+      type="text"
+      placeholder="Adresse USDT"
+      autocomplete="off"
+    >
+
+
+
     <button
-      id="login"
+      class="primary full"
+      id="submit"
       type="button"
     >
-      Se connecter
+      Envoyer la demande
     </button>
 
-  </header>
+
+    <p
+      id="msg"
+      role="status"
+    ></p>
+
+  </section>
 
 
 
-  <!-- ================================= -->
-  <!-- CONTENU PRINCIPAL -->
-  <!-- ================================= -->
+  <!-- ========================================= -->
+  <!-- FONCTIONNEMENT -->
+  <!-- ========================================= -->
 
-  <main>
-
-
-    <!-- =============================== -->
-    <!-- HERO -->
-    <!-- =============================== -->
-
-    <section class="hero">
+  <section class="features">
 
 
-      <div>
+    <div>
 
-        <small>
-          ÉCHANGE DIGITAL SIMPLE
-        </small>
-
-
-        <h1>
-          Achetez ou vendez vos USDT facilement.
-        </h1>
+      <b>
+        01
+      </b>
 
 
-        <p>
-          Une interface simple et rapide pour envoyer
-          vos demandes d'achat ou de vente d'USDT.
-        </p>
+      <h3>
+        Connexion
+      </h3>
 
 
-        <button
-          class="primary"
-          id="start"
-          type="button"
-        >
-          Commencer
-        </button>
+      <p>
+        Espace personnel pour chaque client.
+      </p>
 
-      </div>
+    </div>
 
 
 
-      <div class="card">
+    <div>
 
-        <i></i>
-
-        <b>
-          Noa Digit Trade
-        </b>
-
-        <span>
-          Service d'échange
-        </span>
-
-      </div>
+      <b>
+        02
+      </b>
 
 
-    </section>
+      <h3>
+        Demande
+      </h3>
+
+
+      <p>
+        Achat ou vente avec le réseau choisi.
+      </p>
+
+    </div>
 
 
 
-    <!-- =============================== -->
-    <!-- FORMULAIRE DE COMMANDE -->
-    <!-- =============================== -->
+    <div>
 
-    <section
-      id="order"
-      class="panel"
+      <b>
+        03
+      </b>
+
+
+      <h3>
+        Validation
+      </h3>
+
+
+      <p>
+        Traitement depuis l'espace administrateur.
+      </p>
+
+    </div>
+
+
+  </section>
+
+</main>
+
+
+
+<!-- ========================================= -->
+<!-- FENÊTRE AUTHENTIFICATION -->
+<!-- ========================================= -->
+
+<div
+  id="authModal"
+  class="modal"
+  aria-hidden="true"
+>
+
+
+  <div class="modal-content">
+
+
+    <!-- ===================================== -->
+    <!-- BOUTON FERMER -->
+    <!-- ===================================== -->
+
+    <button
+      id="closeAuth"
+      class="close"
+      type="button"
+      aria-label="Fermer"
     >
+      ×
+    </button>
+
+
+
+    <!-- ===================================== -->
+    <!-- CONNEXION -->
+    <!-- ===================================== -->
+
+    <div id="loginForm">
+
 
       <h2>
-        Nouvelle demande
+        Se connecter
       </h2>
 
 
-
-      <!-- ACHAT / VENTE -->
-
-      <div class="tabs">
-
-
-        <button
-          class="tab active"
-          data-type="buy"
-          type="button"
-        >
-          Acheter USDT
-        </button>
-
-
-        <button
-          class="tab"
-          data-type="sell"
-          type="button"
-        >
-          Vendre USDT
-        </button>
-
-
-      </div>
+      <p class="auth-subtitle">
+        Accédez à votre espace personnel.
+      </p>
 
 
 
-      <!-- RÉSEAU -->
+      <!-- EMAIL -->
 
-      <label for="network">
-        Réseau
-      </label>
-
-
-      <select id="network">
-
-        <option value="BEP20">
-          BEP20
-        </option>
-
-
-        <option value="TRC20">
-          TRC20
-        </option>
-
-
-        <option value="ERC20">
-          ERC20
-        </option>
-
-      </select>
-
-
-
-      <!-- MONTANT -->
-
-      <label for="amount">
-        Montant (USDT)
+      <label for="loginEmail">
+        Email
       </label>
 
 
       <input
-        id="amount"
-        type="number"
-        min="1"
-        step="0.01"
-        placeholder="Ex. 100"
-        autocomplete="off"
+        id="loginEmail"
+        type="email"
+        placeholder="Votre adresse email"
+        autocomplete="email"
       >
 
 
 
-      <!-- PORTEFEUILLE -->
+      <!-- MOT DE PASSE -->
 
-      <label for="wallet">
-        Adresse du portefeuille
+      <label for="loginPassword">
+        Mot de passe
       </label>
 
 
-      <input
-        id="wallet"
-        type="text"
-        placeholder="Adresse USDT"
-        autocomplete="off"
-      >
-
-
-
-      <!-- ENVOYER -->
-
-      <button
-        class="primary full"
-        id="submit"
-        type="button"
-      >
-        Envoyer la demande
-      </button>
-
-
-      <p
-        id="msg"
-        role="status"
-      ></p>
-
-
-    </section>
-
-
-
-    <!-- =============================== -->
-    <!-- FONCTIONNEMENT -->
-    <!-- =============================== -->
-
-    <section class="features">
-
-
-      <div>
-
-        <b>
-          01
-        </b>
-
-
-        <h3>
-          Connexion
-        </h3>
-
-
-        <p>
-          Espace personnel pour chaque client.
-        </p>
-
-      </div>
-
-
-
-      <div>
-
-        <b>
-          02
-        </b>
-
-
-        <h3>
-          Demande
-        </h3>
-
-
-        <p>
-          Achat ou vente avec le réseau choisi.
-        </p>
-
-      </div>
-
-
-
-      <div>
-
-        <b>
-          03
-        </b>
-
-
-        <h3>
-          Validation
-        </h3>
-
-
-        <p>
-          Traitement depuis l'espace administrateur.
-        </p>
-
-      </div>
-
-
-    </section>
-
-
-  </main>
-
-
-
-  <!-- ================================= -->
-  <!-- FENÊTRE AUTHENTIFICATION -->
-  <!-- ================================= -->
-
-  <div
-    id="authModal"
-    class="modal"
-    aria-hidden="true"
-  >
-
-
-    <div class="modal-content">
-
-
-      <!-- ============================= -->
-      <!-- BOUTON FERMER -->
-      <!-- ============================= -->
-
-      <button
-        id="closeAuth"
-        class="close"
-        type="button"
-        aria-label="Fermer"
-      >
-        ×
-      </button>
-
-
-
-      <!-- ============================= -->
-      <!-- CONNEXION -->
-      <!-- ============================= -->
-
-      <div id="loginForm">
-
-
-        <h2>
-          Se connecter
-        </h2>
-
-
-        <p class="auth-subtitle">
-          Accédez à votre espace personnel.
-        </p>
-
-
-
-        <label for="loginEmail">
-          Email
-        </label>
-
-
-        <input
-          id="loginEmail"
-          type="email"
-          placeholder="Votre adresse email"
-          autocomplete="email"
-        >
-
-
-
-        <label for="loginPassword">
-          Mot de passe
-        </label>
-
+      <div class="password-wrapper">
 
         <input
           id="loginPassword"
@@ -379,82 +362,103 @@
         >
 
 
-
         <button
-          id="loginSubmit"
-          class="primary full"
+          class="toggle-password"
           type="button"
+          data-target="loginPassword"
+          aria-label="Afficher le mot de passe"
+          title="Afficher le mot de passe"
         >
-          Se connecter
+          👁️
         </button>
-
-
-
-        <p
-          id="loginMessage"
-          class="auth-message"
-          role="status"
-        ></p>
-
-
-
-        <p class="switch-auth">
-
-          Vous n'avez pas encore de compte ?
-
-          <button
-            id="showSignup"
-            type="button"
-          >
-            Créer un compte
-          </button>
-
-        </p>
-
 
       </div>
 
 
 
-      <!-- ============================= -->
-      <!-- INSCRIPTION -->
-      <!-- ============================= -->
+      <!-- CONNEXION -->
 
-      <div
-        id="signupForm"
-        hidden
+      <button
+        id="loginSubmit"
+        class="primary full"
+        type="button"
+      >
+        Se connecter
+      </button>
+
+
+      <p
+        id="loginMessage"
+        class="auth-message"
+        role="status"
+      ></p>
+
+
+
+      <!-- PASSER À L'INSCRIPTION -->
+
+      <p class="switch-auth">
+
+        Vous n'avez pas encore de compte ?
+
+        <button
+          id="showSignup"
+          type="button"
+        >
+          Créer un compte
+        </button>
+
+      </p>
+
+    </div>
+
+
+
+    <!-- ===================================== -->
+    <!-- INSCRIPTION -->
+    <!-- ===================================== -->
+
+    <div
+      id="signupForm"
+      hidden
+    >
+
+
+      <h2>
+        Créer un compte
+      </h2>
+
+
+      <p class="auth-subtitle">
+        Créez votre compte Noa Digit Trade.
+      </p>
+
+
+
+      <!-- EMAIL -->
+
+      <label for="signupEmail">
+        Email
+      </label>
+
+
+      <input
+        id="signupEmail"
+        type="email"
+        placeholder="Votre adresse email"
+        autocomplete="email"
       >
 
 
-        <h2>
-          Créer un compte
-        </h2>
+
+      <!-- MOT DE PASSE -->
+
+      <label for="signupPassword">
+        Mot de passe
+      </label>
 
 
-        <p class="auth-subtitle">
-          Créez votre compte Noa Digit Trade.
-        </p>
-
-
-
-        <label for="signupEmail">
-          Email
-        </label>
-
-
-        <input
-          id="signupEmail"
-          type="email"
-          placeholder="Votre adresse email"
-          autocomplete="email"
-        >
-
-
-
-        <label for="signupPassword">
-          Mot de passe
-        </label>
-
+      <div class="password-wrapper">
 
         <input
           id="signupPassword"
@@ -464,11 +468,28 @@
         >
 
 
+        <button
+          class="toggle-password"
+          type="button"
+          data-target="signupPassword"
+          aria-label="Afficher le mot de passe"
+          title="Afficher le mot de passe"
+        >
+          👁️
+        </button>
 
-        <label for="signupPasswordConfirm">
-          Confirmer le mot de passe
-        </label>
+      </div>
 
+
+
+      <!-- CONFIRMATION MOT DE PASSE -->
+
+      <label for="signupPasswordConfirm">
+        Confirmer le mot de passe
+      </label>
+
+
+      <div class="password-wrapper">
 
         <input
           id="signupPasswordConfirm"
@@ -478,76 +499,163 @@
         >
 
 
-
         <button
-          id="signupSubmit"
-          class="primary full"
+          class="toggle-password"
           type="button"
+          data-target="signupPasswordConfirm"
+          aria-label="Afficher le mot de passe"
+          title="Afficher le mot de passe"
         >
-          Créer mon compte
+          👁️
         </button>
-
-
-
-        <p
-          id="signupMessage"
-          class="auth-message"
-          role="status"
-        ></p>
-
-
-
-        <p class="switch-auth">
-
-          Vous avez déjà un compte ?
-
-          <button
-            id="showLogin"
-            type="button"
-          >
-            Se connecter
-          </button>
-
-        </p>
-
 
       </div>
 
 
-    </div>
 
+      <!-- CRÉER LE COMPTE -->
+
+      <button
+        id="signupSubmit"
+        class="primary full"
+        type="button"
+      >
+        Créer mon compte
+      </button>
+
+
+      <p
+        id="signupMessage"
+        class="auth-message"
+        role="status"
+      ></p>
+
+
+
+      <!-- RETOUR CONNEXION -->
+
+      <p class="switch-auth">
+
+        Vous avez déjà un compte ?
+
+        <button
+          id="showLogin"
+          type="button"
+        >
+          Se connecter
+        </button>
+
+      </p>
+
+    </div>
 
   </div>
 
-
-
-  <!-- ================================= -->
-  <!-- PIED DE PAGE -->
-  <!-- ================================= -->
-
-  <footer>
-
-    © 2026 Noa Digit Trade
-
-  </footer>
+</div>
 
 
 
-  <!-- ================================= -->
-  <!-- SUPABASE -->
-  <!-- ================================= -->
+<!-- ========================================= -->
+<!-- PIED DE PAGE -->
+<!-- ========================================= -->
 
-  <script
-    src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"
-  ></script>
+<footer>
+
+  © 2026 Noa Digit Trade
+
+</footer>
 
 
 
-  <!-- ================================= -->
-  <!-- APPLICATION -->
-  <!-- ================================= -->
+<!-- ========================================= -->
+<!-- SUPABASE -->
+<!-- ========================================= -->
 
-  <script src="app.js"></script>
+<script
+  src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"
+></script>
+
+
+
+<!-- ========================================= -->
+<!-- APPLICATION -->
+<!-- ========================================= -->
+
+<script src="app.js"></script>
+
+
+
+<!-- ========================================= -->
+<!-- AFFICHER / MASQUER LES MOTS DE PASSE -->
+<!-- ========================================= -->
+
+<script>
+
+  document
+    .querySelectorAll('.toggle-password')
+    .forEach(button => {
+
+      button.addEventListener(
+        'click',
+        () => {
+
+          const targetId =
+            button.dataset.target;
+
+
+          const input =
+            document.getElementById(
+              targetId
+            );
+
+
+          if (!input) {
+            return;
+          }
+
+
+          if (
+            input.type === 'password'
+          ) {
+
+            input.type = 'text';
+
+            button.textContent = '🙈';
+
+            button.setAttribute(
+              'aria-label',
+              'Masquer le mot de passe'
+            );
+
+            button.setAttribute(
+              'title',
+              'Masquer le mot de passe'
+            );
+
+          } else {
+
+            input.type = 'password';
+
+            button.textContent = '👁️';
+
+            button.setAttribute(
+              'aria-label',
+              'Afficher le mot de passe'
+            );
+
+            button.setAttribute(
+              'title',
+              'Afficher le mot de passe'
+            );
+
+          }
+
+        }
+      );
+
+    });
+
+</script>
 
 
 </body>
