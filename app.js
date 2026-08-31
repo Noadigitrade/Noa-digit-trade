@@ -2834,20 +2834,12 @@ async function sendOrder() {
 
 
     // ========================================================
-    // MESSAGE SUCCÈS
-    // ========================================================
+// CONFIRMATION DE COMMANDE
+// ========================================================
 
-    if (type === 'buy') {
+message.textContent = '';
 
-      message.textContent =
-        `Demande d’achat envoyée : ${formatNumber(cryptoAmount, 6)} USDT nets pour ${formatNumber(fiatAmount, 0)} FCFA. Réseau : ${network}. Frais : ${formatNumber(networkFee, 2)} USDT. Paiement : ${paymentMethod}.`;
-
-    } else {
-
-      message.textContent =
-        `Demande de vente envoyée : ${formatNumber(cryptoAmount, 6)} USDT pour ${formatNumber(fiatAmount, 0)} FCFA nets. Réseau : ${network}. Frais : ${formatNumber(networkFee, 2)} USDT. Paiement : ${paymentMethod}.`;
-
-    }
+showOrderConfirmation(order);
 
 
     // ========================================================
