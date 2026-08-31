@@ -187,6 +187,51 @@
     }
 
     /* =========================
+       MOT DE PASSE
+    ========================= */
+
+    .password-wrapper {
+      position: relative;
+      width: 100%;
+    }
+
+    .password-wrapper input {
+      width: 100%;
+      padding-right: 52px;
+    }
+
+    .password-toggle {
+      position: absolute;
+      top: 50%;
+      right: 8px;
+      transform: translateY(-50%);
+
+      width: 40px;
+      height: 40px;
+
+      border: none;
+      background: transparent;
+      border-radius: 10px;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      font-size: 19px;
+      color: #667085;
+      cursor: pointer;
+    }
+
+    .password-toggle:hover {
+      background: #edf3fa;
+      color: #0757d9;
+    }
+
+    .password-toggle:active {
+      transform: translateY(-50%) scale(.95);
+    }
+
+    /* =========================
        BUTTONS
     ========================= */
 
@@ -686,7 +731,9 @@
         </div>
 
 
-        <!-- CONNEXION -->
+        <!-- =================================================
+             CONNEXION
+        ================================================== -->
 
         <form id="loginForm" class="auth-form active">
 
@@ -730,7 +777,9 @@
         </form>
 
 
-        <!-- INSCRIPTION -->
+        <!-- =================================================
+             INSCRIPTION
+        ================================================== -->
 
         <form id="registerForm" class="auth-form">
 
@@ -739,6 +788,8 @@
             situés au Burkina Faso.
           </div>
 
+
+          <!-- NOM -->
 
           <div class="field">
             <label for="registerName">
@@ -755,6 +806,8 @@
           </div>
 
 
+          <!-- TELEPHONE -->
+
           <div class="field">
             <label for="registerPhone">
               Numéro de téléphone
@@ -769,6 +822,8 @@
             >
           </div>
 
+
+          <!-- PAYS -->
 
           <div class="field">
             <label for="registerCountry">
@@ -786,6 +841,8 @@
           </div>
 
 
+          <!-- EMAIL -->
+
           <div class="field">
             <label for="registerEmail">
               Adresse email
@@ -801,37 +858,79 @@
           </div>
 
 
+          <!-- =================================================
+               MOT DE PASSE
+          ================================================== -->
+
           <div class="field">
+
             <label for="registerPassword">
               Mot de passe
             </label>
 
-            <input
-              type="password"
-              id="registerPassword"
-              placeholder="Minimum 6 caractères"
-              minlength="6"
-              autocomplete="new-password"
-              required
-            >
+            <div class="password-wrapper">
+
+              <input
+                type="password"
+                id="registerPassword"
+                placeholder="Minimum 6 caractères"
+                minlength="6"
+                autocomplete="new-password"
+                required
+              >
+
+              <button
+                type="button"
+                class="password-toggle"
+                data-password-target="registerPassword"
+                aria-label="Afficher le mot de passe"
+                title="Afficher le mot de passe"
+              >
+                👁️
+              </button>
+
+            </div>
+
           </div>
 
 
+          <!-- =================================================
+               CONFIRMATION MOT DE PASSE
+          ================================================== -->
+
           <div class="field">
+
             <label for="registerPasswordConfirm">
               Confirmer le mot de passe
             </label>
 
-            <input
-              type="password"
-              id="registerPasswordConfirm"
-              placeholder="Répétez le mot de passe"
-              minlength="6"
-              autocomplete="new-password"
-              required
-            >
+            <div class="password-wrapper">
+
+              <input
+                type="password"
+                id="registerPasswordConfirm"
+                placeholder="Répétez le mot de passe"
+                minlength="6"
+                autocomplete="new-password"
+                required
+              >
+
+              <button
+                type="button"
+                class="password-toggle"
+                data-password-target="registerPasswordConfirm"
+                aria-label="Afficher la confirmation du mot de passe"
+                title="Afficher la confirmation du mot de passe"
+              >
+                👁️
+              </button>
+
+            </div>
+
           </div>
 
+
+          <!-- AVERTISSEMENT -->
 
           <div class="warning-box">
             ⚠️ Utilisez obligatoirement vos informations
@@ -839,6 +938,8 @@
             et effectuer/valider vos paiements.
           </div>
 
+
+          <!-- INSCRIPTION -->
 
           <button
             type="submit"
@@ -1694,6 +1795,72 @@
 ====================================================== -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+
+<!-- =====================================================
+     AFFICHAGE / MASQUAGE DES MOTS DE PASSE
+====================================================== -->
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+
+    const toggleButtons =
+      document.querySelectorAll(".password-toggle");
+
+    toggleButtons.forEach(function (button) {
+
+      button.addEventListener("click", function () {
+
+        const targetId =
+          button.getAttribute("data-password-target");
+
+        const input =
+          document.getElementById(targetId);
+
+        if (!input) {
+          return;
+        }
+
+        if (input.type === "password") {
+
+          input.type = "text";
+
+          button.textContent = "🙈";
+
+          button.setAttribute(
+            "aria-label",
+            "Masquer le mot de passe"
+          );
+
+          button.setAttribute(
+            "title",
+            "Masquer le mot de passe"
+          );
+
+        } else {
+
+          input.type = "password";
+
+          button.textContent = "👁️";
+
+          button.setAttribute(
+            "aria-label",
+            "Afficher le mot de passe"
+          );
+
+          button.setAttribute(
+            "title",
+            "Afficher le mot de passe"
+          );
+
+        }
+
+      });
+
+    });
+
+  });
+</script>
 
 
 <!-- =====================================================
