@@ -23,6 +23,7 @@ const SUPABASE_KEY =
 
 const BUY_RATE = 600;
 
+
 // Le client vend à NOA DIGIT TRADE
 // 1 USDT = 570 FCFA
 
@@ -1290,7 +1291,7 @@ async function createUserProfile(user) {
 // MON COMPTE
 // ==========================================
 
-function showAccountModal(user) {
+async function showAccountModal(user) {
 
   const oldModal =
     document.getElementById(
@@ -1332,80 +1333,54 @@ function showAccountModal(user) {
 
     <div style="
       width:100%;
-      max-width:520px;
+      max-width:560px;
       max-height:90vh;
       overflow-y:auto;
       background:white;
       color:#101828;
-      border-radius:20px;
+      border-radius:24px;
       padding:28px;
       box-shadow:0 20px 50px rgba(0,0,0,.25);
     ">
 
       <h2 style="
         margin-top:0;
-        margin-bottom:8px;
+        font-size:32px;
       ">
         Mon compte
       </h2>
 
-
-      <p style="
-        margin-top:0;
-        margin-bottom:20px;
-        color:#475467;
-      ">
+      <p>
         <strong>Email :</strong><br>
         ${escapeHtml(user.email || '')}
       </p>
 
-
-      <!-- ============================== -->
-      <!-- MES DEMANDES -->
-      <!-- ============================== -->
-
-      <div style="
-        border-top:1px solid #eaecf0;
-        padding-top:20px;
-        margin-top:10px;
+      <hr style="
+        border:none;
+        border-top:1px solid #e5e7eb;
+        margin:25px 0;
       ">
 
-        <h3 style="
-          margin:0 0 14px 0;
-        ">
-          Mes demandes
-        </h3>
+      <h3 style="
+        font-size:22px;
+        margin-bottom:18px;
+      ">
+        Mes demandes
+      </h3>
 
-
-        <div id="ordersContainer">
-
-          <p style="
-            color:#667085;
-            text-align:center;
-            padding:15px 0;
-          ">
-            Chargement de vos demandes...
-          </p>
-
-        </div>
-
+      <div id="ordersContainer">
+        <p style="color:#667085;">
+          Chargement de vos demandes...
+        </p>
       </div>
-
-
-      <!-- ============================== -->
-      <!-- BOUTONS -->
-      <!-- ============================== -->
 
       <button
         id="logoutButton"
         type="button"
         class="primary full"
-        style="
-          margin-top:20px;
-        ">
+        style="margin-top:25px;">
         Se déconnecter
       </button>
-
 
       <button
         id="closeAccountButton"
@@ -1413,23 +1388,16 @@ function showAccountModal(user) {
         style="
           width:100%;
           margin-top:10px;
-          padding:12px;
+          padding:13px;
           border:1px solid #d0d5dd;
-          border-radius:10px;
+          border-radius:12px;
           background:white;
           cursor:pointer;
         ">
         Fermer
       </button>
 
-
-      <p
-        id="accountMessage"
-        style="
-          line-height:1.5;
-          margin-bottom:0;
-        ">
-      </p>
+      <p id="accountMessage"></p>
 
     </div>
 
@@ -1441,42 +1409,15 @@ function showAccountModal(user) {
   );
 
 
-  // ======================================
-  // CHARGER LES COMMANDES
-  // ======================================
-
-  loadUserOrders(
-    user
-  );
-
-
-  // ======================================
-  // FERMER
-  // ======================================
-
-  const closeButton =
-    document.getElementById(
+  document
+    .getElementById(
       'closeAccountButton'
-    );
-
-
-  if (closeButton) {
-
-    closeButton.addEventListener(
+    )
+    .addEventListener(
       'click',
-      () => {
-
-        modal.remove();
-
-      }
+      () => modal.remove()
     );
 
-  }
-
-
-  // ======================================
-  // FERMER EN CLIQUANT À L'EXTÉRIEUR
-  // ======================================
 
   modal.addEventListener(
     'click',
@@ -1494,27 +1435,25 @@ function showAccountModal(user) {
   );
 
 
-  // ======================================
-  // DÉCONNEXION
-  // ======================================
-
-  const logoutButton =
-    document.getElementById(
+  document
+    .getElementById(
       'logoutButton'
-    );
-
-
-  if (logoutButton) {
-
-    logoutButton.addEventListener(
+    )
+    .addEventListener(
       'click',
       async () => {
 
-        logoutButton.disabled =
+        const button =
+          document.getElementById(
+            'logoutButton'
+          );
+
+
+        button.disabled =
           true;
 
 
-        logoutButton.textContent =
+        button.textContent =
           'Déconnexion...';
 
 
@@ -1525,12 +1464,6 @@ function showAccountModal(user) {
 
 
         if (error) {
-
-          console.error(
-            'Erreur déconnexion :',
-            error
-          );
-
 
           const accountMessage =
             document.getElementById(
@@ -1547,11 +1480,11 @@ function showAccountModal(user) {
           }
 
 
-          logoutButton.disabled =
+          button.disabled =
             false;
 
 
-          logoutButton.textContent =
+          button.textContent =
             'Se déconnecter';
 
 
@@ -1565,16 +1498,22 @@ function showAccountModal(user) {
       }
     );
 
-  }
+
+  // Charger les commandes
+  await loadUserOrders(
+    user.id
+  );
 
 }
 
 
 // ==========================================
-// CHARGER LES DEMANDES DE L'UTILISATEUR
+// CHARGER LES DEMANDES DU CLIENT
 // ==========================================
 
-async function loadUserOrders(user) {
+async function loadUserOrders(
+  authUserId
+) {
 
   const container =
     document.getElementById(
@@ -1587,24 +1526,11 @@ async function loadUserOrders(user) {
   }
 
 
-  container.innerHTML = `
-
-    <p style="
-      color:#667085;
-      text-align:center;
-      padding:15px 0;
-    ">
-      Chargement de vos demandes...
-    </p>
-
-  `;
-
-
   try {
 
-    // ======================================
-    // RÉCUPÉRER LE PROFIL USERS
-    // ======================================
+    // --------------------------------------
+    // Récupérer l'identifiant du profil
+    // --------------------------------------
 
     const {
       data: users,
@@ -1613,7 +1539,7 @@ async function loadUserOrders(user) {
       await supabaseClient
         .from('Users')
         .select('id')
-        .eq('auth_id', user.id)
+        .eq('auth_id', authUserId)
         .limit(1);
 
 
@@ -1630,17 +1556,14 @@ async function loadUserOrders(user) {
     ) {
 
       container.innerHTML = `
-
         <div style="
-          text-align:center;
           padding:20px;
+          background:#f8fafc;
+          border-radius:16px;
           color:#667085;
-          background:#f9fafb;
-          border-radius:12px;
         ">
-          Aucune demande trouvée.
+          Aucune demande pour le moment.
         </div>
-
       `;
 
       return;
@@ -1652,9 +1575,9 @@ async function loadUserOrders(user) {
       users[0].id;
 
 
-    // ======================================
-    // RÉCUPÉRER LES COMMANDES
-    // ======================================
+    // --------------------------------------
+    // Récupérer les commandes
+    // --------------------------------------
 
     const {
       data: orders,
@@ -1673,14 +1596,11 @@ async function loadUserOrders(user) {
           status,
           created_at
         `)
-        .eq(
-          'user_id',
-          userId
-        )
+        .eq('user_id', userId)
         .order(
           'created_at',
           {
-            ascending:false
+            ascending: false
           }
         );
 
@@ -1692,44 +1612,20 @@ async function loadUserOrders(user) {
     }
 
 
-    // ======================================
-    // AUCUNE COMMANDE
-    // ======================================
-
     if (
       !orders ||
       orders.length === 0
     ) {
 
       container.innerHTML = `
-
         <div style="
-          text-align:center;
           padding:20px;
+          background:#f8fafc;
+          border-radius:16px;
           color:#667085;
-          background:#f9fafb;
-          border-radius:12px;
         ">
-
-          <div style="
-            font-size:28px;
-            margin-bottom:8px;
-          ">
-            📋
-          </div>
-
-          <strong>
-            Aucune demande
-          </strong>
-
-          <p style="
-            margin:6px 0 0;
-          ">
-            Vos demandes apparaîtront ici.
-          </p>
-
+          Aucune demande pour le moment.
         </div>
-
       `;
 
       return;
@@ -1737,45 +1633,38 @@ async function loadUserOrders(user) {
     }
 
 
-    // ======================================
-    // AFFICHER LES COMMANDES
-    // ======================================
+    // --------------------------------------
+    // Afficher les commandes
+    // --------------------------------------
 
     container.innerHTML =
-      orders.map(
-        order =>
+      orders
+        .map(order =>
           createOrderCard(order)
-      ).join('');
+        )
+        .join('');
 
 
   } catch (error) {
 
     console.error(
-      'Erreur chargement demandes :',
+      'Erreur chargement commandes :',
       error
     );
 
 
     container.innerHTML = `
-
       <div style="
-        padding:15px;
-        border-radius:12px;
-        background:#fef3f2;
+        padding:20px;
+        background:#fff4f4;
+        border:1px solid #fecaca;
+        border-radius:16px;
         color:#b42318;
-        line-height:1.5;
       ">
-
         Impossible de charger vos demandes.
-
-        <br>
-
-        <small>
-          ${escapeHtml(error.message || '')}
-        </small>
-
+        <br><br>
+        ${escapeHtml(error.message || '')}
       </div>
-
     `;
 
   }
@@ -1793,7 +1682,72 @@ function createOrderCard(order) {
     order.type === 'buy';
 
 
-  const typeLabel =
+  // ----------------------------------------
+  // Valeurs enregistrées
+  // ----------------------------------------
+
+  const cryptoAmount =
+    Number(order.crypto_amount) || 0;
+
+
+  let fiatAmount =
+    Number(order.fiat_amount) || 0;
+
+
+  let rate =
+    Number(order.rate) || 0;
+
+
+  // ----------------------------------------
+  // CORRECTION DE SECOURS
+  //
+  // Si une ancienne commande possède
+  // 0 FCFA ou 0 comme taux, on recalcule
+  // avec le taux correspondant.
+  // ----------------------------------------
+
+  if (isBuy) {
+
+    if (rate <= 0) {
+
+      rate =
+        BUY_RATE;
+
+    }
+
+
+    if (fiatAmount <= 0) {
+
+      fiatAmount =
+        cryptoAmount * BUY_RATE;
+
+    }
+
+  } else {
+
+    if (rate <= 0) {
+
+      rate =
+        SELL_RATE;
+
+    }
+
+
+    if (fiatAmount <= 0) {
+
+      fiatAmount =
+        cryptoAmount * SELL_RATE;
+
+    }
+
+  }
+
+
+  // ----------------------------------------
+  // Type
+  // ----------------------------------------
+
+  const typeText =
     isBuy
       ? 'Achat USDT'
       : 'Vente USDT';
@@ -1805,139 +1759,220 @@ function createOrderCard(order) {
       : '🔵';
 
 
-  const cryptoAmount =
-    formatNumber(
-      Number(order.crypto_amount || 0),
-      6
-    );
-
-
-  const fiatAmount =
-    formatNumber(
-      Number(order.fiat_amount || 0),
-      0
-    );
-
-
-  const rate =
-    formatNumber(
-      Number(order.rate || 0),
-      0
-    );
-
-
-  const network =
-    order.network ||
-    'Non précisé';
-
-
-  const wallet =
-    order.wallet_address ||
-    'Non précisée';
-
+  // ----------------------------------------
+  // Statut
+  // ----------------------------------------
 
   const status =
-    getStatusInfo(
-      order.status
-    );
+    String(
+      order.status || 'pending'
+    ).toLowerCase();
 
 
-  const date =
-    formatDate(
-      order.created_at
-    );
+  let statusText =
+    'En attente';
 
+
+  let statusBackground =
+    '#fff7d6';
+
+
+  let statusColor =
+    '#9a6700';
+
+
+  if (status === 'completed') {
+
+    statusText =
+      'Terminée';
+
+    statusBackground =
+      '#dcfce7';
+
+    statusColor =
+      '#166534';
+
+  }
+
+
+  if (status === 'approved') {
+
+    statusText =
+      'Validée';
+
+    statusBackground =
+      '#dcfce7';
+
+    statusColor =
+      '#166534';
+
+  }
+
+
+  if (status === 'cancelled') {
+
+    statusText =
+      'Annulée';
+
+    statusBackground =
+      '#fee2e2';
+
+    statusColor =
+      '#991b1b';
+
+  }
+
+
+  if (status === 'rejected') {
+
+    statusText =
+      'Refusée';
+
+    statusBackground =
+      '#fee2e2';
+
+    statusColor =
+      '#991b1b';
+
+  }
+
+
+  // ----------------------------------------
+  // Date
+  // ----------------------------------------
+
+  let dateText =
+    'Date inconnue';
+
+
+  if (order.created_at) {
+
+    const date =
+      new Date(
+        order.created_at
+      );
+
+
+    if (
+      !Number.isNaN(
+        date.getTime()
+      )
+    ) {
+
+      dateText =
+        date.toLocaleString(
+          'fr-FR',
+          {
+            dateStyle: 'medium',
+            timeStyle: 'short'
+          }
+        );
+
+    }
+
+  }
+
+
+  // ----------------------------------------
+  // Wallet
+  // ----------------------------------------
+
+  const wallet =
+    order.wallet_address || '';
+
+
+  // ----------------------------------------
+  // HTML
+  // ----------------------------------------
 
   return `
 
     <div style="
-      border:1px solid #eaecf0;
-      border-radius:14px;
-      padding:16px;
-      margin-bottom:12px;
-      background:#ffffff;
+      border:1px solid #e5e7eb;
+      border-radius:20px;
+      padding:20px;
+      margin-bottom:18px;
+      background:white;
     ">
-
-
-      <!-- EN-TÊTE -->
 
       <div style="
         display:flex;
         justify-content:space-between;
         align-items:center;
         gap:10px;
-        margin-bottom:14px;
+        flex-wrap:wrap;
+        margin-bottom:18px;
       ">
 
         <strong style="
-          font-size:16px;
+          font-size:19px;
         ">
-          ${typeIcon} ${typeLabel}
+          ${typeIcon} ${typeText}
         </strong>
-
 
         <span style="
           display:inline-block;
-          padding:5px 9px;
-          border-radius:999px;
-          background:${status.background};
-          color:${status.color};
-          font-size:12px;
-          font-weight:600;
-          white-space:nowrap;
+          padding:8px 13px;
+          border-radius:20px;
+          background:${statusBackground};
+          color:${statusColor};
+          font-size:14px;
+          font-weight:bold;
         ">
-          ${status.icon} ${status.label}
+          ${statusText}
         </span>
 
       </div>
 
 
-      <!-- MONTANTS -->
-
       <div style="
         display:grid;
         grid-template-columns:1fr 1fr;
-        gap:10px;
-        margin-bottom:14px;
+        gap:12px;
+        margin-bottom:18px;
       ">
 
         <div style="
-          background:#f9fafb;
-          border-radius:10px;
-          padding:10px;
+          padding:15px;
+          border-radius:14px;
+          background:#f8fafc;
         ">
 
           <div style="
-            font-size:11px;
             color:#667085;
-            margin-bottom:4px;
+            font-size:13px;
+            margin-bottom:5px;
           ">
             Montant USDT
           </div>
 
-          <strong>
-            ${cryptoAmount} USDT
+          <strong style="
+            font-size:19px;
+          ">
+            ${formatNumber(cryptoAmount, 6)} USDT
           </strong>
 
         </div>
 
 
         <div style="
-          background:#f9fafb;
-          border-radius:10px;
-          padding:10px;
+          padding:15px;
+          border-radius:14px;
+          background:#f8fafc;
         ">
 
           <div style="
-            font-size:11px;
             color:#667085;
-            margin-bottom:4px;
+            font-size:13px;
+            margin-bottom:5px;
           ">
             Montant FCFA
           </div>
 
-          <strong>
-            ${fiatAmount} FCFA
+          <strong style="
+            font-size:19px;
+          ">
+            ${formatNumber(fiatAmount, 0)} FCFA
           </strong>
 
         </div>
@@ -1945,37 +1980,34 @@ function createOrderCard(order) {
       </div>
 
 
-      <!-- DÉTAILS -->
-
       <div style="
-        font-size:13px;
-        line-height:1.7;
+        line-height:1.8;
         color:#475467;
+        font-size:15px;
       ">
 
         <div>
           <strong>Taux :</strong>
-          1 USDT = ${rate} FCFA
+          1 USDT = ${formatNumber(rate, 0)} FCFA
         </div>
-
 
         <div>
           <strong>Réseau :</strong>
-          ${escapeHtml(network)}
+          ${escapeHtml(order.network || '')}
         </div>
 
-
-        <div style="
-          word-break:break-all;
-        ">
+        <div>
           <strong>Portefeuille :</strong>
-          ${escapeHtml(wallet)}
+          <span style="
+            word-break:break-all;
+          ">
+            ${escapeHtml(wallet)}
+          </span>
         </div>
-
 
         <div>
           <strong>Date :</strong>
-          ${escapeHtml(date)}
+          ${escapeHtml(dateText)}
         </div>
 
       </div>
@@ -1983,164 +2015,6 @@ function createOrderCard(order) {
     </div>
 
   `;
-
-}
-
-
-// ==========================================
-// STATUT DE COMMANDE
-// ==========================================
-
-function getStatusInfo(status) {
-
-  const normalizedStatus =
-    String(
-      status || 'pending'
-    ).toLowerCase();
-
-
-  switch (
-    normalizedStatus
-  ) {
-
-    case 'completed':
-
-    case 'complete':
-
-    case 'success':
-
-    case 'successful':
-
-      return {
-
-        label:
-          'Terminée',
-
-        icon:
-          '✅',
-
-        background:
-          '#ecfdf3',
-
-        color:
-          '#027a48'
-
-      };
-
-
-    case 'cancelled':
-
-    case 'canceled':
-
-    case 'rejected':
-
-    case 'failed':
-
-      return {
-
-        label:
-          'Annulée',
-
-        icon:
-          '❌',
-
-        background:
-          '#fef3f2',
-
-        color:
-          '#b42318'
-
-      };
-
-
-    case 'processing':
-
-    case 'in_progress':
-
-      return {
-
-        label:
-          'En traitement',
-
-        icon:
-          '🔄',
-
-        background:
-          '#eff8ff',
-
-        color:
-          '#175cd3'
-
-      };
-
-
-    case 'pending':
-
-    default:
-
-      return {
-
-        label:
-          'En attente',
-
-        icon:
-          '🟡',
-
-        background:
-          '#fffaeb',
-
-        color:
-          '#b54708'
-
-      };
-
-  }
-
-}
-
-
-// ==========================================
-// FORMAT DATE
-// ==========================================
-
-function formatDate(dateValue) {
-
-  if (!dateValue) {
-
-    return 'Date inconnue';
-
-  }
-
-
-  const date =
-    new Date(
-      dateValue
-    );
-
-
-  if (
-    Number.isNaN(
-      date.getTime()
-    )
-  ) {
-
-    return String(
-      dateValue
-    );
-
-  }
-
-
-  return date.toLocaleString(
-    'fr-FR',
-    {
-      dateStyle:
-        'medium',
-
-      timeStyle:
-        'short'
-    }
-  );
 
 }
 
@@ -2313,7 +2187,7 @@ async function sendOrder() {
 
   if (type === 'buy') {
 
-    // Le client paie en FCFA
+    // Client paie en FCFA
     // et reçoit des USDT.
 
     fiatAmount =
@@ -2327,7 +2201,7 @@ async function sendOrder() {
 
   } else {
 
-    // Le client vend des USDT
+    // Client vend des USDT
     // et reçoit des FCFA.
 
     cryptoAmount =
@@ -2533,7 +2407,6 @@ async function sendOrder() {
 
 
     updateCalculation();
-
 
   } catch (error) {
 
