@@ -1,6 +1,8 @@
 // ==========================================
 // NOA DIGIT TRADE
 // SUPABASE AUTH + ORDERS
+// ACHAT / VENTE + PAIEMENT MOBILE
+// FRAIS RÉSEAU + MINIMUM 2 000 FCFA
 // ==========================================
 
 
@@ -19,25 +21,30 @@ const SUPABASE_KEY =
 // TAUX
 // ==========================================
 
-// Achat : le client achète 1 USDT à 600 FCFA
+// Achat : 1 USDT = 600 FCFA
 const BUY_RATE = 600;
 
-// Vente : le client vend 1 USDT à 570 FCFA
+// Vente : 1 USDT = 570 FCFA
 const SELL_RATE = 570;
 
 
 // ==========================================
-// MINIMUM
+// MONTANTS MINIMUMS
 // ==========================================
 
-// Minimum de transaction en FCFA
-const MIN_FCFA = 2000;
+// Minimum pour chaque opération
+const MIN_FIAT_AMOUNT = 2000;
+
+// Minimum USDT pour une vente
+const MIN_SELL_USDT =
+  MIN_FIAT_AMOUNT / SELL_RATE;
 
 
 // ==========================================
 // FRAIS RÉSEAU
 // ==========================================
 
+// Frais fixes en USDT
 const NETWORK_FEES = {
 
   BEP20: 0,
@@ -50,33 +57,59 @@ const NETWORK_FEES = {
 
 
 // ==========================================
+// RÉSEAUX AUTORISÉS
+// ==========================================
+
+const ALLOWED_NETWORKS = [
+  'BEP20',
+  'TRC20',
+  'ERC20'
+];
+
+
+// ==========================================
+// MOYENS DE PAIEMENT AUTORISÉS
+// ==========================================
+
+const ALLOWED_PAYMENT_METHODS = [
+  'Orange Money',
+  'Moov Money'
+];
+
+
+// ==========================================
 // INITIALISATION SUPABASE
 // ==========================================
 
-if (!window.supabase) {
+let supabaseClient = null;
+
+
+if (
+  window.supabase &&
+  typeof window.supabase.createClient === 'function'
+) {
+
+  supabaseClient =
+    window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY
+    );
+
+  console.log(
+    'Supabase JS chargé correctement.'
+  );
+
+} else {
 
   console.error(
     'Supabase JS n’a pas été chargé.'
   );
 
-} else {
-
-  console.log(
-    'Supabase JS chargé.'
-  );
-
 }
 
 
-const supabaseClient =
-  window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
-  );
-
-
 // ==========================================
-// VARIABLES
+// VARIABLES GLOBALES
 // ==========================================
 
 let type = 'buy';
@@ -105,21 +138,36 @@ document.addEventListener(
 
     setupCalculation();
 
-    setupPaymentMethods();
-
     setupNetworkChange();
 
-    await checkSession();
+    setupPaymentMethods();
+
+    setupPasswordButtons();
+
+    if (supabaseClient) {
+
+      await checkSession();
+
+    }
 
   }
 );
 
 
 // ==========================================
-// VÉRIFIER LA SESSION
+// VÉRIFICATION SESSION
 // ==========================================
 
 async function checkSession() {
+
+  if (!supabaseClient) {
+
+    updateLoginButton(null);
+
+    return;
+
+  }
+
 
   try {
 
@@ -163,22 +211,26 @@ async function checkSession() {
 
 
 // ==========================================
-// SURVEILLER LES CHANGEMENTS
+// SURVEILLER AUTHENTIFICATION
 // ==========================================
 
-supabaseClient.auth.onAuthStateChange(
-  (_event, session) => {
+if (supabaseClient) {
 
-    updateLoginButton(
-      session
-    );
+  supabaseClient.auth.onAuthStateChange(
+    (_event, session) => {
 
-  }
-);
+      updateLoginButton(
+        session
+      );
+
+    }
+  );
+
+}
 
 
 // ==========================================
-// BOUTON CONNEXION / MON COMPTE
+// BOUTON MON COMPTE
 // ==========================================
 
 function updateLoginButton(session) {
@@ -231,7 +283,7 @@ function updateLoginButton(session) {
 
 
 // ==========================================
-// ONGLET ACHETER / VENDRE
+// ONGLET ACHAT / VENTE
 // ==========================================
 
 function setupTabs() {
@@ -266,13 +318,9 @@ function setupTabs() {
 
 
           type =
-            button.dataset.type;
-
-
-          console.log(
-            'Type sélectionné :',
-            type
-          );
+            button.dataset.type === 'sell'
+              ? 'sell'
+              : 'buy';
 
 
           updateCalculationMode();
@@ -336,7 +384,7 @@ function setupStartButton() {
 
 
 // ==========================================
-// CALCUL
+// CALCUL INITIAL
 // ==========================================
 
 function setupCalculation() {
@@ -361,8 +409,6 @@ function setupCalculation() {
 
 
   updateCalculationMode();
-
-  updateCalculation();
 
 }
 
@@ -400,45 +446,45 @@ function setupNetworkChange() {
 
 function setupPaymentMethods() {
 
-  const buttons =
+  const inputs =
     document.querySelectorAll(
-      '.payment-option'
+      'input[name="payment_method"]'
     );
 
 
-  buttons.forEach(
-    button => {
+  inputs.forEach(
+    input => {
 
-      button.addEventListener(
-        'click',
+      input.addEventListener(
+        'change',
         () => {
 
-          buttons.forEach(
-            item => {
+          document
+            .querySelectorAll(
+              '.payment-option'
+            )
+            .forEach(
+              option => {
 
-              item.classList.remove(
-                'active'
-              );
+                option.classList.remove(
+                  'active'
+                );
 
-            }
-          );
-
-
-          button.classList.add(
-            'active'
-          );
-
-
-          const paymentMethod =
-            document.getElementById(
-              'paymentMethod'
+              }
             );
 
 
-          if (paymentMethod) {
+          const parent =
+            input.closest(
+              '.payment-option'
+            );
 
-            paymentMethod.value =
-              button.dataset.payment;
+
+          if (parent) {
+
+            parent.classList.add(
+              'active'
+            );
 
           }
 
@@ -452,26 +498,102 @@ function setupPaymentMethods() {
 
 
 // ==========================================
-// RÉCUPÉRER LES FRAIS
+// BOUTONS AFFICHER / MASQUER MOT DE PASSE
 // ==========================================
 
-function getNetworkFee() {
+function setupPasswordButtons() {
 
-  const networkInput =
+  const buttons =
+    document.querySelectorAll(
+      '.show-password'
+    );
+
+
+  buttons.forEach(
+    button => {
+
+      button.addEventListener(
+        'click',
+        () => {
+
+          const target =
+            button.dataset.target;
+
+
+          const input =
+            document.getElementById(
+              target
+            );
+
+
+          if (!input) {
+
+            return;
+
+          }
+
+
+          if (
+            input.type === 'password'
+          ) {
+
+            input.type =
+              'text';
+
+            button.textContent =
+              'Masquer';
+
+          } else {
+
+            input.type =
+              'password';
+
+            button.textContent =
+              'Afficher';
+
+          }
+
+        }
+      );
+
+    }
+  );
+
+}
+
+
+// ==========================================
+// RÉCUPÉRER LE RÉSEAU
+// ==========================================
+
+function getNetwork() {
+
+  const input =
     document.getElementById(
       'network'
     );
 
 
-  if (!networkInput) {
+  if (!input) {
 
-    return 0;
+    return 'BEP20';
 
   }
 
 
+  return input.value;
+
+}
+
+
+// ==========================================
+// RÉCUPÉRER LES FRAIS RÉSEAU
+// ==========================================
+
+function getNetworkFee() {
+
   const network =
-    networkInput.value;
+    getNetwork();
 
 
   return (
@@ -482,7 +604,18 @@ function getNetworkFee() {
 
 
 // ==========================================
-// ADAPTER L'AFFICHAGE
+// NOM RÉSEAU
+// ==========================================
+
+function getNetworkName() {
+
+  return getNetwork();
+
+}
+
+
+// ==========================================
+// ADAPTER L'AFFICHAGE ACHAT / VENTE
 // ==========================================
 
 function updateCalculationMode() {
@@ -499,15 +632,21 @@ function updateCalculationMode() {
     );
 
 
-  const walletLabel =
+  const calculation =
     document.getElementById(
-      'walletLabel'
+      'calculation'
     );
 
 
   const rateText =
     document.getElementById(
       'rateText'
+    );
+
+
+  const minAmountText =
+    document.getElementById(
+      'minAmountText'
     );
 
 
@@ -520,9 +659,9 @@ function updateCalculationMode() {
 
   if (type === 'buy') {
 
-    // --------------------------------------
+    // ======================================
     // ACHAT
-    // --------------------------------------
+    // ======================================
 
     if (amountLabel) {
 
@@ -533,67 +672,130 @@ function updateCalculationMode() {
 
 
     amountInput.placeholder =
-      'Minimum : 2 000 FCFA';
+      'Ex. 10000';
 
 
     amountInput.min =
-      MIN_FCFA;
-
-
-    if (walletLabel) {
-
-      walletLabel.textContent =
-        'Adresse du portefeuille USDT';
-
-    }
+      String(
+        MIN_FIAT_AMOUNT
+      );
 
 
     if (rateText) {
 
       rateText.textContent =
-        `Taux d'achat : 1 USDT = ${BUY_RATE.toLocaleString('fr-FR')} FCFA`;
+        `Taux d'achat : 1 USDT = ${formatNumber(BUY_RATE, 0)} FCFA`;
 
     }
 
-    updateCalculation();
 
-    return;
+    if (minAmountText) {
 
-  }
+      minAmountText.textContent =
+        `Montant minimum : ${formatNumber(MIN_FIAT_AMOUNT, 0)} FCFA`;
 
-
-  // --------------------------------------
-  // VENTE
-  // --------------------------------------
-
-  if (amountLabel) {
-
-    amountLabel.textContent =
-      'Montant à vendre (USDT)';
-
-  }
+    }
 
 
-  amountInput.placeholder =
-    'Montant en USDT';
+    if (calculation) {
+
+      calculation.innerHTML = `
+
+        <span>Vous recevrez</span>
+
+        <strong id="resultAmount">
+          0 USDT
+        </strong>
+
+        <small id="resultDetail">
+          1 USDT = ${formatNumber(BUY_RATE, 0)} FCFA
+        </small>
+
+        <small
+          id="feeDetail"
+          style="display:block;margin-top:8px;">
+          Frais réseau : 0 USDT
+        </small>
+
+        <small
+          id="netDetail"
+          style="display:block;margin-top:4px;">
+          Montant net reçu : 0 USDT
+        </small>
+
+      `;
+
+    }
+
+  } else {
+
+    // ======================================
+    // VENTE
+    // ======================================
+
+    if (amountLabel) {
+
+      amountLabel.textContent =
+        'Montant à vendre (USDT)';
+
+    }
 
 
-  amountInput.min =
-    '0';
+    amountInput.placeholder =
+      'Ex. 10';
 
 
-  if (walletLabel) {
-
-    walletLabel.textContent =
-      'Adresse du portefeuille USDT';
-
-  }
+    amountInput.min =
+      String(
+        MIN_SELL_USDT
+      );
 
 
-  if (rateText) {
+    if (rateText) {
 
-    rateText.textContent =
-      `Taux de vente : 1 USDT = ${SELL_RATE.toLocaleString('fr-FR')} FCFA`;
+      rateText.textContent =
+        `Taux de vente : 1 USDT = ${formatNumber(SELL_RATE, 0)} FCFA`;
+
+    }
+
+
+    if (minAmountText) {
+
+      minAmountText.textContent =
+        `Minimum : ${formatNumber(MIN_SELL_USDT, 6)} USDT (soit ${formatNumber(MIN_FIAT_AMOUNT, 0)} FCFA)`;
+
+    }
+
+
+    if (calculation) {
+
+      calculation.innerHTML = `
+
+        <span>Vous recevrez</span>
+
+        <strong id="resultAmount">
+          0 FCFA
+        </strong>
+
+        <small id="resultDetail">
+          1 USDT = ${formatNumber(SELL_RATE, 0)} FCFA
+        </small>
+
+        <small
+          id="feeDetail"
+          style="display:block;margin-top:8px;">
+          Frais réseau : 0 USDT
+        </small>
+
+        <small
+          id="netDetail"
+          style="display:block;margin-top:4px;">
+          Montant net : 0 FCFA
+        </small>
+
+      `;
+
+    }
 
   }
 
@@ -604,7 +806,7 @@ function updateCalculationMode() {
 
 
 // ==========================================
-// CALCULER LE MONTANT
+// CALCUL EN TEMPS RÉEL
 // ==========================================
 
 function updateCalculation() {
@@ -655,12 +857,12 @@ function updateCalculation() {
     );
 
 
-  const fee =
+  const networkFee =
     getNetworkFee();
 
 
   // ========================================
-  // AUCUN MONTANT
+  // MONTANT VIDE
   // ========================================
 
   if (
@@ -668,25 +870,18 @@ function updateCalculation() {
     value <= 0
   ) {
 
-    if (type === 'buy') {
-
-      resultAmount.textContent =
-        '0 USDT';
-
-    } else {
-
-      resultAmount.textContent =
-        '0 FCFA';
-
-    }
+    resultAmount.textContent =
+      type === 'buy'
+        ? '0 USDT'
+        : '0 FCFA';
 
 
     if (resultDetail) {
 
       resultDetail.textContent =
         type === 'buy'
-          ? 'Montant minimum : 2 000 FCFA'
-          : 'Montant minimum équivalent : 2 000 FCFA';
+          ? `1 USDT = ${formatNumber(BUY_RATE, 0)} FCFA`
+          : `1 USDT = ${formatNumber(SELL_RATE, 0)} FCFA`;
 
     }
 
@@ -694,7 +889,7 @@ function updateCalculation() {
     if (feeDetail) {
 
       feeDetail.textContent =
-        `Frais réseau : ${formatNumber(fee, 2)} USDT`;
+        `Frais réseau ${getNetworkName()} : ${formatNumber(networkFee, 2)} USDT`;
 
     }
 
@@ -726,7 +921,7 @@ function updateCalculation() {
 
     const netUSDT =
       Math.max(
-        grossUSDT - fee,
+        grossUSDT - networkFee,
         0
       );
 
@@ -738,7 +933,7 @@ function updateCalculation() {
     if (resultDetail) {
 
       resultDetail.textContent =
-        `${formatNumber(value, 0)} FCFA ÷ ${BUY_RATE} = ${formatNumber(grossUSDT, 6)} USDT brut`;
+        `${formatNumber(value, 0)} FCFA ÷ ${formatNumber(BUY_RATE, 0)} = ${formatNumber(grossUSDT, 6)} USDT brut`;
 
     }
 
@@ -746,7 +941,7 @@ function updateCalculation() {
     if (feeDetail) {
 
       feeDetail.textContent =
-        `Frais réseau ${getNetworkName()} : ${formatNumber(fee, 2)} USDT`;
+        `Frais réseau ${getNetworkName()} : ${formatNumber(networkFee, 2)} USDT`;
 
     }
 
@@ -776,16 +971,8 @@ function updateCalculation() {
     usdtAmount * SELL_RATE;
 
 
-  /*
-    Pour une vente, les frais réseau sont
-    des frais liés au transfert de l'USDT.
-
-    Ils sont donc affichés séparément.
-  */
-
-
   const feeFCFA =
-    fee * SELL_RATE;
+    networkFee * SELL_RATE;
 
 
   const netFCFA =
@@ -802,7 +989,7 @@ function updateCalculation() {
   if (resultDetail) {
 
     resultDetail.textContent =
-      `${formatNumber(usdtAmount, 6)} USDT × ${SELL_RATE} = ${formatNumber(grossFCFA, 0)} FCFA brut`;
+      `${formatNumber(usdtAmount, 6)} USDT × ${formatNumber(SELL_RATE, 0)} = ${formatNumber(grossFCFA, 0)} FCFA brut`;
 
   }
 
@@ -810,7 +997,7 @@ function updateCalculation() {
   if (feeDetail) {
 
     feeDetail.textContent =
-      `Frais réseau ${getNetworkName()} : ${formatNumber(fee, 2)} USDT (${formatNumber(feeFCFA, 0)} FCFA)`;
+      `Frais réseau ${getNetworkName()} : ${formatNumber(networkFee, 2)} USDT (${formatNumber(feeFCFA, 0)} FCFA)`;
 
   }
 
@@ -826,31 +1013,7 @@ function updateCalculation() {
 
 
 // ==========================================
-// NOM DU RÉSEAU
-// ==========================================
-
-function getNetworkName() {
-
-  const networkInput =
-    document.getElementById(
-      'network'
-    );
-
-
-  if (!networkInput) {
-
-    return 'BEP20';
-
-  }
-
-
-  return networkInput.value;
-
-}
-
-
-// ==========================================
-// FORMAT NOMBRE
+// FORMATAGE NOMBRE
 // ==========================================
 
 function formatNumber(
@@ -858,7 +1021,9 @@ function formatNumber(
   maximumFractionDigits = 2
 ) {
 
-  return Number(value).toLocaleString(
+  return Number(
+    value
+  ).toLocaleString(
     'fr-FR',
     {
       minimumFractionDigits:
@@ -866,7 +1031,6 @@ function formatNumber(
 
       maximumFractionDigits:
         maximumFractionDigits
-
     }
   );
 
@@ -874,7 +1038,7 @@ function formatNumber(
 
 
 // ==========================================
-// OUVRIR AUTH
+// OUVRIR AUTHENTIFICATION
 // ==========================================
 
 function showAuthModal() {
@@ -898,10 +1062,6 @@ function showAuthModal() {
 
 
   if (!modal) {
-
-    console.error(
-      'Fenêtre authModal introuvable.'
-    );
 
     return;
 
@@ -965,7 +1125,7 @@ function showAuthModal() {
 
 
 // ==========================================
-// FERMER AUTH
+// FERMER AUTHENTIFICATION
 // ==========================================
 
 function closeAuthModal() {
@@ -1037,9 +1197,9 @@ function setupAuth() {
     );
 
 
-  // --------------------------------------
+  // ----------------------------------------
   // FERMER
-  // --------------------------------------
+  // ----------------------------------------
 
   if (closeAuth) {
 
@@ -1051,9 +1211,9 @@ function setupAuth() {
   }
 
 
-  // --------------------------------------
-  // CLIQUER À L'EXTÉRIEUR
-  // --------------------------------------
+  // ----------------------------------------
+  // EXTÉRIEUR
+  // ----------------------------------------
 
   if (modal) {
 
@@ -1075,9 +1235,9 @@ function setupAuth() {
   }
 
 
-  // --------------------------------------
+  // ----------------------------------------
   // INSCRIPTION
-  // --------------------------------------
+  // ----------------------------------------
 
   if (showSignup) {
 
@@ -1118,9 +1278,9 @@ function setupAuth() {
   }
 
 
-  // --------------------------------------
+  // ----------------------------------------
   // CONNEXION
-  // --------------------------------------
+  // ----------------------------------------
 
   if (showLogin) {
 
@@ -1161,9 +1321,9 @@ function setupAuth() {
   }
 
 
-  // --------------------------------------
-  // BOUTON CONNEXION
-  // --------------------------------------
+  // ----------------------------------------
+  // CONNEXION
+  // ----------------------------------------
 
   if (loginSubmit) {
 
@@ -1175,9 +1335,9 @@ function setupAuth() {
   }
 
 
-  // --------------------------------------
-  // BOUTON INSCRIPTION
-  // --------------------------------------
+  // ----------------------------------------
+  // INSCRIPTION
+  // ----------------------------------------
 
   if (signupSubmit) {
 
@@ -1258,6 +1418,16 @@ async function loginUser() {
   }
 
 
+  if (!supabaseClient) {
+
+    message.textContent =
+      'Service de connexion indisponible.';
+
+    return;
+
+  }
+
+
   button.disabled =
     true;
 
@@ -1274,11 +1444,9 @@ async function loginUser() {
     } =
       await supabaseClient.auth.signInWithPassword({
 
-        email:
-          email,
+        email,
 
-        password:
-          password
+        password
 
       });
 
@@ -1411,9 +1579,7 @@ async function signupUser() {
   }
 
 
-  if (
-    password.length < 6
-  ) {
+  if (password.length < 6) {
 
     message.textContent =
       'Le mot de passe doit contenir au moins 6 caractères.';
@@ -1429,6 +1595,16 @@ async function signupUser() {
 
     message.textContent =
       'Les mots de passe ne correspondent pas.';
+
+    return;
+
+  }
+
+
+  if (!supabaseClient) {
+
+    message.textContent =
+      'Service d’inscription indisponible.';
 
     return;
 
@@ -1451,11 +1627,9 @@ async function signupUser() {
     } =
       await supabaseClient.auth.signUp({
 
-        email:
-          email,
+        email,
 
-        password:
-          password,
+        password,
 
         options: {
 
@@ -1480,6 +1654,10 @@ async function signupUser() {
     );
 
 
+    // --------------------------------------
+    // EMAIL À CONFIRMER
+    // --------------------------------------
+
     if (
       data.user &&
       !data.session
@@ -1488,10 +1666,20 @@ async function signupUser() {
       message.textContent =
         'Compte créé. Vérifiez votre email pour confirmer votre compte.';
 
+      passwordInput.value =
+        '';
+
+      confirmInput.value =
+        '';
+
       return;
 
     }
 
+
+    // --------------------------------------
+    // SESSION IMMÉDIATE
+    // --------------------------------------
 
     if (data.user) {
 
@@ -1557,7 +1745,7 @@ async function signupUser() {
 
 
 // ==========================================
-// CRÉER LE PROFIL USERS
+// CRÉER / RÉCUPÉRER PROFIL USERS
 // ==========================================
 
 async function createUserProfile(user) {
@@ -1574,8 +1762,17 @@ async function createUserProfile(user) {
   }
 
 
+  if (!supabaseClient) {
+
+    throw new Error(
+      'Supabase indisponible.'
+    );
+
+  }
+
+
   // ----------------------------------------
-  // RECHERCHER LE PROFIL
+  // RECHERCHE PROFIL
   // ----------------------------------------
 
   const {
@@ -1610,7 +1807,7 @@ async function createUserProfile(user) {
 
 
   // ----------------------------------------
-  // CRÉER LE PROFIL
+  // CRÉATION PROFIL
   // ----------------------------------------
 
   const {
@@ -1628,7 +1825,7 @@ async function createUserProfile(user) {
           user.email || ''
 
       })
-      .select()
+      .select('id')
       .single();
 
 
@@ -1648,7 +1845,7 @@ async function createUserProfile(user) {
 // MON COMPTE
 // ==========================================
 
-function showAccountModal(user) {
+async function showAccountModal(user) {
 
   const oldModal =
     document.getElementById(
@@ -1674,6 +1871,7 @@ function showAccountModal(user) {
 
 
   modal.style.cssText = `
+
     position:fixed;
     inset:0;
     background:rgba(0,0,0,.55);
@@ -1682,6 +1880,8 @@ function showAccountModal(user) {
     justify-content:center;
     z-index:9999;
     padding:20px;
+    overflow-y:auto;
+
   `;
 
 
@@ -1689,15 +1889,20 @@ function showAccountModal(user) {
 
     <div style="
       width:100%;
-      max-width:420px;
+      max-width:560px;
+      max-height:92vh;
+      overflow-y:auto;
       background:white;
       color:#101828;
-      border-radius:20px;
+      border-radius:24px;
       padding:28px;
       box-shadow:0 20px 50px rgba(0,0,0,.25);
     ">
 
-      <h2>
+      <h2 style="
+        margin-top:0;
+        font-size:32px;
+      ">
         Mon compte
       </h2>
 
@@ -1706,32 +1911,36 @@ function showAccountModal(user) {
         ${escapeHtml(user.email || '')}
       </p>
 
+      <div class="account-divider"></div>
+
+      <h3 class="orders-title">
+        Mes demandes
+      </h3>
+
+      <div id="ordersContainer">
+
+        <p class="orders-empty">
+          Chargement de vos demandes...
+        </p>
+
+      </div>
+
       <button
         id="logoutButton"
         type="button"
-        class="primary full">
+        class="primary full"
+        style="margin-top:20px;">
         Se déconnecter
       </button>
 
       <button
         id="closeAccountButton"
         type="button"
-        style="
-          width:100%;
-          margin-top:10px;
-          padding:12px;
-          border:1px solid #d0d5dd;
-          border-radius:10px;
-          background:white;
-          cursor:pointer;
-        ">
+        class="close-btn">
         Fermer
       </button>
 
-      <p
-        id="accountMessage"
-        style="line-height:1.5;">
-      </p>
+      <p id="accountMessage"></p>
 
     </div>
 
@@ -1747,11 +1956,15 @@ function showAccountModal(user) {
   // FERMER
   // ----------------------------------------
 
-  document
-    .getElementById(
+  const closeButton =
+    document.getElementById(
       'closeAccountButton'
-    )
-    .addEventListener(
+    );
+
+
+  if (closeButton) {
+
+    closeButton.addEventListener(
       'click',
       () => {
 
@@ -1760,9 +1973,11 @@ function showAccountModal(user) {
       }
     );
 
+  }
+
 
   // ----------------------------------------
-  // CLIQUER EXTÉRIEUR
+  // EXTÉRIEUR
   // ----------------------------------------
 
   modal.addEventListener(
@@ -1785,26 +2000,31 @@ function showAccountModal(user) {
   // DÉCONNEXION
   // ----------------------------------------
 
-  document
-    .getElementById(
+  const logoutButton =
+    document.getElementById(
       'logoutButton'
-    )
-    .addEventListener(
+    );
+
+
+  if (logoutButton) {
+
+    logoutButton.addEventListener(
       'click',
       async () => {
 
-        const button =
-          document.getElementById(
-            'logoutButton'
-          );
-
-
-        button.disabled =
+        logoutButton.disabled =
           true;
 
 
-        button.textContent =
+        logoutButton.textContent =
           'Déconnexion...';
+
+
+        if (!supabaseClient) {
+
+          return;
+
+        }
 
 
         const {
@@ -1836,11 +2056,11 @@ function showAccountModal(user) {
           }
 
 
-          button.disabled =
+          logoutButton.disabled =
             false;
 
 
-          button.textContent =
+          logoutButton.textContent =
             'Se déconnecter';
 
 
@@ -1854,41 +2074,529 @@ function showAccountModal(user) {
       }
     );
 
+  }
+
+
+  await loadUserOrders(
+    user
+  );
+
 }
 
 
 // ==========================================
-// PROTECTION HTML
+// CHARGER LES COMMANDES
 // ==========================================
 
-function escapeHtml(value) {
+async function loadUserOrders(user) {
 
-  return String(value)
-
-    .replaceAll(
-      '&',
-      '&amp;'
-    )
-
-    .replaceAll(
-      '<',
-      '&lt;'
-    )
-
-    .replaceAll(
-      '>',
-      '&gt;'
-    )
-
-    .replaceAll(
-      '"',
-      '&quot;'
-    )
-
-    .replaceAll(
-      "'",
-      '&#039;'
+  const container =
+    document.getElementById(
+      'ordersContainer'
     );
+
+
+  if (!container) {
+
+    return;
+
+  }
+
+
+  if (!supabaseClient) {
+
+    container.innerHTML = `
+
+      <p class="orders-empty">
+        Service indisponible.
+      </p>
+
+    `;
+
+    return;
+
+  }
+
+
+  try {
+
+    // --------------------------------------
+    // PROFIL
+    // --------------------------------------
+
+    const {
+      data: users,
+      error: userError
+    } =
+      await supabaseClient
+        .from('Users')
+        .select('id')
+        .eq(
+          'auth_id',
+          user.id
+        )
+        .limit(1);
+
+
+    if (userError) {
+
+      throw userError;
+
+    }
+
+
+    if (
+      !users ||
+      users.length === 0
+    ) {
+
+      container.innerHTML = `
+
+        <p class="orders-empty">
+          Aucune demande pour le moment.
+        </p>
+
+      `;
+
+      return;
+
+    }
+
+
+    const userId =
+      users[0].id;
+
+
+    // --------------------------------------
+    // COMMANDES
+    // --------------------------------------
+
+    const {
+      data: orders,
+      error: ordersError
+    } =
+      await supabaseClient
+        .from('orders')
+        .select(`
+          id,
+          type,
+          crypto_amount,
+          fiat_amount,
+          rate,
+          fee,
+          network,
+          wallet_address,
+          payment_method,
+          status,
+          created_at
+        `)
+        .eq(
+          'user_id',
+          userId
+        )
+        .order(
+          'created_at',
+          {
+            ascending:
+              false
+          }
+        );
+
+
+    if (ordersError) {
+
+      throw ordersError;
+
+    }
+
+
+    if (
+      !orders ||
+      orders.length === 0
+    ) {
+
+      container.innerHTML = `
+
+        <p class="orders-empty">
+          Aucune demande pour le moment.
+        </p>
+
+      `;
+
+      return;
+
+    }
+
+
+    container.innerHTML =
+      orders
+        .map(
+          createOrderCard
+        )
+        .join('');
+
+
+  } catch (error) {
+
+    console.error(
+      'Erreur chargement commandes :',
+      error
+    );
+
+
+    container.innerHTML = `
+
+      <p class="orders-empty">
+        Impossible de charger vos demandes.
+      </p>
+
+    `;
+
+  }
+
+}
+
+
+// ==========================================
+// CARTE COMMANDE
+// ==========================================
+
+function createOrderCard(order) {
+
+  const isBuy =
+    order.type === 'buy';
+
+
+  const typeLabel =
+    isBuy
+      ? 'Achat USDT'
+      : 'Vente USDT';
+
+
+  const status =
+    formatStatus(
+      order.status
+    );
+
+
+  const statusClass =
+    getStatusClass(
+      order.status
+    );
+
+
+  const cryptoAmount =
+    formatNumber(
+      order.crypto_amount,
+      6
+    );
+
+
+  const fiatAmount =
+    formatNumber(
+      order.fiat_amount,
+      0
+    );
+
+
+  const rate =
+    formatNumber(
+      order.rate,
+      0
+    );
+
+
+  const fee =
+    formatNumber(
+      order.fee || 0,
+      2
+    );
+
+
+  const paymentMethod =
+    order.payment_method ||
+    'Non renseigné';
+
+
+  const network =
+    order.network ||
+    'Non renseigné';
+
+
+  const wallet =
+    order.wallet_address ||
+    'Non renseignée';
+
+
+  const date =
+    formatDate(
+      order.created_at
+    );
+
+
+  return `
+
+    <div class="order-card">
+
+      <div class="order-card-head">
+
+        <div class="order-type">
+
+          <span class="order-dot ${
+            isBuy
+              ? 'buy-dot'
+              : 'sell-dot'
+          }"></span>
+
+          <strong>
+            ${typeLabel}
+          </strong>
+
+        </div>
+
+        <span class="status ${statusClass}">
+          ${escapeHtml(status)}
+        </span>
+
+      </div>
+
+
+      <div class="amount-grid">
+
+        <div class="amount-box">
+
+          <span>
+            Montant USDT
+          </span>
+
+          <strong>
+            ${cryptoAmount} USDT
+          </strong>
+
+        </div>
+
+
+        <div class="amount-box">
+
+          <span>
+            Montant FCFA
+          </span>
+
+          <strong>
+            ${fiatAmount} FCFA
+          </strong>
+
+        </div>
+
+      </div>
+
+
+      <div class="order-meta">
+
+        <strong>
+          Taux :
+        </strong>
+
+        1 USDT = ${rate} FCFA
+
+      </div>
+
+
+      <div class="order-meta">
+
+        <strong>
+          Frais réseau :
+        </strong>
+
+        ${fee} USDT
+
+      </div>
+
+
+      <div class="order-meta">
+
+        <strong>
+          Moyen de paiement :
+        </strong>
+
+        ${escapeHtml(
+          paymentMethod
+        )}
+
+      </div>
+
+
+      <div class="order-meta">
+
+        <strong>
+          Réseau :
+        </strong>
+
+        ${escapeHtml(
+          network
+        )}
+
+      </div>
+
+
+      <div class="order-meta">
+
+        <strong>
+          Portefeuille :
+        </strong>
+
+        ${escapeHtml(
+          wallet
+        )}
+
+      </div>
+
+
+      <div class="order-meta">
+
+        <strong>
+          Date :
+        </strong>
+
+        ${escapeHtml(
+          date
+        )}
+
+      </div>
+
+    </div>
+
+  `;
+
+}
+
+
+// ==========================================
+// STATUT
+// ==========================================
+
+function formatStatus(status) {
+
+  const value =
+    String(
+      status || ''
+    ).toLowerCase();
+
+
+  if (
+    value === 'pending'
+  ) {
+
+    return 'En attente';
+
+  }
+
+
+  if (
+    value === 'approved' ||
+    value === 'validated' ||
+    value === 'completed'
+  ) {
+
+    return 'Validée';
+
+  }
+
+
+  if (
+    value === 'cancelled' ||
+    value === 'canceled' ||
+    value === 'rejected'
+  ) {
+
+    return 'Annulée';
+
+  }
+
+
+  return status ||
+    'En attente';
+
+}
+
+
+// ==========================================
+// CLASSE STATUT
+// ==========================================
+
+function getStatusClass(status) {
+
+  const value =
+    String(
+      status || ''
+    ).toLowerCase();
+
+
+  if (
+    value === 'approved' ||
+    value === 'validated' ||
+    value === 'completed'
+  ) {
+
+    return 'approved';
+
+  }
+
+
+  if (
+    value === 'cancelled' ||
+    value === 'canceled' ||
+    value === 'rejected'
+  ) {
+
+    return 'cancelled';
+
+  }
+
+
+  return '';
+
+}
+
+
+// ==========================================
+// DATE
+// ==========================================
+
+function formatDate(value) {
+
+  if (!value) {
+
+    return 'Non renseignée';
+
+  }
+
+
+  const date =
+    new Date(value);
+
+
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
+
+    return String(value);
+
+  }
+
+
+  return date.toLocaleString(
+    'fr-FR',
+    {
+      dateStyle:
+        'long',
+
+      timeStyle:
+        'short'
+    }
+  );
 
 }
 
@@ -1948,12 +2656,6 @@ async function sendOrder() {
     );
 
 
-  const paymentInput =
-    document.getElementById(
-      'paymentMethod'
-    );
-
-
   const message =
     document.getElementById(
       'msg'
@@ -1983,6 +2685,17 @@ async function sendOrder() {
   }
 
 
+  // ========================================
+  // EMPÊCHER DOUBLE ENVOI
+  // ========================================
+
+  if (submit.disabled) {
+
+    return;
+
+  }
+
+
   const amount =
     amountInput.value.trim();
 
@@ -1995,10 +2708,16 @@ async function sendOrder() {
     networkInput.value;
 
 
+  const paymentInput =
+    document.querySelector(
+      'input[name="payment_method"]:checked'
+    );
+
+
   const paymentMethod =
     paymentInput
       ? paymentInput.value
-      : 'Orange Money';
+      : '';
 
 
   message.textContent =
@@ -2006,18 +2725,96 @@ async function sendOrder() {
 
 
   // ========================================
-  // VALIDATION MONTANT
+  // VÉRIFICATION SUPABASE
   // ========================================
 
-  if (!amount || !wallet) {
+  if (!supabaseClient) {
 
     message.textContent =
-      'Veuillez remplir tous les champs.';
+      'Le service est momentanément indisponible.';
 
     return;
 
   }
 
+
+  // ========================================
+  // CHAMPS OBLIGATOIRES
+  // ========================================
+
+  if (!amount) {
+
+    message.textContent =
+      'Veuillez indiquer un montant.';
+
+    amountInput.focus();
+
+    return;
+
+  }
+
+
+  if (!wallet) {
+
+    message.textContent =
+      'Veuillez indiquer votre adresse de portefeuille USDT.';
+
+    walletInput.focus();
+
+    return;
+
+  }
+
+
+  if (!paymentMethod) {
+
+    message.textContent =
+      'Veuillez choisir Orange Money ou Moov Money.';
+
+    return;
+
+  }
+
+
+  // ========================================
+  // VALIDATION RÉSEAU
+  // ========================================
+
+  if (
+    !ALLOWED_NETWORKS.includes(
+      network
+    )
+  ) {
+
+    message.textContent =
+      'Le réseau sélectionné n’est pas valide.';
+
+    return;
+
+  }
+
+
+  // ========================================
+  // VALIDATION PAIEMENT
+  // ========================================
+
+  if (
+    !ALLOWED_PAYMENT_METHODS.includes(
+      paymentMethod
+    )
+  ) {
+
+    message.textContent =
+      'Le moyen de paiement sélectionné n’est pas valide.';
+
+    return;
+
+  }
+
+
+  // ========================================
+  // VALIDATION MONTANT
+  // ========================================
 
   const numericAmount =
     Number(amount);
@@ -2048,18 +2845,27 @@ async function sendOrder() {
 
   let rate;
 
-  let networkFee;
-
-
-  networkFee =
+  const networkFee =
     getNetworkFee();
 
 
   if (type === 'buy') {
 
-    // --------------------------------------
+    // ======================================
     // ACHAT
-    // --------------------------------------
+    // ======================================
+
+    if (
+      numericAmount < MIN_FIAT_AMOUNT
+    ) {
+
+      message.textContent =
+        `Le montant minimum pour un achat est de ${formatNumber(MIN_FIAT_AMOUNT, 0)} FCFA.`;
+
+      return;
+
+    }
+
 
     fiatAmount =
       numericAmount;
@@ -2069,38 +2875,14 @@ async function sendOrder() {
       BUY_RATE;
 
 
-    cryptoAmount =
+    const grossUSDT =
       numericAmount / BUY_RATE;
 
 
-    /*
-      Le montant enregistré dans crypto_amount
-      correspond au montant NET réellement reçu
-      après déduction des frais réseau.
-    */
-
     cryptoAmount =
-      Math.max(
-        cryptoAmount - networkFee,
-        0
-      );
+      grossUSDT - networkFee;
 
 
-    // Minimum de 2 000 FCFA
-    if (
-      fiatAmount < MIN_FCFA
-    ) {
-
-      message.textContent =
-        `Le montant minimum d'achat est de ${formatNumber(MIN_FCFA, 0)} FCFA.`;
-
-      return;
-
-    }
-
-
-    // Vérifier que les frais ne dépassent
-    // pas le montant acheté
     if (
       cryptoAmount <= 0
     ) {
@@ -2114,9 +2896,21 @@ async function sendOrder() {
 
   } else {
 
-    // --------------------------------------
+    // ======================================
     // VENTE
-    // --------------------------------------
+    // ======================================
+
+    if (
+      numericAmount < MIN_SELL_USDT
+    ) {
+
+      message.textContent =
+        `Le montant minimum pour une vente est de ${formatNumber(MIN_SELL_USDT, 6)} USDT, soit ${formatNumber(MIN_FIAT_AMOUNT, 0)} FCFA.`;
+
+      return;
+
+    }
+
 
     cryptoAmount =
       numericAmount;
@@ -2126,40 +2920,19 @@ async function sendOrder() {
       SELL_RATE;
 
 
-    const grossFiat =
+    const grossFCFA =
       numericAmount * SELL_RATE;
 
 
-    const feeFiat =
+    const feeFCFA =
       networkFee * SELL_RATE;
 
 
     fiatAmount =
       Math.max(
-        grossFiat - feeFiat,
+        grossFCFA - feeFCFA,
         0
       );
-
-
-    /*
-      Minimum de 2 000 FCFA sur la valeur
-      de la vente avant frais.
-    */
-
-    if (
-      grossFiat < MIN_FCFA
-    ) {
-
-      const minimumUSDT =
-        MIN_FCFA / SELL_RATE;
-
-
-      message.textContent =
-        `Le montant minimum de vente est de ${formatNumber(minimumUSDT, 6)} USDT (soit au moins ${formatNumber(MIN_FCFA, 0)} FCFA).`;
-
-      return;
-
-    }
 
 
     if (
@@ -2293,7 +3066,7 @@ async function sendOrder() {
 
 
     // ======================================
-    // CRÉER LA COMMANDE
+    // CRÉER COMMANDE
     // ======================================
 
     const {
@@ -2310,26 +3083,26 @@ async function sendOrder() {
           type:
             type,
 
-          crypto_amount:
-            cryptoAmount,
-
           fiat_amount:
             fiatAmount,
+
+          crypto_amount:
+            cryptoAmount,
 
           rate:
             rate,
 
+          fee:
+            networkFee,
+
           network:
             network,
 
-          network_fee:
-            networkFee,
+          wallet_address:
+            wallet,
 
           payment_method:
             paymentMethod,
-
-          wallet_address:
-            wallet,
 
           status:
             'pending'
@@ -2367,12 +3140,12 @@ async function sendOrder() {
     if (type === 'buy') {
 
       message.textContent =
-        `Demande d’achat envoyée : ${formatNumber(cryptoAmount, 6)} USDT nets pour ${formatNumber(fiatAmount, 0)} FCFA. Réseau : ${network}. Frais : ${formatNumber(networkFee, 2)} USDT. Paiement : ${paymentMethod}.`;
+        `Demande d’achat envoyée avec succès : ${formatNumber(cryptoAmount, 6)} USDT nets pour ${formatNumber(fiatAmount, 0)} FCFA. Réseau : ${network}. Frais : ${formatNumber(networkFee, 2)} USDT. Paiement : ${paymentMethod}.`;
 
     } else {
 
       message.textContent =
-        `Demande de vente envoyée : ${formatNumber(cryptoAmount, 6)} USDT pour ${formatNumber(fiatAmount, 0)} FCFA nets. Réseau : ${network}. Frais : ${formatNumber(networkFee, 2)} USDT. Paiement : ${paymentMethod}.`;
+        `Demande de vente envoyée avec succès : ${formatNumber(cryptoAmount, 6)} USDT pour ${formatNumber(fiatAmount, 0)} FCFA nets. Réseau : ${network}. Frais : ${formatNumber(networkFee, 2)} USDT. Paiement : ${paymentMethod}.`;
 
     }
 
@@ -2384,12 +3157,41 @@ async function sendOrder() {
     amountInput.value =
       '';
 
-
     walletInput.value =
       '';
 
 
+    document
+      .querySelectorAll(
+        'input[name="payment_method"]'
+      )
+      .forEach(
+        input => {
+
+          input.checked =
+            false;
+
+        }
+      );
+
+
+    document
+      .querySelectorAll(
+        '.payment-option'
+      )
+      .forEach(
+        option => {
+
+          option.classList.remove(
+            'active'
+          );
+
+        }
+      );
+
+
     updateCalculation();
+
 
   } catch (error) {
 
@@ -2413,5 +3215,41 @@ async function sendOrder() {
       'Envoyer la demande';
 
   }
+
+}
+
+
+// ==========================================
+// PROTECTION HTML
+// ==========================================
+
+function escapeHtml(value) {
+
+  return String(value)
+
+    .replaceAll(
+      '&',
+      '&amp;'
+    )
+
+    .replaceAll(
+      '<',
+      '&lt;'
+    )
+
+    .replaceAll(
+      '>',
+      '&gt;'
+    )
+
+    .replaceAll(
+      '"',
+      '&quot;'
+    )
+
+    .replaceAll(
+      "'",
+      '&#039;'
+    );
 
 }
