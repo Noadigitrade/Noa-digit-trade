@@ -2,6 +2,7 @@
 // NOA DIGIT TRADE
 // SUPABASE AUTH + ORDERS + HISTORIQUE
 // CONFIRMATION + ORANGE MONEY + QR CODE
+// VERSION CORRIGÉE
 // ============================================================
 
 
@@ -21,7 +22,6 @@ const SUPABASE_KEY =
 // ============================================================
 
 const BUY_RATE = 600;
-
 const SELL_RATE = 570;
 
 
@@ -37,13 +37,9 @@ const MIN_FCFA = 2000;
 // ============================================================
 
 const NETWORK_FEES = {
-
   BEP20: 0,
-
   TRC20: 2,
-
   ERC20: 2.5
-
 };
 
 
@@ -51,15 +47,14 @@ const NETWORK_FEES = {
 // ORANGE MONEY
 // ============================================================
 
-// Numéro utilisé uniquement dans le code USSD / QR.
-// Il n'est jamais affiché directement.
-const ORANGE_MONEY_NUMBER =
-  '74602553';
+const ORANGE_MONEY_NUMBER = '74602553';
 
 
 // ============================================================
 // INITIALISATION SUPABASE
 // ============================================================
+
+let supabaseClient = null;
 
 if (!window.supabase) {
 
@@ -73,14 +68,13 @@ if (!window.supabase) {
     'Supabase JS chargé.'
   );
 
+  supabaseClient =
+    window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY
+    );
+
 }
-
-
-const supabaseClient =
-  window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
-  );
 
 
 // ============================================================
@@ -101,6 +95,16 @@ document.addEventListener(
     console.log(
       'NOA DIGIT TRADE démarré.'
     );
+
+    if (!supabaseClient) {
+
+      console.error(
+        'Supabase n’est pas disponible.'
+      );
+
+      return;
+
+    }
 
     setupTabs();
 
@@ -129,6 +133,10 @@ document.addEventListener(
 // ============================================================
 
 async function checkSession() {
+
+  if (!supabaseClient) {
+    return;
+  }
 
   try {
 
@@ -173,15 +181,19 @@ async function checkSession() {
 // SURVEILLER AUTH
 // ============================================================
 
-supabaseClient.auth.onAuthStateChange(
-  (_event, session) => {
+if (supabaseClient) {
 
-    updateLoginButton(
-      session
-    );
+  supabaseClient.auth.onAuthStateChange(
+    (_event, session) => {
 
-  }
-);
+      updateLoginButton(
+        session
+      );
+
+    }
+  );
+
+}
 
 
 // ============================================================
@@ -196,9 +208,7 @@ function updateLoginButton(session) {
     );
 
   if (!login) {
-
     return;
-
   }
 
   login.onclick = null;
@@ -208,7 +218,11 @@ function updateLoginButton(session) {
     login.textContent =
       'Mon compte';
 
-    login.onclick = () => {
+    login.onclick = event => {
+
+      if (event) {
+        event.preventDefault();
+      }
 
       showAccountModal(
         session.user
@@ -221,7 +235,11 @@ function updateLoginButton(session) {
     login.textContent =
       'Se connecter';
 
-    login.onclick = () => {
+    login.onclick = event => {
+
+      if (event) {
+        event.preventDefault();
+      }
 
       showAuthModal();
 
@@ -248,7 +266,9 @@ function setupTabs() {
 
       button.addEventListener(
         'click',
-        () => {
+        event => {
+
+          event.preventDefault();
 
           tabs.forEach(
             item => {
@@ -265,7 +285,7 @@ function setupTabs() {
           );
 
           type =
-            button.dataset.type;
+            button.dataset.type || 'buy';
 
           console.log(
             'Type sélectionné :',
@@ -295,14 +315,14 @@ function setupStartButton() {
     );
 
   if (!start) {
-
     return;
-
   }
 
   start.addEventListener(
     'click',
-    () => {
+    event => {
+
+      event.preventDefault();
 
       const order =
         document.getElementById(
@@ -312,13 +332,8 @@ function setupStartButton() {
       if (order) {
 
         order.scrollIntoView({
-
-          behavior:
-            'smooth',
-
-          block:
-            'start'
-
+          behavior: 'smooth',
+          block: 'start'
         });
 
       }
@@ -341,9 +356,7 @@ function setupCalculation() {
     );
 
   if (!amountInput) {
-
     return;
-
   }
 
   amountInput.addEventListener(
@@ -370,9 +383,7 @@ function setupNetworkChange() {
     );
 
   if (!networkInput) {
-
     return;
-
   }
 
   networkInput.addEventListener(
@@ -401,7 +412,9 @@ function setupPaymentMethods() {
 
       button.addEventListener(
         'click',
-        () => {
+        event => {
+
+          event.preventDefault();
 
           buttons.forEach(
             item => {
@@ -448,6 +461,7 @@ function setupPaymentMethods() {
     );
 
   }
+
 
   const paymentMethod =
     document.getElementById(
@@ -509,9 +523,7 @@ function getNetworkFee() {
     );
 
   if (!networkInput) {
-
     return 0;
-
   }
 
   const network =
@@ -536,18 +548,19 @@ function getNetworkName() {
     );
 
   if (!networkInput) {
-
     return 'BEP20';
-
   }
 
-  return networkInput.value || 'BEP20';
+  return (
+    networkInput.value ||
+    'BEP20'
+  );
 
 }
 
 
 // ============================================================
-// ADAPTER AFFICHAGE ACHAT / VENTE
+// ADAPTER ACHAT / VENTE
 // ============================================================
 
 function updateCalculationMode() {
@@ -573,9 +586,7 @@ function updateCalculationMode() {
     );
 
   if (!amountInput) {
-
     return;
-
   }
 
 
@@ -592,7 +603,7 @@ function updateCalculationMode() {
       'Minimum : 2 000 FCFA';
 
     amountInput.min =
-      MIN_FCFA;
+      String(MIN_FCFA);
 
     if (walletLabel) {
 
@@ -608,37 +619,34 @@ function updateCalculationMode() {
 
     }
 
-    updateCalculation();
+  } else {
 
-    return;
+    if (amountLabel) {
 
-  }
+      amountLabel.textContent =
+        'Montant à vendre (USDT)';
 
+    }
 
-  if (amountLabel) {
+    amountInput.placeholder =
+      'Montant en USDT';
 
-    amountLabel.textContent =
-      'Montant à vendre (USDT)';
+    amountInput.min =
+      '0';
 
-  }
+    if (walletLabel) {
 
-  amountInput.placeholder =
-    'Montant en USDT';
+      walletLabel.textContent =
+        'Adresse du portefeuille USDT';
 
-  amountInput.min =
-    '0';
+    }
 
-  if (walletLabel) {
+    if (rateText) {
 
-    walletLabel.textContent =
-      'Adresse du portefeuille USDT';
+      rateText.textContent =
+        `Taux de vente : 1 USDT = ${formatNumber(SELL_RATE, 0)} FCFA`;
 
-  }
-
-  if (rateText) {
-
-    rateText.textContent =
-      `Taux de vente : 1 USDT = ${formatNumber(SELL_RATE, 0)} FCFA`;
+    }
 
   }
 
@@ -682,9 +690,7 @@ function updateCalculation() {
     !amountInput ||
     !resultAmount
   ) {
-
     return;
-
   }
 
   const value =
@@ -704,17 +710,10 @@ function updateCalculation() {
     value <= 0
   ) {
 
-    if (type === 'buy') {
-
-      resultAmount.textContent =
-        '0 USDT';
-
-    } else {
-
-      resultAmount.textContent =
-        '0 FCFA';
-
-    }
+    resultAmount.textContent =
+      type === 'buy'
+        ? '0 USDT'
+        : '0 FCFA';
 
     if (resultDetail) {
 
@@ -745,6 +744,10 @@ function updateCalculation() {
 
   }
 
+
+  // ==========================================================
+  // ACHAT
+  // ==========================================================
 
   if (type === 'buy') {
 
@@ -785,6 +788,10 @@ function updateCalculation() {
 
   }
 
+
+  // ==========================================================
+  // VENTE
+  // ==========================================================
 
   const usdtAmount =
     value;
@@ -840,12 +847,9 @@ function formatNumber(
   return Number(value).toLocaleString(
     'fr-FR',
     {
-      minimumFractionDigits:
-        0,
-
+      minimumFractionDigits: 0,
       maximumFractionDigits:
         maximumFractionDigits
-
     }
   );
 
@@ -892,17 +896,11 @@ function showAuthModal() {
   );
 
   if (loginForm) {
-
-    loginForm.hidden =
-      false;
-
+    loginForm.hidden = false;
   }
 
   if (signupForm) {
-
-    signupForm.hidden =
-      true;
-
+    signupForm.hidden = true;
   }
 
   const loginMessage =
@@ -916,17 +914,11 @@ function showAuthModal() {
     );
 
   if (loginMessage) {
-
-    loginMessage.textContent =
-      '';
-
+    loginMessage.textContent = '';
   }
 
   if (signupMessage) {
-
-    signupMessage.textContent =
-      '';
-
+    signupMessage.textContent = '';
   }
 
 }
@@ -944,9 +936,7 @@ function closeAuthModal() {
     );
 
   if (!modal) {
-
     return;
-
   }
 
   modal.style.display =
@@ -1001,7 +991,13 @@ function setupAuth() {
 
     closeAuth.addEventListener(
       'click',
-      closeAuthModal
+      event => {
+
+        event.preventDefault();
+
+        closeAuthModal();
+
+      }
     );
 
   }
@@ -1031,7 +1027,9 @@ function setupAuth() {
 
     showSignup.addEventListener(
       'click',
-      () => {
+      event => {
+
+        event.preventDefault();
 
         const loginForm =
           document.getElementById(
@@ -1044,17 +1042,11 @@ function setupAuth() {
           );
 
         if (loginForm) {
-
-          loginForm.hidden =
-            true;
-
+          loginForm.hidden = true;
         }
 
         if (signupForm) {
-
-          signupForm.hidden =
-            false;
-
+          signupForm.hidden = false;
         }
 
       }
@@ -1067,7 +1059,9 @@ function setupAuth() {
 
     showLogin.addEventListener(
       'click',
-      () => {
+      event => {
+
+        event.preventDefault();
 
         const loginForm =
           document.getElementById(
@@ -1080,17 +1074,11 @@ function setupAuth() {
           );
 
         if (signupForm) {
-
-          signupForm.hidden =
-            true;
-
+          signupForm.hidden = true;
         }
 
         if (loginForm) {
-
-          loginForm.hidden =
-            false;
-
+          loginForm.hidden = false;
         }
 
       }
@@ -1125,7 +1113,11 @@ function setupAuth() {
 // CONNEXION UTILISATEUR
 // ============================================================
 
-async function loginUser() {
+async function loginUser(event) {
+
+  if (event) {
+    event.preventDefault();
+  }
 
   const emailInput =
     document.getElementById(
@@ -1153,9 +1145,7 @@ async function loginUser() {
     !message ||
     !button
   ) {
-
     return;
-
   }
 
   const email =
@@ -1202,9 +1192,7 @@ async function loginUser() {
       });
 
     if (error) {
-
       throw error;
-
     }
 
     message.textContent =
@@ -1224,7 +1212,10 @@ async function loginUser() {
 
     message.textContent =
       'Erreur : ' +
-      error.message;
+      (
+        error.message ||
+        'Connexion impossible.'
+      );
 
   } finally {
 
@@ -1243,7 +1234,11 @@ async function loginUser() {
 // INSCRIPTION
 // ============================================================
 
-async function signupUser() {
+async function signupUser(event) {
+
+  if (event) {
+    event.preventDefault();
+  }
 
   const emailInput =
     document.getElementById(
@@ -1277,9 +1272,7 @@ async function signupUser() {
     !message ||
     !button
   ) {
-
     return;
-
   }
 
   const email =
@@ -1359,10 +1352,13 @@ async function signupUser() {
       });
 
     if (error) {
-
       throw error;
-
     }
+
+
+    // --------------------------------------------------------
+    // EMAIL DE CONFIRMATION
+    // --------------------------------------------------------
 
     if (
       data.user &&
@@ -1372,9 +1368,20 @@ async function signupUser() {
       message.textContent =
         'Compte créé. Vérifiez votre email pour confirmer votre compte.';
 
+      passwordInput.value =
+        '';
+
+      confirmInput.value =
+        '';
+
       return;
 
     }
+
+
+    // --------------------------------------------------------
+    // SESSION DIRECTE
+    // --------------------------------------------------------
 
     if (data.user) {
 
@@ -1418,7 +1425,10 @@ async function signupUser() {
 
     message.textContent =
       'Erreur : ' +
-      error.message;
+      (
+        error.message ||
+        'Inscription impossible.'
+      );
 
   } finally {
 
@@ -1464,9 +1474,7 @@ async function createUserProfile(user) {
       .limit(1);
 
   if (searchError) {
-
     throw searchError;
-
   }
 
   if (
@@ -1497,9 +1505,7 @@ async function createUserProfile(user) {
       .single();
 
   if (insertError) {
-
     throw insertError;
-
   }
 
   return newUser;
@@ -1519,9 +1525,7 @@ async function showAccountModal(user) {
     );
 
   if (oldModal) {
-
     oldModal.remove();
-
   }
 
   const modal =
@@ -1676,7 +1680,9 @@ async function showAccountModal(user) {
 
     closeButton.addEventListener(
       'click',
-      () => {
+      event => {
+
+        event.preventDefault();
 
         modal.remove();
 
@@ -1711,7 +1717,9 @@ async function showAccountModal(user) {
 
     logoutButton.addEventListener(
       'click',
-      async () => {
+      async event => {
+
+        event.preventDefault();
 
         logoutButton.disabled =
           true;
@@ -1719,12 +1727,20 @@ async function showAccountModal(user) {
         logoutButton.textContent =
           'Déconnexion...';
 
-        const {
-          error
-        } =
-          await supabaseClient.auth.signOut();
+        try {
 
-        if (error) {
+          const {
+            error
+          } =
+            await supabaseClient.auth.signOut();
+
+          if (error) {
+            throw error;
+          }
+
+          modal.remove();
+
+        } catch (error) {
 
           console.error(
             'Erreur déconnexion :',
@@ -1740,7 +1756,10 @@ async function showAccountModal(user) {
 
             accountMessage.textContent =
               'Erreur : ' +
-              error.message;
+              (
+                error.message ||
+                'Déconnexion impossible.'
+              );
 
           }
 
@@ -1750,11 +1769,7 @@ async function showAccountModal(user) {
           logoutButton.textContent =
             'Se déconnecter';
 
-          return;
-
         }
-
-        modal.remove();
 
       }
     );
@@ -1780,9 +1795,7 @@ async function loadOrderHistory(user) {
     );
 
   if (!history) {
-
     return;
-
   }
 
   try {
@@ -1801,9 +1814,7 @@ async function loadOrderHistory(user) {
         .limit(1);
 
     if (userError) {
-
       throw userError;
-
     }
 
     if (
@@ -1858,14 +1869,12 @@ async function loadOrderHistory(user) {
         .order(
           'created_at',
           {
-            ascending:false
+            ascending: false
           }
         );
 
     if (ordersError) {
-
       throw ordersError;
-
     }
 
     if (
@@ -2111,11 +2120,8 @@ function getStatusInfo(status) {
   ) {
 
     case 'completed':
-
     case 'complete':
-
     case 'success':
-
     case 'successful':
 
       return {
@@ -2133,9 +2139,7 @@ function getStatusInfo(status) {
 
 
     case 'cancelled':
-
     case 'canceled':
-
     case 'rejected':
 
       return {
@@ -2153,7 +2157,6 @@ function getStatusInfo(status) {
 
 
     case 'processing':
-
     case 'in_progress':
 
       return {
@@ -2170,8 +2173,23 @@ function getStatusInfo(status) {
       };
 
 
-    case 'pending':
+    case 'payment_declared':
 
+      return {
+
+        text:
+          'Paiement déclaré',
+
+        background:
+          '#eff8ff',
+
+        color:
+          '#175cd3'
+
+      };
+
+
+    case 'pending':
     default:
 
       return {
@@ -2199,9 +2217,7 @@ function getStatusInfo(status) {
 function formatDate(value) {
 
   if (!value) {
-
     return 'Date inconnue';
-
   }
 
   const date =
@@ -2212,29 +2228,17 @@ function formatDate(value) {
       date.getTime()
     )
   ) {
-
     return 'Date inconnue';
-
   }
 
   return date.toLocaleString(
     'fr-FR',
     {
-      day:
-        '2-digit',
-
-      month:
-        'long',
-
-      year:
-        'numeric',
-
-      hour:
-        '2-digit',
-
-      minute:
-        '2-digit'
-
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
     }
   );
 
@@ -2298,10 +2302,36 @@ function setupSubmitButton() {
 
   }
 
-  submit.addEventListener(
-    'click',
-    sendOrder
-  );
+
+  const form =
+    submit.closest('form');
+
+
+  // ----------------------------------------------------------
+  // SI LE BOUTON EST DANS UN FORMULAIRE
+  // ----------------------------------------------------------
+
+  if (form) {
+
+    form.addEventListener(
+      'submit',
+      event => {
+
+        event.preventDefault();
+
+        sendOrder(event);
+
+      }
+    );
+
+  } else {
+
+    submit.addEventListener(
+      'click',
+      sendOrder
+    );
+
+  }
 
 }
 
@@ -2310,7 +2340,11 @@ function setupSubmitButton() {
 // ENVOYER LA COMMANDE
 // ============================================================
 
-async function sendOrder() {
+async function sendOrder(event) {
+
+  if (event) {
+    event.preventDefault();
+  }
 
   const amountInput =
     document.getElementById(
@@ -2368,6 +2402,11 @@ async function sendOrder() {
   message.textContent =
     '';
 
+
+  // ==========================================================
+  // VALIDATION
+  // ==========================================================
+
   if (
     !amount ||
     !wallet
@@ -2397,13 +2436,12 @@ async function sendOrder() {
 
   }
 
+
   let cryptoAmount;
-
   let fiatAmount;
-
   let rate;
-
   let networkFee;
+
 
   networkFee =
     getNetworkFee();
@@ -2430,6 +2468,7 @@ async function sendOrder() {
         0
       );
 
+
     if (
       fiatAmount < MIN_FCFA
     ) {
@@ -2440,6 +2479,7 @@ async function sendOrder() {
       return;
 
     }
+
 
     if (
       cryptoAmount <= 0
@@ -2479,6 +2519,7 @@ async function sendOrder() {
         0
       );
 
+
     if (
       grossFiat < MIN_FCFA
     ) {
@@ -2492,6 +2533,7 @@ async function sendOrder() {
       return;
 
     }
+
 
     if (
       fiatAmount <= 0
@@ -2553,6 +2595,10 @@ async function sendOrder() {
   }
 
 
+  // ==========================================================
+  // DÉSACTIVER
+  // ==========================================================
+
   submit.disabled =
     true;
 
@@ -2563,6 +2609,11 @@ async function sendOrder() {
   try {
 
     let userId;
+
+
+    // ========================================================
+    // RÉCUPÉRER PROFIL
+    // ========================================================
 
     const {
       data: users,
@@ -2577,13 +2628,13 @@ async function sendOrder() {
         )
         .limit(1);
 
-    if (userError) {
 
+    if (userError) {
       throw new Error(
         userError.message
       );
-
     }
+
 
     if (
       users &&
@@ -2652,6 +2703,7 @@ async function sendOrder() {
         .select()
         .single();
 
+
     if (orderError) {
 
       console.error(
@@ -2664,6 +2716,7 @@ async function sendOrder() {
       );
 
     }
+
 
     console.log(
       'Commande créée :',
@@ -2728,7 +2781,10 @@ async function sendOrder() {
 
     message.textContent =
       'Erreur : ' +
-      error.message;
+      (
+        error.message ||
+        'Impossible de créer la commande.'
+      );
 
   } finally {
 
@@ -2744,7 +2800,7 @@ async function sendOrder() {
 
 
 // ============================================================
-// CRÉER LE CODE USSD ORANGE MONEY
+// CRÉER CODE USSD ORANGE MONEY
 // ============================================================
 
 function createOrangeUSSD(amount) {
@@ -2762,7 +2818,7 @@ function createOrangeUSSD(amount) {
 
 
 // ============================================================
-// CHARGER LA BIBLIOTHÈQUE QR CODE
+// CHARGER QR CODE
 // ============================================================
 
 function loadQRCodeLibrary() {
@@ -2770,7 +2826,6 @@ function loadQRCodeLibrary() {
   return new Promise(
     (resolve, reject) => {
 
-      // Déjà disponible
       if (
         window.QRCode &&
         typeof window.QRCode.toCanvas === 'function'
@@ -2785,11 +2840,11 @@ function loadQRCodeLibrary() {
       }
 
 
-      // Éviter de charger plusieurs fois
       const existingScript =
         document.querySelector(
           'script[data-noa-qrcode="true"]'
         );
+
 
       if (existingScript) {
 
@@ -2816,8 +2871,12 @@ function loadQRCodeLibrary() {
 
             }
 
+          },
+          {
+            once: true
           }
         );
+
 
         existingScript.addEventListener(
           'error',
@@ -2829,6 +2888,9 @@ function loadQRCodeLibrary() {
               )
             );
 
+          },
+          {
+            once: true
           }
         );
 
@@ -2837,7 +2899,6 @@ function loadQRCodeLibrary() {
       }
 
 
-      // Charger QRCode.js
       const script =
         document.createElement(
           'script'
@@ -2851,6 +2912,7 @@ function loadQRCodeLibrary() {
 
       script.dataset.noaQrcode =
         'true';
+
 
       script.onload =
         () => {
@@ -2868,13 +2930,14 @@ function loadQRCodeLibrary() {
 
             reject(
               new Error(
-                'QRCode.js chargé mais API QRCode.toCanvas indisponible.'
+                'QRCode.js chargé mais API indisponible.'
               )
             );
 
           }
 
         };
+
 
       script.onerror =
         () => {
@@ -2887,6 +2950,7 @@ function loadQRCodeLibrary() {
 
         };
 
+
       document.head.appendChild(
         script
       );
@@ -2898,7 +2962,7 @@ function loadQRCodeLibrary() {
 
 
 // ============================================================
-// CRÉER QR CODE DE SECOURS
+// QR DE SECOURS
 // ============================================================
 
 function createQRCodeURL(data) {
@@ -2924,25 +2988,21 @@ async function renderPaymentQRCode(
 ) {
 
   if (!container) {
-
     return;
-
   }
 
-
-  // Nettoyer
-  container.innerHTML = '';
+  container.innerHTML =
+    '';
 
 
   // ==========================================================
-  // CANVAS LOCAL
+  // QR LOCAL
   // ==========================================================
 
   try {
 
     const QRCode =
       await loadQRCodeLibrary();
-
 
     const canvas =
       document.createElement(
@@ -2995,7 +3055,6 @@ async function renderPaymentQRCode(
       'QR Code généré localement.'
     );
 
-
     return;
 
   } catch (error) {
@@ -3009,7 +3068,7 @@ async function renderPaymentQRCode(
 
 
   // ==========================================================
-  // FALLBACK IMAGE
+  // FALLBACK
   // ==========================================================
 
   const img =
@@ -3103,15 +3162,24 @@ function getOrderNumber(order) {
   const id =
     String(order.id);
 
+  const cleanId =
+    id.replaceAll(
+      '-',
+      ''
+    );
+
+
   if (
-    id.length > 8
+    cleanId.length > 8
   ) {
 
     return (
       '#' +
-      id
-        .replaceAll('-', '')
-        .substring(0, 8)
+      cleanId
+        .substring(
+          0,
+          8
+        )
         .toUpperCase()
     );
 
@@ -3119,7 +3187,7 @@ function getOrderNumber(order) {
 
   return (
     '#' +
-    id.toUpperCase()
+    cleanId.toUpperCase()
   );
 
 }
@@ -3140,9 +3208,7 @@ function showOrderConfirmation(
     );
 
   if (oldModal) {
-
     oldModal.remove();
-
   }
 
 
@@ -3153,7 +3219,6 @@ function showOrderConfirmation(
 
   modal.id =
     'orderConfirmationModal';
-
 
   modal.style.cssText = `
     position:fixed;
@@ -3171,12 +3236,10 @@ function showOrderConfirmation(
   const isBuy =
     details.type === 'buy';
 
-
   const title =
     isBuy
       ? 'Commande créée'
       : 'Demande de vente créée';
-
 
   const orderNumber =
     getOrderNumber(order);
@@ -3232,7 +3295,7 @@ function showOrderConfirmation(
             margin:0;
             font-size:27px;
           ">
-            ${title}
+            ${escapeHtml(title)}
           </h2>
 
           <p style="
@@ -3244,8 +3307,6 @@ function showOrderConfirmation(
 
         </div>
 
-
-        <!-- NUMÉRO COMMANDE -->
 
         <div style="
           background:#f8f9fc;
@@ -3273,8 +3334,6 @@ function showOrderConfirmation(
 
         </div>
 
-
-        <!-- RÉCAPITULATIF -->
 
         <div style="
           border:1px solid #e4e7ec;
@@ -3314,6 +3373,24 @@ function showOrderConfirmation(
 
             <strong>
               ${formatNumber(details.fiatAmount, 0)} FCFA
+            </strong>
+
+          </div>
+
+
+          <div style="
+            display:flex;
+            justify-content:space-between;
+            gap:12px;
+            padding:7px 0;
+          ">
+
+            <span style="color:#667085;">
+              Taux
+            </span>
+
+            <strong>
+              1 USDT = ${formatNumber(details.rate, 0)} FCFA
             </strong>
 
           </div>
@@ -3375,10 +3452,6 @@ function showOrderConfirmation(
         </div>
 
 
-        <!-- ================================================= -->
-        <!-- PAIEMENT ORANGE MONEY -->
-        <!-- ================================================= -->
-
         <div style="
           background:#fff8ed;
           border:1px solid #fedf89;
@@ -3430,8 +3503,6 @@ function showOrderConfirmation(
 
           </div>
 
-
-          <!-- QR CODE -->
 
           <div style="
             text-align:center;
@@ -3512,8 +3583,6 @@ function showOrderConfirmation(
         </div>
 
 
-        <!-- STATUT -->
-
         <div style="
           background:#fffaeb;
           border:1px solid #fedf89;
@@ -3573,7 +3642,6 @@ function showOrderConfirmation(
             margin:14px 0 0;
             text-align:center;
             line-height:1.5;
-            color:#027a48;
           ">
         </p>
 
@@ -3581,15 +3649,11 @@ function showOrderConfirmation(
 
     `;
 
-    // Ajouter la modal
+
     document.body.appendChild(
       modal
     );
 
-
-    // ========================================================
-    // GÉNÉRER QR APRÈS AFFICHAGE
-    // ========================================================
 
     const qrContainer =
       document.getElementById(
@@ -3648,7 +3712,7 @@ function showOrderConfirmation(
             margin:0;
             font-size:27px;
           ">
-            ${title}
+            ${escapeHtml(title)}
           </h2>
 
           <p style="
@@ -3874,7 +3938,7 @@ function showOrderConfirmation(
 
 
   // ==========================================================
-  // FERMER
+  // FERMER MODAL
   // ==========================================================
 
   const closeButton =
@@ -3886,7 +3950,9 @@ function showOrderConfirmation(
 
     closeButton.addEventListener(
       'click',
-      () => {
+      event => {
+
+        event.preventDefault();
 
         modal.remove();
 
@@ -3915,225 +3981,218 @@ function showOrderConfirmation(
     }
   );
 
-// ==========================================================
-// J'AI EFFECTUÉ LE PAIEMENT
-// ==========================================================
 
-const paymentDoneButton =
-  document.getElementById(
-    'paymentDoneButton'
-  );
+  // ==========================================================
+  // J'AI EFFECTUÉ LE PAIEMENT
+  // ==========================================================
 
-if (paymentDoneButton) {
+  const paymentDoneButton =
+    document.getElementById(
+      'paymentDoneButton'
+    );
 
-  paymentDoneButton.addEventListener(
-    'click',
-    async () => {
+  if (paymentDoneButton) {
 
-      const paymentDoneMessage =
-        document.getElementById(
-          'paymentDoneMessage'
-        );
+    paymentDoneButton.addEventListener(
+      'click',
+      async event => {
+
+        event.preventDefault();
 
 
-      // ------------------------------------------------------
-      // VÉRIFIER QUE LA COMMANDE EXISTE
-      // ------------------------------------------------------
-
-      if (
-        !order ||
-        !order.id
-      ) {
-
-        if (paymentDoneMessage) {
-
-          paymentDoneMessage.style.color =
-            '#b42318';
-
-          paymentDoneMessage.textContent =
-            'Impossible d’identifier la commande.';
-
-        }
-
-        return;
-
-      }
+        const paymentDoneMessage =
+          document.getElementById(
+            'paymentDoneMessage'
+          );
 
 
-      // ------------------------------------------------------
-      // DÉSACTIVER LE BOUTON
-      // ------------------------------------------------------
-
-      paymentDoneButton.disabled =
-        true;
-
-      paymentDoneButton.textContent =
-        'Enregistrement...';
-
-
-      if (paymentDoneMessage) {
-
-        paymentDoneMessage.style.color =
-          '#667085';
-
-        paymentDoneMessage.textContent =
-          '';
-
-      }
-
-
-      try {
-
-        // ====================================================
-        // VÉRIFIER LA SESSION
-        // ====================================================
-
-        const {
-          data: sessionData,
-          error: sessionError
-        } =
-          await supabaseClient.auth.getSession();
-
+        // ----------------------------------------------------
+        // VÉRIFIER COMMANDE
+        // ----------------------------------------------------
 
         if (
-          sessionError ||
-          !sessionData.session
+          !order ||
+          !order.id
         ) {
 
-          throw new Error(
-            'Votre session a expiré. Veuillez vous reconnecter.'
-          );
+          if (paymentDoneMessage) {
+
+            paymentDoneMessage.style.color =
+              '#b42318';
+
+            paymentDoneMessage.textContent =
+              'Impossible d’identifier la commande.';
+
+          }
+
+          return;
 
         }
 
 
-        // ====================================================
-        // DÉCLARER LE PAIEMENT
-        // ====================================================
-
-        const {
-          data: declared,
-          error: declareError
-        } =
-          await supabaseClient.rpc(
-            'declare_order_payment',
-            {
-              p_order_id:
-                order.id
-            }
-          );
-
-
-        if (declareError) {
-
-          console.error(
-            'Erreur déclaration paiement :',
-            declareError
-          );
-
-          throw new Error(
-            declareError.message
-          );
-
-        }
-
-
-        // ====================================================
-        // VÉRIFIER LE RÉSULTAT
-        // ====================================================
-
-        if (
-          declared !== true
-        ) {
-
-          throw new Error(
-            'Cette commande ne peut plus être déclarée comme payée.'
-          );
-
-        }
-
-
-        // ====================================================
-        // SUCCÈS
-        // ====================================================
-
-        paymentDoneButton.textContent =
-          'Paiement déclaré ✓';
-
-        paymentDoneButton.style.background =
-          '#027a48';
+        // ----------------------------------------------------
+        // DÉSACTIVER
+        // ----------------------------------------------------
 
         paymentDoneButton.disabled =
           true;
 
+        paymentDoneButton.textContent =
+          'Enregistrement...';
+
 
         if (paymentDoneMessage) {
 
           paymentDoneMessage.style.color =
-            '#027a48';
+            '#667085';
 
           paymentDoneMessage.textContent =
-            'Votre paiement a bien été déclaré. Votre commande est maintenant en attente de vérification par NOA DIGIT TRADE.';
+            '';
 
         }
 
 
-        // ----------------------------------------------------
-        // METTRE À JOUR L'OBJET LOCAL
-        // ----------------------------------------------------
+        try {
 
-        order.status =
-          'payment_declared';
+          // ==================================================
+          // VÉRIFIER SESSION
+          // ==================================================
 
-
-      } catch (error) {
-
-        console.error(
-          'Erreur déclaration paiement :',
-          error
-        );
+          const {
+            data: sessionData,
+            error: sessionError
+          } =
+            await supabaseClient.auth.getSession();
 
 
-        // ====================================================
-        // ERREUR
-        // ====================================================
+          if (
+            sessionError ||
+            !sessionData.session
+          ) {
 
-        paymentDoneButton.disabled =
-          false;
-
-        paymentDoneButton.textContent =
-          'J’ai effectué le paiement';
-
-
-        if (paymentDoneMessage) {
-
-          paymentDoneMessage.style.color =
-            '#b42318';
-
-          paymentDoneMessage.textContent =
-            'Erreur : ' +
-            (
-              error.message ||
-              'Impossible d’enregistrer votre déclaration.'
+            throw new Error(
+              'Votre session a expiré. Veuillez vous reconnecter.'
             );
+
+          }
+
+
+          // ==================================================
+          // APPELER RPC
+          // ==================================================
+
+          const {
+            data: declared,
+            error: declareError
+          } =
+            await supabaseClient.rpc(
+              'declare_order_payment',
+              {
+                p_order_id:
+                  order.id
+              }
+            );
+
+
+          if (declareError) {
+
+            console.error(
+              'Erreur déclaration paiement :',
+              declareError
+            );
+
+            throw new Error(
+              declareError.message
+            );
+
+          }
+
+
+          // ==================================================
+          // VÉRIFIER RÉSULTAT
+          // ==================================================
+
+          if (
+            declared !== true
+          ) {
+
+            throw new Error(
+              'Cette commande ne peut plus être déclarée comme payée.'
+            );
+
+          }
+
+
+          // ==================================================
+          // SUCCÈS
+          // ==================================================
+
+          paymentDoneButton.textContent =
+            'Paiement déclaré ✓';
+
+          paymentDoneButton.style.background =
+            '#027a48';
+
+          paymentDoneButton.disabled =
+            true;
+
+
+          if (paymentDoneMessage) {
+
+            paymentDoneMessage.style.color =
+              '#027a48';
+
+            paymentDoneMessage.textContent =
+              'Votre paiement a bien été déclaré. Votre commande est maintenant en attente de vérification par NOA DIGIT TRADE.';
+
+          }
+
+
+          // --------------------------------------------------
+          // MISE À JOUR LOCALE
+          // --------------------------------------------------
+
+          order.status =
+            'payment_declared';
+
+
+        } catch (error) {
+
+          console.error(
+            'Erreur déclaration paiement :',
+            error
+          );
+
+
+          paymentDoneButton.disabled =
+            false;
+
+          paymentDoneButton.textContent =
+            'J’ai effectué le paiement';
+
+
+          if (paymentDoneMessage) {
+
+            paymentDoneMessage.style.color =
+              '#b42318';
+
+            paymentDoneMessage.textContent =
+              'Erreur : ' +
+              (
+                error.message ||
+                'Impossible d’enregistrer votre déclaration.'
+              );
+
+          }
 
         }
 
       }
+    );
 
-    }
-  );
+  }
 
 }
-
-        
-
-      
-    
-
-  
-
-
 
 
 // ============================================================
