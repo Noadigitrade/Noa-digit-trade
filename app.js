@@ -1,6 +1,7 @@
 // ============================================================
 // NOA DIGIT TRADE
 // SUPABASE AUTH + ORDERS + HISTORIQUE
+// CONFIRMATION + ORANGE MONEY + QR CODE
 // ============================================================
 
 
@@ -38,10 +39,24 @@ const MIN_FCFA = 2000;
 // ============================================================
 
 const NETWORK_FEES = {
+
   BEP20: 0,
+
   TRC20: 2,
+
   ERC20: 2.5
+
 };
+
+
+// ============================================================
+// ORANGE MONEY
+// ============================================================
+
+// Numéro utilisé uniquement dans le code de paiement.
+// Il ne sera jamais affiché directement à l'utilisateur.
+const ORANGE_MONEY_NUMBER =
+  '74602553';
 
 
 // ============================================================
@@ -102,6 +117,8 @@ document.addEventListener(
     setupPaymentMethods();
 
     setupNetworkChange();
+
+    removeMoovMoney();
 
     await checkSession();
 
@@ -374,6 +391,8 @@ function setupNetworkChange() {
 
 function setupPaymentMethods() {
 
+  removeMoovMoney();
+
   const buttons =
     document.querySelectorAll(
       '.payment-option'
@@ -408,12 +427,75 @@ function setupPaymentMethods() {
           if (paymentMethod) {
 
             paymentMethod.value =
-              button.dataset.payment || '';
+              'Orange Money';
 
           }
 
         }
       );
+
+    }
+  );
+
+
+  // ----------------------------------------------------------
+  // SÉLECTIONNER ORANGE MONEY PAR DÉFAUT
+  // ----------------------------------------------------------
+
+  const orangeButton =
+    document.querySelector(
+      '.payment-option[data-payment="Orange Money"]'
+    );
+
+  if (orangeButton) {
+
+    orangeButton.classList.add(
+      'active'
+    );
+
+  }
+
+  const paymentMethod =
+    document.getElementById(
+      'paymentMethod'
+    );
+
+  if (paymentMethod) {
+
+    paymentMethod.value =
+      'Orange Money';
+
+  }
+
+}
+
+
+// ============================================================
+// SUPPRIMER MOOV MONEY
+// ============================================================
+
+function removeMoovMoney() {
+
+  const buttons =
+    document.querySelectorAll(
+      '.payment-option'
+    );
+
+  buttons.forEach(
+    button => {
+
+      const payment =
+        String(
+          button.dataset.payment || ''
+        ).toLowerCase();
+
+      if (
+        payment.includes('moov')
+      ) {
+
+        button.remove();
+
+      }
 
     }
   );
@@ -1342,6 +1424,7 @@ async function signupUser() {
       data
     );
 
+
     // --------------------------------------------------------
     // EMAIL À CONFIRMER
     // --------------------------------------------------------
@@ -1608,6 +1691,7 @@ async function showAccountModal(user) {
       </h3>
 
       <div id="orderHistory">
+
         <div style="
           padding:20px;
           text-align:center;
@@ -1615,6 +1699,7 @@ async function showAccountModal(user) {
         ">
           Chargement de l’historique...
         </div>
+
       </div>
 
       <button
@@ -1864,10 +1949,6 @@ async function loadOrderHistory(user) {
 
     // --------------------------------------------------------
     // RÉCUPÉRER LES COMMANDES
-    //
-    // IMPORTANT :
-    // LA COLONNE EST "fee"
-    // ET NON "network_fee"
     // --------------------------------------------------------
 
     const {
@@ -2068,7 +2149,7 @@ function createOrderHistoryCard(order) {
 
   const paymentMethod =
     order.payment_method ||
-    'Non renseigné';
+    'Orange Money';
 
 
   // ----------------------------------------------------------
@@ -2467,10 +2548,12 @@ async function sendOrder() {
   const network =
     networkInput.value;
 
+  // ----------------------------------------------------------
+  // ORANGE MONEY UNIQUEMENT
+  // ----------------------------------------------------------
+
   const paymentMethod =
-    paymentInput
-      ? paymentInput.value
-      : 'Orange Money';
+    'Orange Money';
 
 
   message.textContent =
@@ -2764,11 +2847,6 @@ async function sendOrder() {
     // ========================================================
     // CRÉER COMMANDE
     // ========================================================
-    //
-    // IMPORTANT :
-    // LA COLONNE SUPABASE EST "fee"
-    // PAS "network_fee"
-    // ========================================================
 
     const {
       data: order,
@@ -2834,12 +2912,89 @@ async function sendOrder() {
 
 
     // ========================================================
-// CONFIRMATION DE COMMANDE
-// ========================================================
+    // MESSAGE SUCCÈS
+    // ========================================================
 
-message.textContent = '';
+    message.textContent =
+      '';
 
-showOrderConfirmation(order);
+
+    // --------------------------------------------------------
+    // ACHAT
+    // --------------------------------------------------------
+
+    if (type === 'buy') {
+
+      showOrderConfirmation(
+        order,
+        {
+          type:
+            type,
+
+          fiatAmount:
+            fiatAmount,
+
+          cryptoAmount:
+            cryptoAmount,
+
+          rate:
+            rate,
+
+          fee:
+            networkFee,
+
+          network:
+            network,
+
+          paymentMethod:
+            paymentMethod,
+
+          wallet:
+            wallet
+
+        }
+      );
+
+    }
+
+
+    // --------------------------------------------------------
+    // VENTE
+    // --------------------------------------------------------
+
+    else {
+
+      showOrderConfirmation(
+        order,
+        {
+          type:
+            type,
+
+          fiatAmount:
+            fiatAmount,
+
+          cryptoAmount:
+            cryptoAmount,
+
+          rate:
+            rate,
+
+          fee:
+            networkFee,
+
+          network:
+            network,
+
+          paymentMethod:
+            paymentMethod,
+
+          wallet:
+            wallet
+
+        }
+      );
+
+    }
 
 
     // ========================================================
@@ -2878,11 +3033,102 @@ showOrderConfirmation(order);
   }
 
 }
+
+
+// ============================================================
+// CRÉER LE CODE USSD ORANGE MONEY
+// ============================================================
+
+function createOrangeUSSD(amount) {
+
+  const cleanAmount =
+    Math.round(
+      Number(amount)
+    );
+
+  return (
+    `*144*10*${ORANGE_MONEY_NUMBER}*${cleanAmount}#`
+  );
+
+}
+
+
+// ============================================================
+// URL QR CODE
+// ============================================================
+//
+// Le numéro Orange Money n'est pas affiché.
+// Il est uniquement contenu dans les données du QR Code.
+// ============================================================
+
+function createQRCodeURL(data) {
+
+  return (
+    'https://api.qrserver.com/v1/create-qr-code/' +
+    '?size=260x260' +
+    '&margin=10' +
+    '&data=' +
+    encodeURIComponent(data)
+  );
+
+}
+
+
+// ============================================================
+// NUMÉRO DE COMMANDE
+// ============================================================
+
+function getOrderNumber(order) {
+
+  if (
+    !order ||
+    !order.id
+  ) {
+
+    return '#NDT';
+
+  }
+
+
+  const id =
+    String(order.id);
+
+
+  // ----------------------------------------------------------
+  // Si UUID
+  // ----------------------------------------------------------
+
+  if (
+    id.length > 8
+  ) {
+
+    return (
+      '#' +
+      id
+        .replaceAll('-', '')
+        .substring(0, 8)
+        .toUpperCase()
+    );
+
+  }
+
+
+  return (
+    '#' +
+    id.toUpperCase()
+  );
+
+}
+
+
 // ============================================================
 // CONFIRMATION DE COMMANDE
 // ============================================================
 
-function showOrderConfirmation(order) {
+function showOrderConfirmation(
+  order,
+  details
+) {
 
   const oldModal =
     document.getElementById(
@@ -2896,51 +3142,6 @@ function showOrderConfirmation(order) {
   }
 
 
-  const isBuy =
-    order.type === 'buy';
-
-  const typeText =
-    isBuy
-      ? 'Achat USDT'
-      : 'Vente USDT';
-
-
-  const cryptoAmount =
-    Number(
-      order.crypto_amount || 0
-    );
-
-  const fiatAmount =
-    Number(
-      order.fiat_amount || 0
-    );
-
-  const rate =
-    Number(
-      order.rate || 0
-    );
-
-  const fee =
-    Number(
-      order.fee || 0
-    );
-
-  const network =
-    order.network ||
-    'BEP20';
-
-  const paymentMethod =
-    order.payment_method ||
-    'Non renseigné';
-
-  const orderId =
-    order.id;
-
-
-  // ----------------------------------------------------------
-  // MODAL
-  // ----------------------------------------------------------
-
   const modal =
     document.createElement(
       'div'
@@ -2949,310 +3150,669 @@ function showOrderConfirmation(order) {
   modal.id =
     'orderConfirmationModal';
 
+
   modal.style.cssText = `
     position:fixed;
     inset:0;
-    background:rgba(0,0,0,.65);
+    background:rgba(0,0,0,.62);
     display:flex;
     align-items:center;
     justify-content:center;
     z-index:10000;
-    padding:20px;
+    padding:18px;
     box-sizing:border-box;
   `;
 
 
-  // ----------------------------------------------------------
-  // CONTENU
-  // ----------------------------------------------------------
-
-  modal.innerHTML = `
-
-    <div style="
-      width:100%;
-      max-width:520px;
-      max-height:90vh;
-      overflow-y:auto;
-      background:white;
-      color:#101828;
-      border-radius:24px;
-      padding:28px;
-      box-sizing:border-box;
-      box-shadow:0 25px 70px rgba(0,0,0,.30);
-    ">
+  const isBuy =
+    details.type === 'buy';
 
 
-      <!-- SUCCÈS -->
-
-      <div style="
-        width:64px;
-        height:64px;
-        border-radius:50%;
-        background:#ecfdf3;
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        margin:0 auto 18px;
-        font-size:32px;
-      ">
-        ✓
-      </div>
+  const title =
+    isBuy
+      ? 'Commande créée'
+      : 'Demande de vente créée';
 
 
-      <h2 style="
-        text-align:center;
-        margin:0 0 8px;
-        font-size:27px;
-      ">
-        Commande créée
-      </h2>
+  const orderNumber =
+    getOrderNumber(order);
 
 
-      <p style="
-        text-align:center;
-        color:#667085;
-        margin:0 0 24px;
-        line-height:1.5;
-      ">
-        Votre demande a bien été enregistrée.
-      </p>
+  // ==========================================================
+  // ACHAT
+  // ==========================================================
+
+  if (isBuy) {
+
+    const ussd =
+      createOrangeUSSD(
+        details.fiatAmount
+      );
 
 
-      <!-- NUMÉRO -->
+    const qrURL =
+      createQRCodeURL(
+        ussd
+      );
+
+
+    modal.innerHTML = `
 
       <div style="
-        background:#f8f9fc;
-        border-radius:16px;
-        padding:16px;
-        margin-bottom:20px;
-        text-align:center;
+        width:100%;
+        max-width:520px;
+        max-height:92vh;
+        overflow-y:auto;
+        background:#ffffff;
+        color:#101828;
+        border-radius:24px;
+        padding:24px;
+        box-sizing:border-box;
+        box-shadow:0 25px 70px rgba(0,0,0,.3);
       ">
 
         <div style="
-          font-size:13px;
-          color:#667085;
-          margin-bottom:6px;
-        ">
-          N° de commande
-        </div>
-
-        <div style="
-          font-size:17px;
-          font-weight:700;
-          word-break:break-all;
-        ">
-          #${escapeHtml(orderId)}
-        </div>
-
-      </div>
-
-
-      <!-- DÉTAILS -->
-
-      <div style="
-        border:1px solid #e4e7ec;
-        border-radius:18px;
-        padding:18px;
-      ">
-
-
-        <div style="
-          display:flex;
-          justify-content:space-between;
-          gap:15px;
-          padding-bottom:13px;
-          margin-bottom:13px;
-          border-bottom:1px solid #eaecf0;
+          text-align:center;
+          margin-bottom:22px;
         ">
 
-          <span style="
+          <div style="
+            width:64px;
+            height:64px;
+            margin:0 auto 14px;
+            border-radius:50%;
+            background:#ecfdf3;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            font-size:32px;
+          ">
+            ✓
+          </div>
+
+          <h2 style="
+            margin:0;
+            font-size:27px;
+          ">
+            ${title}
+          </h2>
+
+          <p style="
+            margin:8px 0 0;
             color:#667085;
           ">
-            Opération
-          </span>
-
-          <strong>
-            ${escapeHtml(typeText)}
-          </strong>
+            Votre demande a bien été enregistrée.
+          </p>
 
         </div>
 
+
+        <!-- ================================================= -->
+        <!-- NUMÉRO COMMANDE -->
+        <!-- ================================================= -->
 
         <div style="
-          display:flex;
-          justify-content:space-between;
-          gap:15px;
-          padding-bottom:13px;
-          margin-bottom:13px;
-          border-bottom:1px solid #eaecf0;
-        ">
-
-          <span style="
-            color:#667085;
-          ">
-            USDT
-          </span>
-
-          <strong>
-            ${formatNumber(cryptoAmount, 6)} USDT
-          </strong>
-
-        </div>
-
-
-        <div style="
-          display:flex;
-          justify-content:space-between;
-          gap:15px;
-          padding-bottom:13px;
-          margin-bottom:13px;
-          border-bottom:1px solid #eaecf0;
-        ">
-
-          <span style="
-            color:#667085;
-          ">
-            Montant
-          </span>
-
-          <strong>
-            ${formatNumber(fiatAmount, 0)} FCFA
-          </strong>
-
-        </div>
-
-
-        <div style="
-          display:flex;
-          justify-content:space-between;
-          gap:15px;
-          padding-bottom:13px;
-          margin-bottom:13px;
-          border-bottom:1px solid #eaecf0;
-        ">
-
-          <span style="
-            color:#667085;
-          ">
-            Taux
-          </span>
-
-          <strong>
-            1 USDT = ${formatNumber(rate, 0)} FCFA
-          </strong>
-
-        </div>
-
-
-        <div style="
-          display:flex;
-          justify-content:space-between;
-          gap:15px;
-          padding-bottom:13px;
-          margin-bottom:13px;
-          border-bottom:1px solid #eaecf0;
-        ">
-
-          <span style="
-            color:#667085;
-          ">
-            Réseau
-          </span>
-
-          <strong>
-            ${escapeHtml(network)}
-          </strong>
-
-        </div>
-
-
-        <div style="
-          display:flex;
-          justify-content:space-between;
-          gap:15px;
-          padding-bottom:13px;
-          margin-bottom:13px;
-          border-bottom:1px solid #eaecf0;
-        ">
-
-          <span style="
-            color:#667085;
-          ">
-            Frais
-          </span>
-
-          <strong>
-            ${formatNumber(fee, 2)} USDT
-          </strong>
-
-        </div>
-
-
-        <div style="
-          display:flex;
-          justify-content:space-between;
-          gap:15px;
-        ">
-
-          <span style="
-            color:#667085;
-          ">
-            Paiement
-          </span>
-
-          <strong>
-            ${escapeHtml(paymentMethod)}
-          </strong>
-
-        </div>
-
-
-      </div>
-
-
-      <!-- STATUT -->
-
-      <div style="
-        margin-top:18px;
-        padding:14px;
-        border-radius:14px;
-        background:#fffaeb;
-        color:#b54708;
-        text-align:center;
-        font-size:14px;
-        line-height:1.5;
-      ">
-
-        🕐 Commande en attente de traitement
-
-      </div>
-
-
-      <!-- BOUTON -->
-
-      <button
-        id="closeOrderConfirmation"
-        type="button"
-        style="
-          width:100%;
-          margin-top:22px;
+          background:#f8f9fc;
+          border-radius:16px;
           padding:15px;
-          border:0;
-          border-radius:12px;
-          background:#101828;
-          color:white;
-          font-size:16px;
-          font-weight:600;
-          cursor:pointer;
-        "
-      >
-        Compris
-      </button>
+          margin-bottom:14px;
+          text-align:center;
+        ">
+
+          <div style="
+            color:#667085;
+            font-size:13px;
+            margin-bottom:5px;
+          ">
+            N° de commande
+          </div>
+
+          <div style="
+            font-size:22px;
+            font-weight:800;
+            letter-spacing:1px;
+          ">
+            ${escapeHtml(orderNumber)}
+          </div>
+
+        </div>
 
 
-    </div>
+        <!-- ================================================= -->
+        <!-- RÉCAPITULATIF -->
+        <!-- ================================================= -->
 
-  `;
+        <div style="
+          border:1px solid #e4e7ec;
+          border-radius:18px;
+          padding:18px;
+          margin-bottom:18px;
+        ">
+
+          <div style="
+            display:flex;
+            justify-content:space-between;
+            gap:12px;
+            padding:7px 0;
+          ">
+            <span style="color:#667085;">
+              USDT reçu
+            </span>
+
+            <strong>
+              ${formatNumber(details.cryptoAmount, 6)} USDT
+            </strong>
+          </div>
+
+
+          <div style="
+            display:flex;
+            justify-content:space-between;
+            gap:12px;
+            padding:7px 0;
+          ">
+            <span style="color:#667085;">
+              Montant à payer
+            </span>
+
+            <strong>
+              ${formatNumber(details.fiatAmount, 0)} FCFA
+            </strong>
+          </div>
+
+
+          <div style="
+            display:flex;
+            justify-content:space-between;
+            gap:12px;
+            padding:7px 0;
+          ">
+            <span style="color:#667085;">
+              Réseau
+            </span>
+
+            <strong>
+              ${escapeHtml(details.network)}
+            </strong>
+          </div>
+
+
+          <div style="
+            display:flex;
+            justify-content:space-between;
+            gap:12px;
+            padding:7px 0;
+          ">
+            <span style="color:#667085;">
+              Frais réseau
+            </span>
+
+            <strong>
+              ${formatNumber(details.fee, 2)} USDT
+            </strong>
+          </div>
+
+
+          <div style="
+            display:flex;
+            justify-content:space-between;
+            gap:12px;
+            padding:7px 0;
+          ">
+            <span style="color:#667085;">
+              Paiement
+            </span>
+
+            <strong>
+              Orange Money
+            </strong>
+          </div>
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- INSTRUCTIONS ORANGE MONEY -->
+        <!-- ================================================= -->
+
+        <div style="
+          background:#fff8ed;
+          border:1px solid #fedf89;
+          border-radius:18px;
+          padding:18px;
+          margin-bottom:18px;
+        ">
+
+          <h3 style="
+            margin:0 0 10px;
+            font-size:19px;
+          ">
+            🟠 Paiement Orange Money
+          </h3>
+
+          <p style="
+            margin:0 0 12px;
+            line-height:1.6;
+            color:#475467;
+          ">
+            Effectuez le paiement du montant exact
+            indiqué ci-dessous.
+          </p>
+
+          <div style="
+            background:#ffffff;
+            border-radius:14px;
+            padding:14px;
+            text-align:center;
+            margin-bottom:14px;
+          ">
+
+            <div style="
+              color:#667085;
+              font-size:13px;
+              margin-bottom:5px;
+            ">
+              Montant à payer
+            </div>
+
+            <div style="
+              font-size:28px;
+              font-weight:800;
+            ">
+              ${formatNumber(details.fiatAmount, 0)} FCFA
+            </div>
+
+          </div>
+
+
+          <div style="
+            text-align:center;
+            margin:10px 0 15px;
+          ">
+
+            <div style="
+              color:#667085;
+              font-size:13px;
+              margin-bottom:10px;
+            ">
+              Scannez le QR Code pour préparer le paiement
+            </div>
+
+            <div style="
+              display:inline-block;
+              padding:10px;
+              background:white;
+              border-radius:16px;
+              border:1px solid #e4e7ec;
+            ">
+
+              <img
+                src="${qrURL}"
+                alt="QR Code de paiement Orange Money"
+                width="220"
+                height="220"
+                style="
+                  display:block;
+                  max-width:220px;
+                  width:100%;
+                  height:auto;
+                "
+              >
+
+            </div>
+
+          </div>
+
+
+          <div style="
+            background:#ffffff;
+            border-radius:12px;
+            padding:12px;
+            font-size:13px;
+            line-height:1.5;
+            color:#667085;
+          ">
+
+            <strong style="color:#101828;">
+              Important :
+            </strong>
+
+            Après le paiement, revenez ici et
+            cliquez sur
+            <strong style="color:#101828;">
+              « J’ai effectué le paiement »
+            </strong>.
+
+          </div>
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- STATUT -->
+        <!-- ================================================= -->
+
+        <div style="
+          background:#fffaeb;
+          border:1px solid #fedf89;
+          border-radius:14px;
+          padding:13px;
+          text-align:center;
+          color:#b54708;
+          font-size:14px;
+          line-height:1.5;
+          margin-bottom:18px;
+        ">
+
+          ⏳ Commande en attente de vérification du paiement.
+
+        </div>
+
+
+        <button
+          id="paymentDoneButton"
+          type="button"
+          style="
+            width:100%;
+            padding:16px;
+            border:0;
+            border-radius:13px;
+            background:#101828;
+            color:#ffffff;
+            font-size:16px;
+            font-weight:700;
+            cursor:pointer;
+          ">
+          J’ai effectué le paiement
+        </button>
+
+
+        <button
+          id="closeOrderConfirmation"
+          type="button"
+          style="
+            width:100%;
+            margin-top:10px;
+            padding:14px;
+            border:1px solid #d0d5dd;
+            border-radius:13px;
+            background:#ffffff;
+            color:#101828;
+            font-size:16px;
+            cursor:pointer;
+          ">
+          Fermer
+        </button>
+
+
+        <p
+          id="paymentDoneMessage"
+          style="
+            margin:14px 0 0;
+            text-align:center;
+            line-height:1.5;
+            color:#027a48;
+          ">
+        </p>
+
+      </div>
+
+    `;
+
+  }
+
+
+  // ==========================================================
+  // VENTE
+  // ==========================================================
+
+  else {
+
+    modal.innerHTML = `
+
+      <div style="
+        width:100%;
+        max-width:520px;
+        max-height:92vh;
+        overflow-y:auto;
+        background:#ffffff;
+        color:#101828;
+        border-radius:24px;
+        padding:24px;
+        box-sizing:border-box;
+        box-shadow:0 25px 70px rgba(0,0,0,.3);
+      ">
+
+        <div style="
+          text-align:center;
+          margin-bottom:22px;
+        ">
+
+          <div style="
+            width:64px;
+            height:64px;
+            margin:0 auto 14px;
+            border-radius:50%;
+            background:#ecfdf3;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            font-size:32px;
+          ">
+            ✓
+          </div>
+
+          <h2 style="
+            margin:0;
+            font-size:27px;
+          ">
+            ${title}
+          </h2>
+
+          <p style="
+            margin:8px 0 0;
+            color:#667085;
+          ">
+            Votre demande a bien été enregistrée.
+          </p>
+
+        </div>
+
+
+        <div style="
+          background:#f8f9fc;
+          border-radius:16px;
+          padding:15px;
+          margin-bottom:14px;
+          text-align:center;
+        ">
+
+          <div style="
+            color:#667085;
+            font-size:13px;
+            margin-bottom:5px;
+          ">
+            N° de commande
+          </div>
+
+          <div style="
+            font-size:22px;
+            font-weight:800;
+            letter-spacing:1px;
+          ">
+            ${escapeHtml(orderNumber)}
+          </div>
+
+        </div>
+
+
+        <div style="
+          border:1px solid #e4e7ec;
+          border-radius:18px;
+          padding:18px;
+          margin-bottom:18px;
+        ">
+
+          <div style="
+            display:flex;
+            justify-content:space-between;
+            gap:12px;
+            padding:7px 0;
+          ">
+            <span style="color:#667085;">
+              USDT vendu
+            </span>
+
+            <strong>
+              ${formatNumber(details.cryptoAmount, 6)} USDT
+            </strong>
+          </div>
+
+
+          <div style="
+            display:flex;
+            justify-content:space-between;
+            gap:12px;
+            padding:7px 0;
+          ">
+            <span style="color:#667085;">
+              Montant à recevoir
+            </span>
+
+            <strong>
+              ${formatNumber(details.fiatAmount, 0)} FCFA
+            </strong>
+          </div>
+
+
+          <div style="
+            display:flex;
+            justify-content:space-between;
+            gap:12px;
+            padding:7px 0;
+          ">
+            <span style="color:#667085;">
+              Taux
+            </span>
+
+            <strong>
+              1 USDT = ${formatNumber(details.rate, 0)} FCFA
+            </strong>
+          </div>
+
+
+          <div style="
+            display:flex;
+            justify-content:space-between;
+            gap:12px;
+            padding:7px 0;
+          ">
+            <span style="color:#667085;">
+              Réseau
+            </span>
+
+            <strong>
+              ${escapeHtml(details.network)}
+            </strong>
+          </div>
+
+
+          <div style="
+            display:flex;
+            justify-content:space-between;
+            gap:12px;
+            padding:7px 0;
+          ">
+            <span style="color:#667085;">
+              Frais réseau
+            </span>
+
+            <strong>
+              ${formatNumber(details.fee, 2)} USDT
+            </strong>
+          </div>
+
+
+          <div style="
+            display:flex;
+            justify-content:space-between;
+            gap:12px;
+            padding:7px 0;
+          ">
+            <span style="color:#667085;">
+              Paiement
+            </span>
+
+            <strong>
+              Orange Money
+            </strong>
+          </div>
+
+        </div>
+
+
+        <div style="
+          background:#eff8ff;
+          border:1px solid #b2ddff;
+          border-radius:16px;
+          padding:16px;
+          line-height:1.6;
+          color:#175cd3;
+          margin-bottom:18px;
+        ">
+
+          <strong>
+            ⏳ Demande en cours de traitement
+          </strong>
+
+          <br><br>
+
+          Nous allons vérifier votre demande et
+          effectuer le paiement du montant indiqué
+          selon les informations fournies.
+
+        </div>
+
+
+        <div style="
+          background:#fffaeb;
+          border:1px solid #fedf89;
+          border-radius:14px;
+          padding:13px;
+          text-align:center;
+          color:#b54708;
+          font-size:14px;
+          line-height:1.5;
+          margin-bottom:18px;
+        ">
+
+          ⏳ Commande en attente de traitement.
+
+        </div>
+
+
+        <button
+          id="closeOrderConfirmation"
+          type="button"
+          style="
+            width:100%;
+            padding:15px;
+            border:0;
+            border-radius:13px;
+            background:#101828;
+            color:#ffffff;
+            font-size:16px;
+            font-weight:700;
+            cursor:pointer;
+          ">
+          Fermer
+        </button>
+
+      </div>
+
+    `;
+
+  }
 
 
   document.body.appendChild(
@@ -3260,9 +3820,9 @@ function showOrderConfirmation(order) {
   );
 
 
-  // ----------------------------------------------------------
+  // ==========================================================
   // FERMER
-  // ----------------------------------------------------------
+  // ==========================================================
 
   const closeButton =
     document.getElementById(
@@ -3283,9 +3843,9 @@ function showOrderConfirmation(order) {
   }
 
 
-  // ----------------------------------------------------------
-  // CLIQUER À L'EXTÉRIEUR
-  // ----------------------------------------------------------
+  // ==========================================================
+  // CLIC EXTÉRIEUR
+  // ==========================================================
 
   modal.addEventListener(
     'click',
@@ -3302,4 +3862,48 @@ function showOrderConfirmation(order) {
     }
   );
 
+
+  // ==========================================================
+  // J'AI EFFECTUÉ LE PAIEMENT
+  // ==========================================================
+
+  const paymentDoneButton =
+    document.getElementById(
+      'paymentDoneButton'
+    );
+
+  if (paymentDoneButton) {
+
+    paymentDoneButton.addEventListener(
+      'click',
+      () => {
+
+        paymentDoneButton.disabled =
+          true;
+
+        paymentDoneButton.textContent =
+          'Paiement déclaré ✓';
+
+        const paymentDoneMessage =
+          document.getElementById(
+            'paymentDoneMessage'
+          );
+
+        if (paymentDoneMessage) {
+
+          paymentDoneMessage.textContent =
+            'Votre déclaration a été prise en compte. Votre commande reste en attente de vérification par NOA DIGIT TRADE.';
+
+        }
+
+      }
+    );
+
+  }
+
 }
+
+
+// ============================================================
+// FIN APP.JS
+// ============================================================
