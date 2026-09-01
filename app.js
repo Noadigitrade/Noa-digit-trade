@@ -1497,6 +1497,12 @@ function selectNetwork(
     );
 
 
+  // Mettre immédiatement à jour l'adresse de dépôt lorsque
+  // le client change de réseau en mode VENTE.
+  if (currentExchangeType === 'sell') {
+    updateSellDepositUI();
+  }
+
   updateCalculator();
 }
 
