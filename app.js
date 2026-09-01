@@ -12,17 +12,31 @@ if (!window.supabase) {
   console.error('Supabase JS n\'a pas été chargé.');
 }
 
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabaseClient =
+  window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+  );
 
 const CONFIG = {
   buyRate: 600,
   sellRate: 570,
+
   minOrder: 2000,
   maxOrder: 50000,
+
   networks: {
-    trc20: { name: 'USDT TRC20', fee: 2 },
-    bp20: { name: 'USDT BEP20', fee: 0 }
+    trc20: {
+      name: 'USDT TRC20',
+      fee: 2
+    },
+
+    bp20: {
+      name: 'USDT BEP20',
+      fee: 0
+    }
   },
+
   payment: {
     method: 'orange_money',
     number: '74602553',
@@ -30,214 +44,489 @@ const CONFIG = {
   }
 };
 
+
 let currentUser = null;
 let currentProfile = null;
 let currentOrder = null;
+
 let currentExchangeType = 'buy';
 let currentNetwork = 'trc20';
+
 let applicationInitializing = false;
 let authListenerReady = false;
 
-const $ = id => document.getElementById(id);
 
-function showMessage(message, type = 'info') {
-  const box = $('appMessage');
+// ============================================================
+// UTILITAIRES
+// ============================================================
+
+const $ = id =>
+  document.getElementById(id);
+
+
+function showMessage(
+  message,
+  type = 'info'
+) {
+
+  const box =
+    $('appMessage');
+
   if (!box) return;
-  box.textContent = String(message || '');
-  box.className = type;
-  box.id = 'appMessage';
+
+  box.textContent =
+    String(message || '');
+
+  box.className =
+    type;
+
+  box.id =
+    'appMessage';
 }
+
 
 function hideMessage() {
-  const box = $('appMessage');
+
+  const box =
+    $('appMessage');
+
   if (!box) return;
-  box.textContent = '';
-  box.className = '';
+
+  box.textContent =
+    '';
+
+  box.className =
+    '';
 }
 
-function formatNumber(value, max = 0) {
-  const n = Number(value);
-  return (Number.isFinite(n) ? n : 0).toLocaleString('fr-FR', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: max
-  });
+
+function formatNumber(
+  value,
+  max = 0
+) {
+
+  const n =
+    Number(value);
+
+  return (
+    Number.isFinite(n)
+      ? n
+      : 0
+  ).toLocaleString(
+    'fr-FR',
+    {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: max
+    }
+  );
 }
+
 
 function formatDate(value) {
+
   if (!value) return '-';
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return '-';
-  return d.toLocaleString('fr-FR', {
-    day: '2-digit', month: '2-digit', year: 'numeric',
-    hour: '2-digit', minute: '2-digit'
-  });
+
+  const d =
+    new Date(value);
+
+  if (
+    Number.isNaN(
+      d.getTime()
+    )
+  ) {
+    return '-';
+  }
+
+  return d.toLocaleString(
+    'fr-FR',
+    {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }
+  );
 }
+
 
 function normalizePhone(phone) {
-  return String(phone || '').replace(/\s+/g, '').trim();
+
+  return String(
+    phone || ''
+  )
+    .replace(
+      /\s+/g,
+      ''
+    )
+    .trim();
 }
+
 
 function escapeHtml(value) {
-  return String(value ?? '')
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+
+  return String(
+    value ?? ''
+  )
+    .replace(
+      /&/g,
+      '&amp;'
+    )
+    .replace(
+      /</g,
+      '&lt;'
+    )
+    .replace(
+      />/g,
+      '&gt;'
+    )
+    .replace(
+      /"/g,
+      '&quot;'
+    )
+    .replace(
+      /'/g,
+      '&#039;'
+    );
 }
 
-function getSupabaseErrorMessage(error) {
-  return error?.message ||
+
+function getSupabaseErrorMessage(
+  error
+) {
+
+  return (
+    error?.message ||
     error?.error_description ||
     error?.details ||
     error?.hint ||
-    'Erreur inconnue.';
+    'Erreur inconnue.'
+  );
 }
+
+
+// ============================================================
+// NAVIGATION PRINCIPALE
+// ============================================================
 
 function showAuthPage() {
-  $('authPage')?.classList.add('active');
-  $('appPage')?.classList.remove('active');
-  $('bottomNav')?.classList.add('hidden');
+
+  $('authPage')?.classList.add(
+    'active'
+  );
+
+  $('appPage')?.classList.remove(
+    'active'
+  );
+
+  $('bottomNav')?.classList.add(
+    'hidden'
+  );
 }
+
 
 function showAppPage() {
-  $('authPage')?.classList.remove('active');
-  $('appPage')?.classList.add('active');
-  $('bottomNav')?.classList.remove('hidden');
+
+  $('authPage')?.classList.remove(
+    'active'
+  );
+
+  $('appPage')?.classList.add(
+    'active'
+  );
+
+  $('bottomNav')?.classList.remove(
+    'hidden'
+  );
 }
 
-function showSubPage(pageId) {
-  document.querySelectorAll('.sub-page').forEach(p => {
-    p.classList.add('hidden');
-    p.classList.remove('active');
-  });
 
-  const target = $(pageId);
+function showSubPage(
+  pageId
+) {
+
+  document
+    .querySelectorAll(
+      '.sub-page'
+    )
+    .forEach(page => {
+
+      page.classList.add(
+        'hidden'
+      );
+
+      page.classList.remove(
+        'active'
+      );
+    });
+
+
+  const target =
+    $(pageId);
 
   if (target) {
-    target.classList.remove('hidden');
-    target.classList.add('active');
+
+    target.classList.remove(
+      'hidden'
+    );
+
+    target.classList.add(
+      'active'
+    );
   }
 
-  document.querySelectorAll('.nav-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.page === pageId);
-  });
+
+  document
+    .querySelectorAll(
+      '.nav-btn'
+    )
+    .forEach(button => {
+
+      button.classList.toggle(
+        'active',
+        button.dataset.page ===
+          pageId
+      );
+    });
+
 
   window.scrollTo({
     top: 0,
     behavior: 'smooth'
   });
 
-  if (pageId === 'ordersPage') {
+
+  if (
+    pageId ===
+    'ordersPage'
+  ) {
+
     loadOrderHistory();
   }
 
-  if (pageId === 'supportPage') {
+
+  if (
+    pageId ===
+    'supportPage'
+  ) {
+
     loadDisputes();
     loadOrdersForDispute();
   }
 }
 
+
+// ============================================================
+// AUTH FORMULAIRES
+// ============================================================
+
 function showLoginForm() {
-  $('loginTab')?.classList.add('active');
-  $('registerTab')?.classList.remove('active');
-  $('loginForm')?.classList.add('active');
-  $('registerForm')?.classList.remove('active');
+
+  $('loginTab')?.classList.add(
+    'active'
+  );
+
+  $('registerTab')?.classList.remove(
+    'active'
+  );
+
+  $('loginForm')?.classList.add(
+    'active'
+  );
+
+  $('registerForm')?.classList.remove(
+    'active'
+  );
 }
+
 
 function showRegisterForm() {
-  $('loginTab')?.classList.remove('active');
-  $('registerTab')?.classList.add('active');
-  $('loginForm')?.classList.remove('active');
-  $('registerForm')?.classList.add('active');
+
+  $('loginTab')?.classList.remove(
+    'active'
+  );
+
+  $('registerTab')?.classList.add(
+    'active'
+  );
+
+  $('loginForm')?.classList.remove(
+    'active'
+  );
+
+  $('registerForm')?.classList.add(
+    'active'
+  );
 }
 
-// ------------------------------------------------------------
+
+// ============================================================
 // PROFIL
-// ------------------------------------------------------------
+// ============================================================
 
 async function loadUserProfile() {
-  if (!currentUser?.id) return null;
 
-  const metadata = currentUser.user_metadata || {};
+  if (
+    !currentUser?.id
+  ) {
+    return null;
+  }
+
+
+  const metadata =
+    currentUser.user_metadata ||
+    {};
+
 
   const fallback = {
-    id: currentUser.id,
+
+    id:
+      currentUser.id,
+
     full_name:
       metadata.full_name ||
       metadata.name ||
-      currentUser.email?.split('@')[0] ||
+      currentUser.email
+        ?.split('@')[0] ||
       'Utilisateur',
-    phone: metadata.phone || '',
-    country: metadata.country || 'Burkina Faso',
-    role: 'user'
+
+    phone:
+      metadata.phone ||
+      '',
+
+    country:
+      metadata.country ||
+      'Burkina Faso',
+
+    role:
+      'user'
   };
 
+
   try {
+
     const {
       data: profile,
       error
-    } = await supabaseClient
-      .from('profiles')
-      .select('id,full_name,phone,country')
-      .eq('id', currentUser.id)
-      .maybeSingle();
+    } =
+      await supabaseClient
+        .from('profiles')
+        .select(
+          'id,full_name,phone,country'
+        )
+        .eq(
+          'id',
+          currentUser.id
+        )
+        .maybeSingle();
 
-    if (!error && profile) {
-      currentProfile = profile;
+
+    if (
+      !error &&
+      profile
+    ) {
+
+      currentProfile =
+        profile;
+
       updateUserInterface();
+
       return profile;
     }
 
-    if (!error && !profile) {
+
+    if (
+      !error &&
+      !profile
+    ) {
+
       const {
         data: inserted,
         error: insertError
-      } = await supabaseClient
-        .from('profiles')
-        .insert({
-          id: currentUser.id,
-          full_name: fallback.full_name,
-          phone: fallback.phone,
-          country: fallback.country
-        })
-        .select('id,full_name,phone,country')
-        .maybeSingle();
+      } =
+        await supabaseClient
+          .from('profiles')
+          .insert({
+            id:
+              currentUser.id,
 
-      if (!insertError && inserted) {
-        currentProfile = inserted;
+            full_name:
+              fallback.full_name,
+
+            phone:
+              fallback.phone,
+
+            country:
+              fallback.country
+          })
+          .select(
+            'id,full_name,phone,country'
+          )
+          .maybeSingle();
+
+
+      if (
+        !insertError &&
+        inserted
+      ) {
+
+        currentProfile =
+          inserted;
+
         updateUserInterface();
+
         return inserted;
       }
 
+
       if (insertError) {
+
         console.warn(
           'Profil non créé (RLS/trigger possible) :',
           insertError
         );
       }
+
     } else if (error) {
+
       console.warn(
         'Profil non lisible, utilisation de Auth :',
         error
       );
     }
+
   } catch (error) {
+
     console.warn(
       'Profil non disponible, utilisation de Auth :',
       error
     );
   }
 
-  currentProfile = fallback;
+
+  currentProfile =
+    fallback;
+
   updateUserInterface();
 
   return currentProfile;
 }
 
-function updateUserInterface() {
-  if (!currentUser) return;
 
-  const p = currentProfile || {};
-  const m = currentUser.user_metadata || {};
+function updateUserInterface() {
+
+  if (!currentUser) {
+    return;
+  }
+
+
+  const p =
+    currentProfile || {};
+
+  const m =
+    currentUser.user_metadata ||
+    {};
+
 
   const name =
     p.full_name ||
@@ -245,101 +534,103 @@ function updateUserInterface() {
     m.name ||
     'Utilisateur';
 
+
   const phone =
     p.phone ||
     m.phone ||
     '';
+
 
   const country =
     p.country ||
     m.country ||
     'Burkina Faso';
 
+
   if ($('userName')) {
-    $('userName').textContent = name;
+
+    $('userName').textContent =
+      name;
   }
 
+
   if ($('userCountry')) {
+
     $('userCountry').textContent =
       '🇧🇫 ' + country;
   }
 
+
   if ($('profileName')) {
-    $('profileName').value = name;
+
+    $('profileName').value =
+      name;
   }
+
 
   if ($('profilePhone')) {
-    $('profilePhone').value = phone;
+
+    $('profilePhone').value =
+      phone;
   }
 
+
   if ($('profileCountry')) {
-    $('profileCountry').value = country;
+
+    $('profileCountry').value =
+      country;
   }
 }
 
-async function initializeApplication() {
-  if (applicationInitializing) return;
 
-  applicationInitializing = true;
+async function initializeApplication() {
+
+  if (
+    applicationInitializing
+  ) {
+    return;
+  }
+
+
+  applicationInitializing =
+    true;
+
 
   try {
+
+    await loadUserProfile();
+
     showAppPage();
+
+    updateUserInterface();
 
     updateRatesUI();
 
-    if (!currentUser) {
-      const { data } =
-        await supabaseClient.auth.getUser();
-
-      currentUser = data?.user || null;
-    }
-
-    if (currentUser) {
-      await loadUserProfile();
-    }
-
     updateCalculator();
 
-    showSubPage('homePage');
-
-    try {
-      await loadOrderHistory();
-    } catch (historyError) {
-      console.warn(
-        'Historique indisponible au démarrage :',
-        historyError
-      );
-    }
-
   } catch (error) {
+
     console.error(
       'Erreur initialisation :',
       error
     );
 
-    if (currentUser) {
-      showAppPage();
-      updateUserInterface();
-    } else {
-      showAuthPage();
-    }
-
-    showMessage(
-      'Une partie de l\'application n\'a pas pu être chargée. Vous pouvez continuer.',
-      'error'
-    );
+    showAppPage();
 
   } finally {
-    applicationInitializing = false;
+
+    applicationInitializing =
+      false;
   }
 }
-
-// ------------------------------------------------------------
-// AUTH
-// ------------------------------------------------------------
+// ============================================================
+// AUTHENTIFICATION
+// ============================================================
 
 async function registerUser(event) {
+
   event.preventDefault();
+
   hideMessage();
 
   const name =
@@ -351,17 +642,21 @@ async function registerUser(event) {
     );
 
   const country =
-    $('registerCountry')?.value.trim() || '';
+    $('registerCountry')?.value.trim() ||
+    'Burkina Faso';
 
   const email =
-    ($('registerEmail')?.value.trim() || '')
-      .toLowerCase();
+    (
+      $('registerEmail')?.value.trim() ||
+      ''
+    ).toLowerCase();
 
   const password =
     $('registerPassword')?.value || '';
 
   const confirmPassword =
     $('registerPasswordConfirm')?.value || '';
+
 
   if (!name) {
     return showMessage(
@@ -370,12 +665,14 @@ async function registerUser(event) {
     );
   }
 
+
   if (!phone) {
     return showMessage(
       'Veuillez saisir votre numéro de téléphone.',
       'error'
     );
   }
+
 
   if (!email) {
     return showMessage(
@@ -384,12 +681,14 @@ async function registerUser(event) {
     );
   }
 
+
   if (password.length < 6) {
     return showMessage(
       'Le mot de passe doit contenir au moins 6 caractères.',
       'error'
     );
   }
+
 
   if (password !== confirmPassword) {
     return showMessage(
@@ -398,56 +697,76 @@ async function registerUser(event) {
     );
   }
 
-  if (country !== 'Burkina Faso') {
-    return showMessage(
-      'NOA DIGIT TRADE est réservé au Burkina Faso.',
-      'error'
-    );
-  }
 
   const button =
     event.submitter ||
-    $('registerForm')?.querySelector(
-      'button[type="submit"]'
-    );
+    $('registerForm')
+      ?.querySelector(
+        'button[type="submit"]'
+      );
+
 
   const original =
     button?.textContent;
 
+
   if (button) {
-    button.disabled = true;
+
+    button.disabled =
+      true;
+
     button.textContent =
       'Création du compte...';
   }
 
+
   try {
+
     const {
       data,
       error
-    } = await supabaseClient.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: name,
-          phone,
-          country
-        }
-      }
-    });
+    } =
+      await supabaseClient.auth.signUp({
 
-    if (error) throw error;
+        email,
+
+        password,
+
+        options: {
+          data: {
+            full_name:
+              name,
+
+            phone:
+              phone,
+
+            country:
+              country
+          }
+        }
+
+      });
+
+
+    if (error) {
+      throw error;
+    }
+
 
     if (!data?.user) {
+
       throw new Error(
-        'Le compte Auth n\'a pas pu être créé.'
+        'Le compte n\'a pas pu être créé.'
       );
     }
 
-    currentUser = data.user;
+
+    currentUser =
+      data.user;
+
 
     if (data.session) {
-      await loadUserProfile();
+
       await initializeApplication();
 
       showMessage(
@@ -456,335 +775,655 @@ async function registerUser(event) {
       );
 
     } else {
+
       showMessage(
-        'Compte créé avec succès. Vérifiez votre adresse email puis connectez-vous.',
+        'Compte créé avec succès. Vérifiez votre email puis connectez-vous.',
         'success'
       );
 
       showLoginForm();
 
+
       if ($('loginEmail')) {
-        $('loginEmail').value = email;
+
+        $('loginEmail').value =
+          email;
       }
     }
 
+
   } catch (error) {
+
+    console.error(
+      'Erreur inscription :',
+      error
+    );
+
+
     let message =
-      getSupabaseErrorMessage(error);
+      getSupabaseErrorMessage(
+        error
+      );
+
 
     if (
       /already registered|user already registered|already exists/i
         .test(message)
     ) {
+
       message =
         'Cette adresse email est déjà utilisée.';
     }
 
-    showMessage(message, 'error');
+
+    showMessage(
+      message,
+      'error'
+    );
+
 
   } finally {
+
     if (button) {
-      button.disabled = false;
+
+      button.disabled =
+        false;
+
       button.textContent =
-        original || 'Créer mon compte';
+        original ||
+        'Créer mon compte';
     }
   }
-}async function loginUser(event) {
+}
+
+
+// ------------------------------------------------------------
+// CONNEXION
+// ------------------------------------------------------------
+
+async function loginUser(event) {
+
   event.preventDefault();
+
   hideMessage();
 
+
   const email =
-    ($('loginEmail')?.value.trim() || '')
-      .toLowerCase();
+    (
+      $('loginEmail')
+        ?.value.trim() ||
+      ''
+    ).toLowerCase();
+
 
   const password =
-    $('loginPassword')?.value || '';
+    $('loginPassword')
+      ?.value || '';
+
 
   if (!email || !password) {
+
     return showMessage(
       'Veuillez remplir tous les champs.',
       'error'
     );
   }
 
+
   const button =
     event.submitter ||
-    $('loginForm')?.querySelector(
-      'button[type="submit"]'
-    );
+    $('loginForm')
+      ?.querySelector(
+        'button[type="submit"]'
+      );
+
 
   const original =
     button?.textContent;
 
+
   if (button) {
-    button.disabled = true;
-    button.textContent = 'Connexion...';
+
+    button.disabled =
+      true;
+
+    button.textContent =
+      'Connexion...';
   }
 
+
   try {
+
     const {
       data,
       error
-    } = await supabaseClient.auth.signInWithPassword({
-      email,
-      password
-    });
+    } =
+      await supabaseClient.auth
+        .signInWithPassword({
 
-    if (error) throw error;
+          email,
 
-    currentUser = data.user;
+          password
+
+        });
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    currentUser =
+      data.user;
+
 
     await initializeApplication();
+
 
     showMessage(
       'Connexion réussie.',
       'success'
     );
 
-  } catch (error) {
-    let message =
-      getSupabaseErrorMessage(error);
 
-    if (/invalid login credentials/i.test(message)) {
+  } catch (error) {
+
+    console.error(
+      'Erreur connexion :',
+      error
+    );
+
+
+    let message =
+      getSupabaseErrorMessage(
+        error
+      );
+
+
+    if (
+      /invalid login credentials/i
+        .test(message)
+    ) {
+
       message =
         'Email ou mot de passe incorrect.';
     }
 
-    if (/email not confirmed/i.test(message)) {
+
+    if (
+      /email not confirmed/i
+        .test(message)
+    ) {
+
       message =
-        'Votre adresse email n\'est pas encore confirmée. Vérifiez votre boîte email.';
+        'Votre adresse email n\'est pas encore confirmée.';
     }
 
-    showMessage(message, 'error');
+
+    showMessage(
+      message,
+      'error'
+    );
+
 
   } finally {
+
     if (button) {
-      button.disabled = false;
+
+      button.disabled =
+        false;
+
       button.textContent =
-        original || 'Se connecter';
+        original ||
+        'Se connecter';
     }
   }
 }
 
+
+// ------------------------------------------------------------
+// DÉCONNEXION
+// ------------------------------------------------------------
+
 async function logoutUser() {
+
   try {
-    await supabaseClient.auth.signOut();
-  } catch (e) {
-    console.error(e);
+
+    await supabaseClient.auth
+      .signOut();
+
+  } catch (error) {
+
+    console.error(
+      'Erreur déconnexion :',
+      error
+    );
   }
 
-  currentUser = null;
-  currentProfile = null;
-  currentOrder = null;
+
+  currentUser =
+    null;
+
+  currentProfile =
+    null;
+
+  currentOrder =
+    null;
+
 
   showAuthPage();
+
   showLoginForm();
 
-  showMessage(
-    'Vous êtes déconnecté.',
-    'info'
-  );
+  hideMessage();
 }
 
 
-// ------------------------------------------------------------
-// TARIFS / CALCUL
-// ------------------------------------------------------------
+// ============================================================
+// TARIFS
+// ============================================================
 
 function updateRatesUI() {
+
   if ($('homeBuyRate')) {
+
     $('homeBuyRate').textContent =
-      formatNumber(CONFIG.buyRate);
+      formatNumber(
+        CONFIG.buyRate
+      );
   }
+
 
   if ($('homeSellRate')) {
+
     $('homeSellRate').textContent =
-      formatNumber(CONFIG.sellRate);
+      formatNumber(
+        CONFIG.sellRate
+      );
   }
+
 
   if ($('homeMinOrder')) {
+
     $('homeMinOrder').textContent =
-      formatNumber(CONFIG.minOrder);
+      formatNumber(
+        CONFIG.minOrder
+      );
   }
+
 
   if ($('homeMaxOrder')) {
+
     $('homeMaxOrder').textContent =
-      formatNumber(CONFIG.maxOrder);
+      formatNumber(
+        CONFIG.maxOrder
+      );
   }
 
+
   if ($('homeTrc20Fee')) {
+
     $('homeTrc20Fee').textContent =
       CONFIG.networks.trc20.fee;
   }
 
+
   if ($('homeBp20Fee')) {
+
     $('homeBp20Fee').textContent =
       CONFIG.networks.bp20.fee;
   }
 
+
   if ($('trc20Fee')) {
+
     $('trc20Fee').textContent =
       CONFIG.networks.trc20.fee;
   }
 
+
   if ($('bp20Fee')) {
+
     $('bp20Fee').textContent =
       CONFIG.networks.bp20.fee;
   }
 }
 
 
-function setBuyMode() {
-  currentExchangeType = 'buy';
+// ============================================================
+// MODE ACHAT
+// ============================================================
 
-  $('buyTab')?.classList.add('active');
-  $('sellTab')?.classList.remove('active');
+function setBuyMode() {
+
+  currentExchangeType =
+    'buy';
+
+
+  $('buyTab')?.classList.add(
+    'active'
+  );
+
+  $('sellTab')?.classList.remove(
+    'active'
+  );
+
 
   if ($('amountLabel')) {
+
     $('amountLabel').textContent =
       'Montant à payer';
   }
 
+
   if ($('amountUnit')) {
+
     $('amountUnit').textContent =
       'FCFA';
   }
 
+
+  const input =
+    $('amountInput');
+
+
+  if (input) {
+
+    input.placeholder =
+      'Minimum : 2 000 FCFA';
+  }
+
+
   updateCalculator();
 }
 
 
+// ============================================================
+// MODE VENTE
+// ============================================================
+
 function setSellMode() {
-  currentExchangeType = 'sell';
 
-  $('buyTab')?.classList.remove('active');
-  $('sellTab')?.classList.add('active');
+  currentExchangeType =
+    'sell';
 
-  // EN VENTE, LE CLIENT SAISIT LES USDT
+
+  $('buyTab')?.classList.remove(
+    'active'
+  );
+
+  $('sellTab')?.classList.add(
+    'active'
+  );
+
+
+  // IMPORTANT :
+  // EN VENTE LE CLIENT SAISIT DES USDT.
   if ($('amountLabel')) {
+
     $('amountLabel').textContent =
       'Quantité à vendre';
   }
 
+
   if ($('amountUnit')) {
+
     $('amountUnit').textContent =
       'USDT';
   }
 
-  updateCalculator();
-}
+
+  const input =
+    $('amountInput');
 
 
-function selectNetwork(network) {
-  if (!CONFIG.networks[network]) return;
+  if (input) {
 
-  currentNetwork = network;
+    input.placeholder =
+      'Exemple : 10 USDT';
+  }
 
-  $('trc20Option')?.classList.toggle(
-    'active',
-    network === 'trc20'
-  );
-
-  $('bp20Option')?.classList.toggle(
-    'active',
-    network === 'bp20'
-  );
 
   updateCalculator();
 }
 
 
-// ------------------------------------------------------------
+// ============================================================
+// RÉSEAU
+// ============================================================
+
+function selectNetwork(
+  network
+) {
+
+  if (
+    !CONFIG.networks[network]
+  ) {
+    return;
+  }
+
+
+  currentNetwork =
+    network;
+
+
+  $('trc20Option')
+    ?.classList.toggle(
+      'active',
+      network === 'trc20'
+    );
+
+
+  $('bp20Option')
+    ?.classList.toggle(
+      'active',
+      network === 'bp20'
+    );
+
+
+  updateCalculator();
+}
+
+
+// ============================================================
 // CALCUL DE LA TRANSACTION
-// ------------------------------------------------------------
+// ============================================================
 
 function calculateOrder() {
-  const inputValue =
-    Number($('amountInput')?.value) || 0;
+
+  const amount =
+    Number(
+      $('amountInput')
+        ?.value
+    ) || 0;
+
 
   const fee =
-    CONFIG.networks[currentNetwork]?.fee || 0;
+    CONFIG
+      .networks[
+        currentNetwork
+      ]?.fee || 0;
 
+
+  // ==========================================================
   // ACHAT
-  if (currentExchangeType === 'buy') {
-    const fiatAmount = inputValue;
+  // ==========================================================
+
+  if (
+    currentExchangeType ===
+    'buy'
+  ) {
+
+    const amountCfa =
+      amount;
+
 
     const grossUsdt =
-      fiatAmount / CONFIG.buyRate;
+      amountCfa /
+      CONFIG.buyRate;
+
 
     const netUsdt =
-      Math.max(grossUsdt - fee, 0);
+      Math.max(
+        grossUsdt - fee,
+        0
+      );
+
 
     return {
-      inputAmount: inputValue,
-      fiatAmount,
-      grossUsdt,
-      netUsdt,
-      rate: CONFIG.buyRate,
-      fee
+
+      side:
+        'buy',
+
+      amountCfa:
+
+        amountCfa,
+
+      usdtAmount:
+
+        grossUsdt,
+
+      feeUsdt:
+
+        fee,
+
+      netUsdt:
+
+        netUsdt,
+
+      receiveCfa:
+
+        null,
+
+      rate:
+
+        CONFIG.buyRate
     };
   }
 
+
+  // ==========================================================
   // VENTE
-  // Le client saisit directement la quantité d'USDT.
-  const usdtAmount = inputValue;
+  // ==========================================================
+
+  // Le client saisit directement
+  // la quantité d'USDT.
+  const usdtAmount =
+    amount;
+
 
   const netUsdt =
-    Math.max(usdtAmount - fee, 0);
+    Math.max(
+      usdtAmount - fee,
+      0
+    );
 
-  const grossFcfa =
-    usdtAmount * CONFIG.sellRate;
 
-  const netFcfa =
-    netUsdt * CONFIG.sellRate;
+  // Montant brut en FCFA
+  const grossCfa =
+    usdtAmount *
+    CONFIG.sellRate;
+
+
+  // Montant réellement reçu
+  // après déduction des frais réseau.
+  const receiveCfa =
+    netUsdt *
+    CONFIG.sellRate;
+
 
   return {
-    inputAmount: inputValue,
-    usdtAmount,
-    grossFcfa,
-    netFcfa,
-    rate: CONFIG.sellRate,
-    fee
+
+    side:
+      'sell',
+
+    amountCfa:
+
+      grossCfa,
+
+    usdtAmount:
+
+      usdtAmount,
+
+    feeUsdt:
+
+      fee,
+
+    netUsdt:
+
+      netUsdt,
+
+    receiveCfa:
+
+      receiveCfa,
+
+    rate:
+
+      CONFIG.sellRate
   };
 }
 
 
+// ============================================================
+// AFFICHAGE DU CALCUL
+// ============================================================
+
 function updateCalculator() {
-  const c = calculateOrder();
 
-  if (!$('summaryRate')) return;
+  const c =
+    calculateOrder();
 
-  if (currentExchangeType === 'buy') {
 
-    if ($('summaryRate')) {
-      $('summaryRate').textContent =
-        `${formatNumber(c.rate)} FCFA / USDT`;
-    }
+  if ($('summaryRate')) {
+
+    $('summaryRate').textContent =
+      `${formatNumber(c.rate)} FCFA / USDT`;
+  }
+
+
+  // ----------------------------------------------------------
+  // ACHAT
+  // ----------------------------------------------------------
+
+  if (
+    currentExchangeType ===
+    'buy'
+  ) {
 
     if ($('summaryCfa')) {
+
       $('summaryCfa').textContent =
-        `${formatNumber(c.fiatAmount)} FCFA`;
+        `${formatNumber(c.amountCfa)} FCFA`;
     }
+
 
     if ($('summaryUsdt')) {
+
       $('summaryUsdt').textContent =
-        `${c.netUsdt.toFixed(6)} USDT`;
+        `${c.usdtAmount.toFixed(6)} USDT`;
     }
+
 
     if ($('summaryFee')) {
+
       $('summaryFee').textContent =
-        `${c.fee} USDT`;
+        `${c.feeUsdt} USDT`;
     }
 
+
     if ($('summaryResultLabel')) {
+
       $('summaryResultLabel').textContent =
         'Vous recevez';
     }
 
+
     if ($('summaryResult')) {
+
       $('summaryResult').textContent =
         `${c.netUsdt.toFixed(6)} USDT`;
     }
+
 
     return;
   }
@@ -794,111 +1433,170 @@ function updateCalculator() {
   // VENTE
   // ----------------------------------------------------------
 
-  if ($('summaryRate')) {
-    $('summaryRate').textContent =
-      `${formatNumber(c.rate)} FCFA / USDT`;
+  if ($('summaryCfa')) {
+
+    $('summaryCfa').textContent =
+      `${formatNumber(c.receiveCfa)} FCFA`;
   }
 
-  if ($('summaryCfa')) {
-    $('summaryCfa').textContent =
-      `${formatNumber(c.netFcfa)} FCFA`;
-  }
 
   if ($('summaryUsdt')) {
+
     $('summaryUsdt').textContent =
       `${c.usdtAmount.toFixed(6)} USDT`;
   }
 
+
   if ($('summaryFee')) {
+
     $('summaryFee').textContent =
-      `${c.fee} USDT`;
+      `${c.feeUsdt} USDT`;
   }
 
+
+  // C'est le montant FCFA que
+  // le client recevra.
   if ($('summaryResultLabel')) {
+
     $('summaryResultLabel').textContent =
       'Vous recevez';
   }
 
+
   if ($('summaryResult')) {
+
     $('summaryResult').textContent =
-      `${formatNumber(c.netFcfa)} FCFA`;
+      `${formatNumber(c.receiveCfa)} FCFA`;
   }
 }
 
 
-// ------------------------------------------------------------
-// PORTEFEUILLE
-// ------------------------------------------------------------
+// ============================================================
+// ADRESSE PORTEFEUILLE
+// ============================================================
 
 function getWalletAddress() {
-  for (
-    const id of [
-      'walletAddress',
-      'wallet',
-      'walletInput',
-      'userWallet',
-      'wallet_address'
-    ]
-  ) {
-    const el = $(id);
 
-    if (el?.value?.trim()) {
+  const ids = [
+
+    'walletAddress',
+
+    'wallet',
+
+    'walletInput',
+
+    'userWallet',
+
+    'wallet_address'
+
+  ];
+
+
+  for (
+    const id of ids
+  ) {
+
+    const el =
+      $(id);
+
+
+    if (
+      el?.value?.trim()
+    ) {
+
       return el.value.trim();
     }
   }
+
 
   return '';
 }
 
 
-// ------------------------------------------------------------
-// VÉRIFICATION AVANT COMMANDE
-// ------------------------------------------------------------
+// ============================================================
+// VÉRIFICATION DE LA COMMANDE
+// ============================================================
 
 function reviewOrder() {
+
   hideMessage();
 
+
   if (!currentUser) {
+
     showMessage(
       'Vous devez être connecté pour passer une commande.',
       'error'
     );
 
     showAuthPage();
+
     showLoginForm();
 
     return;
   }
 
-  const c = calculateOrder();
 
-  if (!c.inputAmount) {
+  const c =
+    calculateOrder();
+
+
+  if (
+    !c.usdtAmount ||
+    c.usdtAmount <= 0
+  ) {
+
     return showMessage(
-      currentExchangeType === 'buy'
+
+      currentExchangeType ===
+      'buy'
+
         ? 'Veuillez saisir un montant en FCFA.'
+
         : 'Veuillez saisir la quantité d\'USDT à vendre.',
+
       'error'
     );
   }
 
 
-  // ----------------------------------------------------------
+  // ==========================================================
   // ACHAT
-  // ----------------------------------------------------------
+  // ==========================================================
 
-  if (currentExchangeType === 'buy') {
+  if (
+    currentExchangeType ===
+    'buy'
+  ) {
 
     if (
-      c.fiatAmount < CONFIG.minOrder ||
-      c.fiatAmount > CONFIG.maxOrder
+      c.amountCfa <
+      CONFIG.minOrder
     ) {
+
       return showMessage(
-        `Le montant doit être compris entre ${formatNumber(CONFIG.minOrder)} et ${formatNumber(CONFIG.maxOrder)} FCFA.`,
+        `Le montant minimum est de ${formatNumber(CONFIG.minOrder)} FCFA.`,
         'error'
       );
     }
 
-    if (c.netUsdt <= 0) {
+
+    if (
+      c.amountCfa >
+      CONFIG.maxOrder
+    ) {
+
+      return showMessage(
+        `Le montant maximum est de ${formatNumber(CONFIG.maxOrder)} FCFA.`,
+        'error'
+      );
+    }
+
+
+    if (
+      c.netUsdt <= 0
+    ) {
+
       return showMessage(
         'Le montant USDT après frais est insuffisant.',
         'error'
@@ -907,29 +1605,53 @@ function reviewOrder() {
   }
 
 
-  // ----------------------------------------------------------
+  // ==========================================================
   // VENTE
-  // ----------------------------------------------------------
+  // ==========================================================
 
-  if (currentExchangeType === 'sell') {
+  if (
+    currentExchangeType ===
+    'sell'
+  ) {
 
     const minimumUsdt =
-      CONFIG.minOrder / CONFIG.sellRate;
+      CONFIG.minOrder /
+      CONFIG.sellRate;
+
 
     const maximumUsdt =
-      CONFIG.maxOrder / CONFIG.sellRate;
+      CONFIG.maxOrder /
+      CONFIG.sellRate;
+
 
     if (
-      c.usdtAmount < minimumUsdt ||
-      c.usdtAmount > maximumUsdt
+      c.usdtAmount <
+      minimumUsdt
     ) {
+
       return showMessage(
-        `La quantité doit être comprise entre ${minimumUsdt.toFixed(2)} et ${maximumUsdt.toFixed(2)} USDT.`,
+        `La quantité minimum est de ${minimumUsdt.toFixed(2)} USDT.`,
         'error'
       );
     }
 
-    if (c.netUsdt <= 0) {
+
+    if (
+      c.usdtAmount >
+      maximumUsdt
+    ) {
+
+      return showMessage(
+        `La quantité maximum est de ${maximumUsdt.toFixed(2)} USDT.`,
+        'error'
+      );
+    }
+
+
+    if (
+      c.netUsdt <= 0
+    ) {
+
       return showMessage(
         'La quantité d\'USDT après frais est insuffisante.',
         'error'
@@ -941,134 +1663,111 @@ function reviewOrder() {
   const wallet =
     getWalletAddress();
 
+
   if (!wallet) {
+
     return showMessage(
-      currentExchangeType === 'sell'
-        ? 'Veuillez saisir l\'adresse du portefeuille depuis lequel vous allez envoyer les USDT.'
-        : 'Veuillez saisir votre adresse de portefeuille USDT.',
+
+      'Veuillez saisir votre adresse de portefeuille USDT.',
+
       'error'
     );
   }
 
 
-  // ----------------------------------------------------------
-  // CRÉATION DE LA COMMANDE TEMPORAIRE
-  // ----------------------------------------------------------
+  // On garde les informations
+  // temporairement avant confirmation.
+  currentOrder = {
 
-  if (currentExchangeType === 'buy') {
+    side:
+      currentExchangeType,
 
-    currentOrder = {
-      type: 'buy',
+    network:
+      currentNetwork,
 
-      fiat_amount:
-        c.fiatAmount,
+    amountCfa:
+      c.amountCfa,
 
-      crypto_amount:
-        c.netUsdt,
+    usdtAmount:
+      c.usdtAmount,
 
-      rate:
-        c.rate,
+    feeUsdt:
+      c.feeUsdt,
 
-      network:
-        currentNetwork,
+    netUsdt:
+      c.netUsdt,
 
-      fee:
-        c.fee,
+    receiveCfa:
+      c.receiveCfa,
 
-      wallet_address:
-        wallet,
+    rate:
+      c.rate,
 
-      payment_method:
-        CONFIG.payment.method,
+    walletAddress:
+      wallet,
 
-      result_usdt:
-        c.netUsdt,
+    paymentMethod:
+      currentExchangeType ===
+      'buy'
 
-      status:
-        'pending'
-    };
+        ? 'orange_money'
 
-  } else {
-
-    currentOrder = {
-      type: 'sell',
-
-      fiat_amount:
-        c.netFcfa,
-
-      crypto_amount:
-        c.usdtAmount,
-
-      rate:
-        c.rate,
-
-      network:
-        currentNetwork,
-
-      fee:
-        c.fee,
-
-      wallet_address:
-        wallet,
-
-      payment_method:
-        null,
-
-      result_usdt:
-        c.netUsdt,
-
-      result_fcfa:
-        c.netFcfa,
-
-      status:
-        'pending'
-    };
-  }
+        : null
+  };
 
 
   renderConfirmation();
 
+
   showSubPage(
     'confirmationPage'
   );
-}// ------------------------------------------------------------
+}
+// ============================================================
 // CONFIRMATION DE LA COMMANDE
-// ------------------------------------------------------------
+// ============================================================
 
 function renderConfirmation() {
-  const box = $('confirmationSummary');
 
-  if (!box || !currentOrder) return;
+  const box =
+    $('confirmationSummary');
 
-  const typeLabel =
-    currentOrder.type === 'buy'
-      ? 'Achat USDT'
-      : 'Vente USDT';
+  if (
+    !box ||
+    !currentOrder
+  ) {
+    return;
+  }
+
 
   const networkName =
-    CONFIG.networks[currentOrder.network]?.name ||
+    CONFIG.networks[
+      currentOrder.network
+    ]?.name ||
     currentOrder.network ||
     '-';
 
 
-  // ----------------------------------------------------------
-  // CONFIRMATION ACHAT
-  // ----------------------------------------------------------
+  // ==========================================================
+  // ACHAT
+  // ==========================================================
 
-  if (currentOrder.type === 'buy') {
+  if (
+    currentOrder.side ===
+    'buy'
+  ) {
 
     box.innerHTML = `
+
       <div class="summary-row">
         <span>Type</span>
-        <strong>
-          ${escapeHtml(typeLabel)}
-        </strong>
+        <strong>Achat USDT</strong>
       </div>
 
       <div class="summary-row">
-        <span>Montant payé</span>
+        <span>Montant à payer</span>
         <strong>
-          ${formatNumber(currentOrder.fiat_amount)} FCFA
+          ${formatNumber(currentOrder.amountCfa)} FCFA
         </strong>
       </div>
 
@@ -1080,9 +1779,23 @@ function renderConfirmation() {
       </div>
 
       <div class="summary-row">
-        <span>USDT reçu</span>
+        <span>USDT acheté</span>
         <strong>
-          ${Number(currentOrder.crypto_amount).toFixed(6)} USDT
+          ${Number(currentOrder.usdtAmount).toFixed(6)} USDT
+        </strong>
+      </div>
+
+      <div class="summary-row">
+        <span>Frais réseau</span>
+        <strong>
+          ${Number(currentOrder.feeUsdt)} USDT
+        </strong>
+      </div>
+
+      <div class="summary-row">
+        <span>USDT net reçu</span>
+        <strong>
+          ${Number(currentOrder.netUsdt).toFixed(6)} USDT
         </strong>
       </div>
 
@@ -1094,54 +1807,45 @@ function renderConfirmation() {
       </div>
 
       <div class="summary-row">
-        <span>Frais réseau</span>
-        <strong>
-          ${Number(currentOrder.fee)} USDT
-        </strong>
-      </div>
-
-      <div class="summary-row">
         <span>Portefeuille</span>
-        <strong>
-          ${escapeHtml(currentOrder.wallet_address)}
+        <strong class="break-word">
+          ${escapeHtml(currentOrder.walletAddress)}
         </strong>
       </div>
 
       <div class="summary-row">
-        <span>Moyen de paiement</span>
-        <strong>
-          Orange Money
-        </strong>
+        <span>Paiement</span>
+        <strong>Orange Money</strong>
       </div>
 
       <div class="summary-row summary-total">
         <span>Vous recevez</span>
         <strong>
-          ${Number(currentOrder.result_usdt).toFixed(6)} USDT
+          ${Number(currentOrder.netUsdt).toFixed(6)} USDT
         </strong>
       </div>
+
     `;
 
     return;
   }
 
 
-  // ----------------------------------------------------------
-  // CONFIRMATION VENTE
-  // ----------------------------------------------------------
+  // ==========================================================
+  // VENTE
+  // ==========================================================
 
   box.innerHTML = `
+
     <div class="summary-row">
       <span>Type</span>
-      <strong>
-        ${escapeHtml(typeLabel)}
-      </strong>
+      <strong>Vente USDT</strong>
     </div>
 
     <div class="summary-row">
       <span>Quantité vendue</span>
       <strong>
-        ${Number(currentOrder.crypto_amount).toFixed(6)} USDT
+        ${Number(currentOrder.usdtAmount).toFixed(6)} USDT
       </strong>
     </div>
 
@@ -1153,6 +1857,20 @@ function renderConfirmation() {
     </div>
 
     <div class="summary-row">
+      <span>Frais réseau</span>
+      <strong>
+        ${Number(currentOrder.feeUsdt)} USDT
+      </strong>
+    </div>
+
+    <div class="summary-row">
+      <span>USDT après frais</span>
+      <strong>
+        ${Number(currentOrder.netUsdt).toFixed(6)} USDT
+      </strong>
+    </div>
+
+    <div class="summary-row">
       <span>Réseau</span>
       <strong>
         ${escapeHtml(networkName)}
@@ -1160,42 +1878,31 @@ function renderConfirmation() {
     </div>
 
     <div class="summary-row">
-      <span>Frais réseau</span>
-      <strong>
-        ${Number(currentOrder.fee)} USDT
-      </strong>
-    </div>
-
-    <div class="summary-row">
-      <span>USDT après frais</span>
-      <strong>
-        ${Number(currentOrder.result_usdt).toFixed(6)} USDT
-      </strong>
-    </div>
-
-    <div class="summary-row">
-      <span>Portefeuille d'envoi</span>
-      <strong>
-        ${escapeHtml(currentOrder.wallet_address)}
+      <span>Adresse d'envoi</span>
+      <strong class="break-word">
+        ${escapeHtml(currentOrder.walletAddress)}
       </strong>
     </div>
 
     <div class="summary-row summary-total">
       <span>Vous recevez</span>
       <strong>
-        ${formatNumber(currentOrder.result_fcfa)} FCFA
+        ${formatNumber(currentOrder.receiveCfa)} FCFA
       </strong>
     </div>
+
   `;
 }
 
 
-// ------------------------------------------------------------
-// ANNULATION DE LA CONFIRMATION
-// ------------------------------------------------------------
+// ============================================================
+// ANNULER LA CONFIRMATION
+// ============================================================
 
 function cancelReview() {
-  currentOrder = null;
+
+  currentOrder =
+    null;
 
   showSubPage(
     'exchangePage'
@@ -1203,35 +1910,52 @@ function cancelReview() {
 }
 
 
-// ------------------------------------------------------------
-// COMMANDES
-// ------------------------------------------------------------
+// ============================================================
+// ENREGISTREMENT DE LA COMMANDE
+// ============================================================
 
 async function placeOrder() {
+
   hideMessage();
 
+
   if (!currentUser) {
-    return showMessage(
+
+    showMessage(
       'Votre session a expiré. Veuillez vous reconnecter.',
       'error'
     );
+
+    showAuthPage();
+
+    showLoginForm();
+
+    return;
   }
 
+
   if (!currentOrder) {
+
     return showMessage(
       'Aucune commande à enregistrer.',
       'error'
     );
   }
 
+
   const button =
     $('placeOrderBtn');
 
-  const original =
+
+  const originalText =
     button?.textContent;
 
+
   if (button) {
-    button.disabled = true;
+
+    button.disabled =
+      true;
+
     button.textContent =
       'Enregistrement...';
   }
@@ -1239,106 +1963,168 @@ async function placeOrder() {
 
   try {
 
+    // --------------------------------------------------------
+    // Vérification de session
+    // --------------------------------------------------------
+
     const {
       data: sessionData,
       error: sessionError
-    } = await supabaseClient.auth.getSession();
+    } =
+      await supabaseClient.auth
+        .getSession();
+
 
     if (sessionError) {
       throw sessionError;
     }
 
-    if (!sessionData?.session?.user) {
+
+    if (
+      !sessionData?.session?.user
+    ) {
+
       throw new Error(
         'Votre session n\'est plus active.'
       );
     }
 
+
     currentUser =
       sessionData.session.user;
 
-    const userId =
-      currentUser.id;
 
-    currentOrder.user_id =
-      userId;
+    // --------------------------------------------------------
+    // NOTE CLIENT
+    // --------------------------------------------------------
+
+    // La table orders ne possède pas de colonne
+    // wallet_address.
+    //
+    // On conserve donc l'adresse dans customer_note.
+    //
+    // L'administration pourra ainsi retrouver
+    // l'adresse du portefeuille.
+
+    const customerNote =
+      currentOrder.walletAddress
+        ? `Adresse portefeuille : ${currentOrder.walletAddress}`
+        : null;
 
 
     // --------------------------------------------------------
-    // PAYLOAD ACHAT
+    // PAYLOAD AVEC LES VRAIES COLONNES ORDERS
     // --------------------------------------------------------
 
-    if (currentOrder.type === 'buy') {
+    const payload = {
 
-      const payload = {
-        user_id:
-          userId,
+      user_id:
+        currentUser.id,
 
-        type:
-          'buy',
+      side:
+        currentOrder.side,
 
-        fiat_amount:
-          currentOrder.fiat_amount,
+      network:
+        currentOrder.network,
 
-        crypto_amount:
-          currentOrder.crypto_amount,
+      payment_method:
+        currentOrder.paymentMethod,
 
-        rate:
-          currentOrder.rate,
+      amount_cfa:
+        Number(
+          currentOrder.amountCfa
+        ),
 
-        fee:
-          currentOrder.fee,
+      usdt_amount:
+        Number(
+          currentOrder.usdtAmount
+        ),
 
-        network:
-          currentOrder.network,
+      fee_usdt:
+        Number(
+          currentOrder.feeUsdt
+        ),
 
-        wallet_address:
-          currentOrder.wallet_address,
+      net_usdt:
+        Number(
+          currentOrder.netUsdt
+        ),
 
-        payment_method:
-          'orange_money',
+      receive_cfa:
+        currentOrder.side === 'sell'
+          ? Number(
+              currentOrder.receiveCfa
+            )
+          : null,
 
-        status:
-          'pending'
-      };
+      status:
+        'pending',
+
+      customer_note:
+        customerNote
+    };
 
 
-      const {
-        data,
-        error
-      } = await supabaseClient
+    console.log(
+      'Commande envoyée à Supabase :',
+      payload
+    );
+
+
+    // --------------------------------------------------------
+    // INSERTION SUPABASE
+    // --------------------------------------------------------
+
+    const {
+      data,
+      error
+    } =
+      await supabaseClient
         .from('orders')
-        .insert(payload)
+        .insert(
+          payload
+        )
         .select('*')
         .single();
 
-      if (error) {
-        throw error;
-      }
 
-      if (!data) {
-        throw new Error(
-          'La commande n\'a pas été créée.'
-        );
-      }
+    if (error) {
+      throw error;
+    }
 
-      Object.assign(
-        currentOrder,
-        {
-          id:
-            data.id,
 
-          created_at:
-            data.created_at,
+    if (!data) {
 
-          status:
-            data.status || 'pending'
-        }
+      throw new Error(
+        'Supabase n\'a retourné aucune commande.'
       );
+    }
 
 
-      // Pour un achat :
-      // on continue vers Orange Money.
+    // --------------------------------------------------------
+    // COMMANDE ENREGISTRÉE
+    // --------------------------------------------------------
+
+    currentOrder.id =
+      data.id;
+
+    currentOrder.createdAt =
+      data.created_at;
+
+    currentOrder.status =
+      data.status ||
+      'pending';
+
+
+    // ========================================================
+    // ACHAT
+    // ========================================================
+
+    if (
+      currentOrder.side ===
+      'buy'
+    ) {
+
       renderPaymentPage();
 
       showSubPage(
@@ -1346,115 +2132,41 @@ async function placeOrder() {
       );
 
       showMessage(
-        'Votre commande a été enregistrée.',
+        'Commande enregistrée. Effectuez maintenant le paiement Orange Money.',
         'success'
       );
 
-      await loadOrderHistory();
-
-      return;
     }
 
 
-    // --------------------------------------------------------
-    // PAYLOAD VENTE
-    // --------------------------------------------------------
+    // ========================================================
+    // VENTE
+    // ========================================================
 
-    const sellPayload = {
-      user_id:
-        userId,
+    else {
 
-      type:
-        'sell',
+      showSubPage(
+        'ordersPage'
+      );
 
-      // En vente, fiat_amount représente
-      // le montant FCFA que le client doit recevoir.
-      fiat_amount:
-        currentOrder.fiat_amount,
-
-      // Quantité totale d'USDT vendue.
-      crypto_amount:
-        currentOrder.crypto_amount,
-
-      rate:
-        currentOrder.rate,
-
-      fee:
-        currentOrder.fee,
-
-      network:
-        currentOrder.network,
-
-      wallet_address:
-        currentOrder.wallet_address,
-
-      // Pas de paiement Orange Money pour une vente.
-      payment_method:
-        null,
-
-      status:
-        'pending'
-    };
-
-
-    const {
-      data: sellData,
-      error: sellError
-    } = await supabaseClient
-      .from('orders')
-      .insert(sellPayload)
-      .select('*')
-      .single();
-
-    if (sellError) {
-      throw sellError;
-    }
-
-    if (!sellData) {
-      throw new Error(
-        'La vente n\'a pas été créée.'
+      showMessage(
+        'Votre demande de vente a été enregistrée. Nous allons la traiter.',
+        'success'
       );
     }
 
 
-    Object.assign(
-      currentOrder,
-      {
-        id:
-          sellData.id,
-
-        created_at:
-          sellData.created_at,
-
-        status:
-          sellData.status || 'pending'
-      }
-    );
-
-
-    // --------------------------------------------------------
-    // VENTE :
-    // PAS D'ÉCRAN ORANGE MONEY.
-    // --------------------------------------------------------
-
-    showSubPage(
-      'ordersPage'
-    );
-
-    showMessage(
-      'Votre demande de vente a été enregistrée. Nous allons traiter votre demande.',
-      'success'
-    );
-
+    // Actualiser l'historique
     await loadOrderHistory();
 
 
   } catch (error) {
 
     console.error(
-      'Erreur création commande :',
+      'ERREUR CRÉATION COMMANDE :',
       error
     );
+
 
     showMessage(
       'Impossible d\'enregistrer la commande : ' +
@@ -1462,82 +2174,110 @@ async function placeOrder() {
       'error'
     );
 
+
   } finally {
 
     if (button) {
-      button.disabled = false;
+
+      button.disabled =
+        false;
 
       button.textContent =
-        original ||
+        originalText ||
         'Placer la commande';
     }
   }
 }
 
 
-// ------------------------------------------------------------
-// PAIEMENT ORANGE MONEY — ACHAT UNIQUEMENT
-// ------------------------------------------------------------
+// ============================================================
+// PAIEMENT ORANGE MONEY
+// ACHAT UNIQUEMENT
+// ============================================================
 
 function renderPaymentPage() {
-  if (!currentOrder) return;
 
-  // Une vente ne doit jamais afficher Orange Money.
-  if (currentOrder.type !== 'buy') {
+  if (
+    !currentOrder ||
+    currentOrder.side !== 'buy'
+  ) {
     return;
   }
 
+
   const amount =
-    Number(currentOrder.fiat_amount) || 0;
+    Number(
+      currentOrder.amountCfa
+    ) || 0;
+
 
   if ($('paymentAmount')) {
+
     $('paymentAmount').textContent =
       `Montant : ${formatNumber(amount)} FCFA`;
   }
 
-  if ($('paymentCode')) {
-    $('paymentCode').textContent =
-      `*144*10*${CONFIG.payment.number}*${amount}#`;
-  }
 
   if ($('paymentNumber')) {
+
     $('paymentNumber').textContent =
       CONFIG.payment.displayNumber;
+  }
+
+
+  if ($('paymentCode')) {
+
+    $('paymentCode').textContent =
+      `*144*10*${CONFIG.payment.number}*${amount}#`;
   }
 }
 
 
-// ------------------------------------------------------------
-// DÉCLARER LE PAIEMENT
-// ------------------------------------------------------------
+// ============================================================
+// DÉCLARATION DU PAIEMENT
+// ============================================================
 
 async function declarePayment() {
+
   hideMessage();
 
-  if (!currentOrder?.id) {
+
+  if (
+    !currentOrder?.id
+  ) {
+
     return showMessage(
       'Commande introuvable.',
       'error'
     );
   }
 
-  // Une vente n'a pas de paiement Orange Money
-  // à déclarer par le client.
-  if (currentOrder.type !== 'buy') {
+
+  if (
+    currentOrder.side !==
+    'buy'
+  ) {
+
     return showMessage(
       'Cette opération ne nécessite pas de paiement Orange Money.',
-      'info'
+      'error'
     );
   }
+
 
   const button =
     $('paymentDoneBtn');
 
-  const original =
+
+  const originalText =
     button?.textContent;
 
+
   if (button) {
-    button.disabled = true;
+
+    button.disabled =
+      true;
+
     button.textContent =
       'Confirmation...';
   }
@@ -1545,54 +2285,74 @@ async function declarePayment() {
 
   try {
 
-    const {
-      data: sessionData,
-      error: sessionError
-    } = await supabaseClient.auth.getSession();
-
-    if (sessionError) {
-      throw sessionError;
-    }
-
-    if (!sessionData?.session) {
-      throw new Error(
-        'Votre session a expiré.'
-      );
-    }
+    // --------------------------------------------------------
+    // Mise à jour directe de la commande.
+    // --------------------------------------------------------
+    //
+    // On évite ici une fonction RPC qui pourrait ne pas
+    // exister dans ta base.
+    //
+    // La commande passe simplement à :
+    // payment_declared
+    //
+    // L'administration pourra ensuite la vérifier.
+    // --------------------------------------------------------
 
     const {
       data,
       error
-    } = await supabaseClient.rpc(
-      'declare_order_payment',
-      {
-        p_order_id:
+    } =
+      await supabaseClient
+        .from('orders')
+        .update({
+          status:
+            'payment_declared'
+        })
+        .eq(
+          'id',
           currentOrder.id
-      }
-    );
+        )
+        .eq(
+          'user_id',
+          currentUser.id
+        )
+        .select('*')
+        .single();
+
 
     if (error) {
       throw error;
     }
 
-    if (data?.status) {
-      currentOrder.status =
-        data.status;
+
+    if (!data) {
+
+      throw new Error(
+        'La commande n\'a pas pu être mise à jour.'
+      );
     }
+
+
+    currentOrder.status =
+      data.status;
+
 
     showMessage(
       'Paiement déclaré. Votre commande est maintenant en attente de vérification.',
       'success'
     );
 
+
     await loadOrderHistory();
+
 
   } catch (error) {
 
     console.error(
-      'Erreur déclaration paiement :',
+      'ERREUR DÉCLARATION PAIEMENT :',
       error
     );
+
 
     showMessage(
       'Impossible de confirmer le paiement : ' +
@@ -1600,42 +2360,45 @@ async function declarePayment() {
       'error'
     );
 
+
   } finally {
 
     if (button) {
-      button.disabled = false;
+
+      button.disabled =
+        false;
 
       button.textContent =
-        original ||
+        originalText ||
         'J\'ai effectué le paiement';
     }
   }
 }
 
 
-function viewCurrentOrder() {
-  showSubPage(
-    'ordersPage'
-  );
-}
-
-
-// ------------------------------------------------------------
-// HISTORIQUE DES COMMANDES
-// ------------------------------------------------------------
+// ============================================================
+// HISTORIQUE
+// ============================================================
 
 async function loadOrderHistory() {
+
   const list =
     $('ordersList');
 
-  if (!list) return;
+
+  if (!list) {
+    return;
+  }
+
 
   if (!currentUser) {
+
     list.innerHTML =
       '<div class="small center">Connectez-vous pour voir vos commandes.</div>';
 
     return;
   }
+
 
   list.innerHTML =
     '<div class="small center">Chargement des commandes...</div>';
@@ -1646,25 +2409,31 @@ async function loadOrderHistory() {
     const {
       data,
       error
-    } = await supabaseClient
-      .from('orders')
-      .select('*')
-      .eq(
-        'user_id',
-        currentUser.id
-      )
-      .order(
-        'created_at',
-        {
-          ascending: false
-        }
-      );
+    } =
+      await supabaseClient
+        .from('orders')
+        .select('*')
+        .eq(
+          'user_id',
+          currentUser.id
+        )
+        .order(
+          'created_at',
+          {
+            ascending: false
+          }
+        );
+
 
     if (error) {
       throw error;
     }
 
-    if (!data?.length) {
+
+    if (
+      !data ||
+      data.length === 0
+    ) {
 
       list.innerHTML =
         '<div class="small center">Vous n\'avez encore aucune commande.</div>';
@@ -1672,80 +2441,128 @@ async function loadOrderHistory() {
       return;
     }
 
+
     list.innerHTML =
       data
-        .map(renderOrderCard)
+        .map(
+          renderOrderCard
+        )
         .join('');
+
 
   } catch (error) {
 
     console.error(
-      'Erreur historique :',
+      'ERREUR HISTORIQUE :',
       error
     );
 
+
     list.innerHTML =
-      '<div class="small center">Impossible de charger vos commandes.</div>';
+      `<div class="small center">
+        Impossible de charger vos commandes.
+        <br>
+        ${escapeHtml(
+          getSupabaseErrorMessage(error)
+        )}
+      </div>`;
   }
 }
 
 
-// ------------------------------------------------------------
+// ============================================================
 // CARTE HISTORIQUE
-// ------------------------------------------------------------
+// ============================================================
 
-function renderOrderCard(order) {
+function renderOrderCard(
+  order
+) {
+
+  const side =
+    order.side;
+
 
   const type =
-    order.type === 'buy'
+    side === 'buy'
       ? 'Achat USDT'
       : 'Vente USDT';
+
 
   const status =
     order.status ||
     'pending';
 
-  const label =
-    getStatusLabel(status);
+
+  const statusLabel =
+    getStatusLabel(
+      status
+    );
+
 
   const networkName =
-    CONFIG.networks[order.network]?.name ||
+    CONFIG.networks[
+      order.network
+    ]?.name ||
     order.network ||
     '-';
 
 
-  // ----------------------------------------------------------
-  // CARTE ACHAT
-  // ----------------------------------------------------------
+  // ==========================================================
+  // ACHAT
+  // ==========================================================
 
-  if (order.type === 'buy') {
+  if (
+    side === 'buy'
+  ) {
 
     return `
+
       <div class="order-card">
 
         <div class="order-header">
+
           <div class="order-type">
             ${escapeHtml(type)}
           </div>
 
           <span class="status ${escapeHtml(status)}">
-            ${escapeHtml(label)}
+            ${escapeHtml(statusLabel)}
           </span>
+
         </div>
+
 
         <div class="order-row">
           <span>Montant payé</span>
           <strong>
-            ${formatNumber(order.fiat_amount)} FCFA
+            ${formatNumber(order.amount_cfa)} FCFA
           </strong>
         </div>
 
+
         <div class="order-row">
-          <span>USDT reçu</span>
+          <span>USDT acheté</span>
           <strong>
-            ${Number(order.crypto_amount || 0).toFixed(6)} USDT
+            ${Number(order.usdt_amount || 0).toFixed(6)} USDT
           </strong>
         </div>
+
+
+        <div class="order-row">
+          <span>Frais</span>
+          <strong>
+            ${Number(order.fee_usdt || 0)} USDT
+          </strong>
+        </div>
+
+
+        <div class="order-row">
+          <span>USDT net reçu</span>
+          <strong>
+            ${Number(order.net_usdt || 0).toFixed(6)} USDT
+          </strong>
+        </div>
+
 
         <div class="order-row">
           <span>Réseau</span>
@@ -1754,12 +2571,6 @@ function renderOrderCard(order) {
           </strong>
         </div>
 
-        <div class="order-row">
-          <span>Paiement</span>
-          <strong>
-            Orange Money
-          </strong>
-        </div>
 
         <div class="order-row">
           <span>Date</span>
@@ -1769,40 +2580,63 @@ function renderOrderCard(order) {
         </div>
 
       </div>
+
     `;
   }
 
 
-  // ----------------------------------------------------------
-  // CARTE VENTE
-  // ----------------------------------------------------------
+  // ==========================================================
+  // VENTE
+  // ==========================================================
 
   return `
+
     <div class="order-card">
 
       <div class="order-header">
+
         <div class="order-type">
           ${escapeHtml(type)}
         </div>
 
         <span class="status ${escapeHtml(status)}">
-          ${escapeHtml(label)}
+          ${escapeHtml(statusLabel)}
         </span>
+
       </div>
+
 
       <div class="order-row">
         <span>USDT vendu</span>
         <strong>
-          ${Number(order.crypto_amount || 0).toFixed(6)} USDT
+          ${Number(order.usdt_amount || 0).toFixed(6)} USDT
         </strong>
       </div>
+
+
+      <div class="order-row">
+        <span>Frais réseau</span>
+        <strong>
+          ${Number(order.fee_usdt || 0).toFixed(6)} USDT
+        </strong>
+      </div>
+
+
+      <div class="order-row">
+        <span>USDT net</span>
+        <strong>
+          ${Number(order.net_usdt || 0).toFixed(6)} USDT
+        </strong>
+      </div>
+
 
       <div class="order-row">
         <span>Montant reçu</span>
         <strong>
-          ${formatNumber(order.fiat_amount || 0)} FCFA
+          ${formatNumber(order.receive_cfa || 0)} FCFA
         </strong>
       </div>
+
 
       <div class="order-row">
         <span>Réseau</span>
@@ -1811,12 +2645,6 @@ function renderOrderCard(order) {
         </strong>
       </div>
 
-      <div class="order-row">
-        <span>Frais réseau</span>
-        <strong>
-          ${Number(order.fee || 0)} USDT
-        </strong>
-      </div>
 
       <div class="order-row">
         <span>Date</span>
@@ -1826,19 +2654,26 @@ function renderOrderCard(order) {
       </div>
 
     </div>
+
   `;
 }
 
 
-// ------------------------------------------------------------
+// ============================================================
 // STATUTS
-// ------------------------------------------------------------
+// ============================================================
 
-function getStatusLabel(status) {
+function getStatusLabel(
+  status
+) {
 
-  return ({
+  const labels = {
+
     pending:
       'En attente',
+
+    payment_declared:
+      'Paiement déclaré',
 
     processing:
       'En traitement',
@@ -1849,123 +2684,188 @@ function getStatusLabel(status) {
     cancelled:
       'Annulée',
 
-    paid:
-      'Paiement déclaré',
+    rejected:
+      'Refusée'
 
-    payment_declared:
-      'Paiement déclaré'
+  };
 
-  })[status] ||
+
+  return (
+    labels[status] ||
     status ||
-    'En attente';
-}// ------------------------------------------------------------
-// LITIGES / SUPPORT
-// ------------------------------------------------------------
+    'En attente'
+  );
+}
+// ============================================================
+// SUPPORT / LITIGES
+// ============================================================
 
 async function loadOrdersForDispute() {
-  const select = $('disputeOrder');
 
-  if (!select || !currentUser) return;
+  const select =
+    $('disputeOrder');
+
+  if (
+    !select ||
+    !currentUser
+  ) {
+    return;
+  }
 
   try {
+
     const {
       data,
       error
-    } = await supabaseClient
-      .from('orders')
-      .select('id,type,created_at,status')
-      .eq('user_id', currentUser.id)
-      .order('created_at', {
-        ascending: false
-      });
+    } =
+      await supabaseClient
+        .from('orders')
+        .select(
+          'id,side,created_at,status'
+        )
+        .eq(
+          'user_id',
+          currentUser.id
+        )
+        .order(
+          'created_at',
+          {
+            ascending: false
+          }
+        );
 
-    if (error) throw error;
+
+    if (error) {
+      throw error;
+    }
+
 
     select.innerHTML =
       '<option value="">Sélectionner une commande</option>';
 
-    (data || []).forEach(order => {
 
-      const type =
-        order.type === 'buy'
-          ? 'Achat'
-          : 'Vente';
+    (data || [])
+      .forEach(order => {
 
-      const option =
-        document.createElement('option');
+        const type =
+          order.side === 'buy'
+            ? 'Achat'
+            : 'Vente';
 
-      option.value =
-        order.id;
 
-      option.textContent =
-        `${type} - ${formatDate(order.created_at)} - ${getStatusLabel(order.status)}`;
+        const option =
+          document.createElement(
+            'option'
+          );
 
-      select.appendChild(option);
-    });
+
+        option.value =
+          order.id;
+
+
+        option.textContent =
+          `${type} - ${formatDate(order.created_at)} - ${getStatusLabel(order.status)}`;
+
+
+        select.appendChild(
+          option
+        );
+      });
+
 
   } catch (error) {
 
     console.error(
-      'Erreur chargement commandes support :',
+      'Erreur commandes support :',
       error
     );
   }
 }
 
 
-async function submitDispute(event) {
+// ============================================================
+// ENVOYER UN LITIGE
+// ============================================================
+
+async function submitDispute(
+  event
+) {
+
   event.preventDefault();
 
   hideMessage();
 
+
   if (!currentUser) {
+
     return showMessage(
       'Vous devez être connecté.',
       'error'
     );
   }
 
+
   const orderId =
-    $('disputeOrder')?.value || '';
+    $('disputeOrder')
+      ?.value || '';
+
 
   const subject =
-    $('disputeSubject')?.value.trim() || '';
+    $('disputeSubject')
+      ?.value
+      ?.trim() || '';
+
 
   const message =
-    $('disputeMessage')?.value.trim() || '';
+    $('disputeMessage')
+      ?.value
+      ?.trim() || '';
+
 
   if (!orderId) {
+
     return showMessage(
       'Veuillez sélectionner une commande.',
       'error'
     );
   }
 
+
   if (!subject) {
+
     return showMessage(
       'Veuillez indiquer le sujet du problème.',
       'error'
     );
   }
 
+
   if (!message) {
+
     return showMessage(
       'Veuillez expliquer votre problème.',
       'error'
     );
   }
 
+
   const button =
     event.submitter ||
-    $('disputeForm')?.querySelector(
-      'button[type="submit"]'
-    );
+    $('disputeForm')
+      ?.querySelector(
+        'button[type="submit"]'
+      );
 
-  const original =
+
+  const originalText =
     button?.textContent;
 
+
   if (button) {
-    button.disabled = true;
+
+    button.disabled =
+      true;
+
     button.textContent =
       'Envoi...';
   }
@@ -1974,6 +2874,7 @@ async function submitDispute(event) {
   try {
 
     const payload = {
+
       user_id:
         currentUser.id,
 
@@ -1993,24 +2894,31 @@ async function submitDispute(event) {
 
     const {
       error
-    } = await supabaseClient
-      .from('disputes')
-      .insert(payload);
+    } =
+      await supabaseClient
+        .from('disputes')
+        .insert(
+          payload
+        );
+
 
     if (error) {
       throw error;
     }
 
-    if ($('disputeForm')) {
-      $('disputeForm').reset();
-    }
+
+    $('disputeForm')
+      ?.reset();
+
 
     showMessage(
-      'Votre demande a été envoyée. Notre équipe va vous répondre.',
+      'Votre demande a été envoyée à notre équipe.',
       'success'
     );
 
+
     await loadDisputes();
+
 
   } catch (error) {
 
@@ -2019,59 +2927,81 @@ async function submitDispute(event) {
       error
     );
 
+
     showMessage(
       'Impossible d\'envoyer votre demande : ' +
       getSupabaseErrorMessage(error),
       'error'
     );
 
+
   } finally {
 
     if (button) {
-      button.disabled = false;
+
+      button.disabled =
+        false;
 
       button.textContent =
-        original ||
+        originalText ||
         'Envoyer la demande';
     }
   }
 }
 
 
+// ============================================================
+// CHARGER LES LITIGES
+// ============================================================
+
 async function loadDisputes() {
 
   const list =
     $('disputesList');
 
-  if (!list || !currentUser) return;
+
+  if (
+    !list ||
+    !currentUser
+  ) {
+    return;
+  }
+
 
   list.innerHTML =
     '<div class="small center">Chargement...</div>';
+
 
   try {
 
     const {
       data,
       error
-    } = await supabaseClient
-      .from('disputes')
-      .select('*')
-      .eq(
-        'user_id',
-        currentUser.id
-      )
-      .order(
-        'created_at',
-        {
-          ascending: false
-        }
-      );
+    } =
+      await supabaseClient
+        .from('disputes')
+        .select('*')
+        .eq(
+          'user_id',
+          currentUser.id
+        )
+        .order(
+          'created_at',
+          {
+            ascending: false
+          }
+        );
+
 
     if (error) {
       throw error;
     }
 
-    if (!data?.length) {
+
+    if (
+      !data ||
+      data.length === 0
+    ) {
 
       list.innerHTML =
         '<div class="small center">Aucune demande pour le moment.</div>';
@@ -2079,10 +3009,14 @@ async function loadDisputes() {
       return;
     }
 
+
     list.innerHTML =
       data
-        .map(renderDisputeCard)
+        .map(
+          renderDisputeCard
+        )
         .join('');
+
 
   } catch (error) {
 
@@ -2091,17 +3025,27 @@ async function loadDisputes() {
       error
     );
 
+
     list.innerHTML =
-      '<div class="small center">Impossible de charger les demandes.</div>';
+      `<div class="small center">
+        Impossible de charger les demandes.
+      </div>`;
   }
 }
 
 
-function renderDisputeCard(dispute) {
+// ============================================================
+// CARTE LITIGE
+// ============================================================
+
+function renderDisputeCard(
+  dispute
+) {
 
   const status =
     dispute.status ||
     'open';
+
 
   const statusLabel =
     status === 'open'
@@ -2110,13 +3054,18 @@ function renderDisputeCard(dispute) {
         ? 'Fermé'
         : status;
 
+
   return `
+
     <div class="order-card">
 
       <div class="order-header">
 
         <strong>
-          ${escapeHtml(dispute.subject || 'Demande')}
+          ${escapeHtml(
+            dispute.subject ||
+            'Demande'
+          )}
         </strong>
 
         <span class="status ${escapeHtml(status)}">
@@ -2126,101 +3075,125 @@ function renderDisputeCard(dispute) {
       </div>
 
       <p>
-        ${escapeHtml(dispute.message || '')}
+        ${escapeHtml(
+          dispute.message ||
+          ''
+        )}
       </p>
 
       <div class="small">
-        ${formatDate(dispute.created_at)}
+        ${formatDate(
+          dispute.created_at
+        )}
       </div>
 
     </div>
+
   `;
 }
 
 
-// ------------------------------------------------------------
-// PROFIL UTILISATEUR
-// ------------------------------------------------------------
+// ============================================================
+// SAUVEGARDE DU PROFIL
+// ============================================================
 
-async function saveProfile(event) {
+async function saveProfile(
+  event
+) {
 
   event?.preventDefault();
 
   hideMessage();
 
+
   if (!currentUser) {
+
     return showMessage(
       'Vous devez être connecté.',
       'error'
     );
   }
 
+
   const name =
-    $('profileName')?.value.trim() || '';
+    $('profileName')
+      ?.value
+      ?.trim() || '';
+
 
   const phone =
     normalizePhone(
-      $('profilePhone')?.value
+      $('profilePhone')
+        ?.value
     );
 
+
   const country =
-    $('profileCountry')?.value.trim() ||
+    $('profileCountry')
+      ?.value
+      ?.trim() ||
     'Burkina Faso';
 
+
   if (!name) {
+
     return showMessage(
       'Veuillez saisir votre nom.',
       'error'
     );
   }
 
+
   if (!phone) {
+
     return showMessage(
       'Veuillez saisir votre numéro.',
       'error'
     );
   }
 
+
   try {
 
     const {
       data,
       error
-    } = await supabaseClient
-      .from('profiles')
-      .upsert(
-        {
-          id:
-            currentUser.id,
+    } =
+      await supabaseClient
+        .from('profiles')
+        .upsert(
+          {
+            id:
+              currentUser.id,
 
-          full_name:
-            name,
+            full_name:
+              name,
 
-          phone:
-            phone,
+            phone:
+              phone,
 
-          country:
-            country
-        },
-        {
-          onConflict:
-            'id'
-        }
-      )
-      .select(
-        'id,full_name,phone,country'
-      )
-      .maybeSingle();
+            country:
+              country
+          },
+          {
+            onConflict:
+              'id'
+          }
+        )
+        .select(
+          'id,full_name,phone,country'
+        )
+        .maybeSingle();
+
 
     if (error) {
       throw error;
     }
 
-    if (data) {
-      currentProfile =
-        data;
-    } else {
-      currentProfile = {
+
+    currentProfile =
+      data || {
+
         id:
           currentUser.id,
 
@@ -2233,27 +3206,36 @@ async function saveProfile(event) {
         country:
           country
       };
-    }
 
-    await supabaseClient.auth.updateUser({
-      data: {
-        full_name:
-          name,
 
-        phone:
-          phone,
+    // Synchroniser également les métadonnées
+    // du compte Auth.
+    await supabaseClient.auth
+      .updateUser({
 
-        country:
-          country
-      }
-    });
+        data: {
+
+          full_name:
+            name,
+
+          phone:
+            phone,
+
+          country:
+            country
+        }
+
+      });
+
 
     updateUserInterface();
+
 
     showMessage(
       'Profil mis à jour avec succès.',
       'success'
     );
+
 
   } catch (error) {
 
@@ -2261,6 +3243,7 @@ async function saveProfile(event) {
       'Erreur sauvegarde profil :',
       error
     );
+
 
     showMessage(
       'Impossible de sauvegarder le profil : ' +
@@ -2271,63 +3254,85 @@ async function saveProfile(event) {
 }
 
 
-// ------------------------------------------------------------
-// MOT DE PASSE
-// ------------------------------------------------------------
+// ============================================================
+// MODIFIER LE MOT DE PASSE
+// ============================================================
 
-async function changePassword(event) {
+async function changePassword(
+  event
+) {
 
   event?.preventDefault();
 
   hideMessage();
 
+
   const password =
-    $('newPassword')?.value || '';
+    $('newPassword')
+      ?.value || '';
 
-  const confirm =
-    $('confirmPassword')?.value || '';
 
-  if (password.length < 6) {
+  const confirmation =
+    $('confirmPassword')
+      ?.value || '';
+
+
+  if (
+    password.length < 6
+  ) {
+
     return showMessage(
       'Le nouveau mot de passe doit contenir au moins 6 caractères.',
       'error'
     );
   }
 
-  if (password !== confirm) {
+
+  if (
+    password !==
+    confirmation
+  ) {
+
     return showMessage(
       'Les mots de passe ne correspondent pas.',
       'error'
     );
   }
 
+
   try {
 
     const {
       error
-    } = await supabaseClient.auth.updateUser({
-      password
-    });
+    } =
+      await supabaseClient.auth
+        .updateUser({
+          password
+        });
+
 
     if (error) {
       throw error;
     }
 
-    if ($('passwordForm')) {
-      $('passwordForm').reset();
-    }
+
+    $('passwordForm')
+      ?.reset();
+
 
     showMessage(
       'Mot de passe modifié avec succès.',
       'success'
     );
 
+
   } catch (error) {
 
     console.error(
-      'Erreur changement mot de passe :',
+      'Erreur mot de passe :',
       error
     );
+
 
     showMessage(
       'Impossible de modifier le mot de passe : ' +
@@ -2338,128 +3343,192 @@ async function changePassword(event) {
 }
 
 
-// ------------------------------------------------------------
+// ============================================================
 // ÉVÉNEMENTS
-// ------------------------------------------------------------
+// ============================================================
 
 function setupEvents() {
 
+  // ----------------------------------------------------------
   // AUTH
-  $('loginForm')?.addEventListener(
-    'submit',
-    loginUser
-  );
+  // ----------------------------------------------------------
 
-  $('registerForm')?.addEventListener(
-    'submit',
-    registerUser
-  );
-
-  $('logoutBtn')?.addEventListener(
-    'click',
-    logoutUser
-  );
+  $('loginForm')
+    ?.addEventListener(
+      'submit',
+      loginUser
+    );
 
 
-  // TABS AUTH
-  $('loginTab')?.addEventListener(
-    'click',
-    showLoginForm
-  );
-
-  $('registerTab')?.addEventListener(
-    'click',
-    showRegisterForm
-  );
+  $('registerForm')
+    ?.addEventListener(
+      'submit',
+      registerUser
+    );
 
 
+  $('logoutBtn')
+    ?.addEventListener(
+      'click',
+      logoutUser
+    );
+
+
+  $('loginTab')
+    ?.addEventListener(
+      'click',
+      showLoginForm
+    );
+
+
+  $('registerTab')
+    ?.addEventListener(
+      'click',
+      showRegisterForm
+    );
+
+
+  // ----------------------------------------------------------
   // ACHAT / VENTE
-  $('buyTab')?.addEventListener(
-    'click',
-    setBuyMode
-  );
+  // ----------------------------------------------------------
 
-  $('sellTab')?.addEventListener(
-    'click',
-    setSellMode
-  );
+  $('buyTab')
+    ?.addEventListener(
+      'click',
+      setBuyMode
+    );
 
 
+  $('sellTab')
+    ?.addEventListener(
+      'click',
+      setSellMode
+    );
+
+
+  // ----------------------------------------------------------
   // RÉSEAUX
-  $('trc20Option')?.addEventListener(
-    'click',
-    () => selectNetwork('trc20')
-  );
+  // ----------------------------------------------------------
 
-  $('bp20Option')?.addEventListener(
-    'click',
-    () => selectNetwork('bp20')
-  );
+  $('trc20Option')
+    ?.addEventListener(
+      'click',
+      () => {
+        selectNetwork(
+          'trc20'
+        );
+      }
+    );
 
 
+  $('bp20Option')
+    ?.addEventListener(
+      'click',
+      () => {
+        selectNetwork(
+          'bp20'
+        );
+      }
+    );
+
+
+  // ----------------------------------------------------------
   // CALCUL AUTOMATIQUE
-  $('amountInput')?.addEventListener(
-    'input',
-    updateCalculator
-  );
+  // ----------------------------------------------------------
 
-  $('walletAddress')?.addEventListener(
-    'input',
-    () => {}
-  );
+  $('amountInput')
+    ?.addEventListener(
+      'input',
+      updateCalculator
+    );
 
 
+  // ----------------------------------------------------------
   // COMMANDE
-  $('reviewOrderBtn')?.addEventListener(
-    'click',
-    reviewOrder
-  );
+  // ----------------------------------------------------------
 
-  $('placeOrderBtn')?.addEventListener(
-    'click',
-    placeOrder
-  );
-
-  $('cancelReviewBtn')?.addEventListener(
-    'click',
-    cancelReview
-  );
+  $('reviewOrderBtn')
+    ?.addEventListener(
+      'click',
+      reviewOrder
+    );
 
 
-  // PAIEMENT ACHAT
-  $('paymentDoneBtn')?.addEventListener(
-    'click',
-    declarePayment
-  );
-
-  $('viewOrderBtn')?.addEventListener(
-    'click',
-    viewCurrentOrder
-  );
+  $('placeOrderBtn')
+    ?.addEventListener(
+      'click',
+      placeOrder
+    );
 
 
+  $('cancelReviewBtn')
+    ?.addEventListener(
+      'click',
+      cancelReview
+    );
+
+
+  // ----------------------------------------------------------
+  // PAIEMENT
+  // ----------------------------------------------------------
+
+  $('paymentDoneBtn')
+    ?.addEventListener(
+      'click',
+      declarePayment
+    );
+
+
+  $('viewOrderBtn')
+    ?.addEventListener(
+      'click',
+      () => {
+
+        showSubPage(
+          'ordersPage'
+        );
+
+      }
+    );
+
+
+  // ----------------------------------------------------------
   // PROFIL
-  $('profileForm')?.addEventListener(
-    'submit',
-    saveProfile
-  );
+  // ----------------------------------------------------------
 
-  $('passwordForm')?.addEventListener(
-    'submit',
-    changePassword
-  );
+  $('profileForm')
+    ?.addEventListener(
+      'submit',
+      saveProfile
+    );
 
 
+  $('passwordForm')
+    ?.addEventListener(
+      'submit',
+      changePassword
+    );
+
+
+  // ----------------------------------------------------------
   // SUPPORT
-  $('disputeForm')?.addEventListener(
-    'submit',
-    submitDispute
-  );
+  // ----------------------------------------------------------
+
+  $('disputeForm')
+    ?.addEventListener(
+      'submit',
+      submitDispute
+    );
 
 
+  // ----------------------------------------------------------
   // NAVIGATION
+  // ----------------------------------------------------------
+
   document
-    .querySelectorAll('.nav-btn')
+    .querySelectorAll(
+      '.nav-btn'
+    )
     .forEach(button => {
 
       button.addEventListener(
@@ -2469,98 +3538,137 @@ function setupEvents() {
           const page =
             button.dataset.page;
 
+
           if (page) {
-            showSubPage(page);
+
+            showSubPage(
+              page
+            );
           }
         }
       );
     });
 
 
-  // BOUTON COMMENCER
-  $('startBtn')?.addEventListener(
-    'click',
-    () => {
-      showSubPage('exchangePage');
-    }
-  );
+  // ----------------------------------------------------------
+  // COMMENCER
+  // ----------------------------------------------------------
+
+  $('startBtn')
+    ?.addEventListener(
+      'click',
+      () => {
+
+        showSubPage(
+          'exchangePage'
+        );
+      }
+    );
 
 
-  // BOUTONS QUI OUVRENT L'ÉCHANGE
+  // ----------------------------------------------------------
+  // OUVRIR L'ÉCHANGE
+  // ----------------------------------------------------------
+
   document
-    .querySelectorAll('[data-open-exchange]')
+    .querySelectorAll(
+      '[data-open-exchange]'
+    )
     .forEach(button => {
 
       button.addEventListener(
         'click',
         () => {
-          showSubPage('exchangePage');
+
+          showSubPage(
+            'exchangePage'
+          );
         }
       );
     });
 
 
-  // BOUTON RETOUR ACCUEIL
+  // ----------------------------------------------------------
+  // RETOUR ACCUEIL
+  // ----------------------------------------------------------
+
   document
-    .querySelectorAll('[data-home]')
+    .querySelectorAll(
+      '[data-home]'
+    )
     .forEach(button => {
 
       button.addEventListener(
         'click',
         () => {
-          showSubPage('homePage');
+
+          showSubPage(
+            'homePage'
+          );
         }
       );
     });
 }
 
 
-// ------------------------------------------------------------
-// ÉTAT AUTH SUPABASE
-// ------------------------------------------------------------
+// ============================================================
+// LISTENER SUPABASE AUTH
+// ============================================================
 
 function setupAuthListener() {
 
-  if (authListenerReady) return;
+  if (
+    authListenerReady
+  ) {
+    return;
+  }
 
-  authListenerReady = true;
 
-  supabaseClient.auth.onAuthStateChange(
-    async (_event, session) => {
+  authListenerReady =
+    true;
 
-      currentUser =
-        session?.user || null;
 
-      if (currentUser) {
+  supabaseClient.auth
+    .onAuthStateChange(
+      (_event, session) => {
 
-        // Important :
-        // ne pas lancer trop de requêtes Supabase
-        // directement dans le callback.
-        setTimeout(
-          () => {
-            initializeApplication();
-          },
-          0
-        );
-
-      } else {
-
-        currentProfile =
+        currentUser =
+          session?.user ||
           null;
 
-        currentOrder =
-          null;
 
-        showAuthPage();
+        if (currentUser) {
+
+          setTimeout(
+            () => {
+
+              initializeApplication();
+
+            },
+            0
+          );
+
+
+        } else {
+
+          currentProfile =
+            null;
+
+          currentOrder =
+            null;
+
+          showAuthPage();
+
+          showLoginForm();
+        }
       }
-    }
-  );
+    );
 }
 
 
-// ------------------------------------------------------------
-// INITIALISATION
-// ------------------------------------------------------------
+// ============================================================
+// DÉMARRAGE
+// ============================================================
 
 async function boot() {
 
@@ -2570,20 +3678,28 @@ async function boot() {
 
     setupAuthListener();
 
+
     const {
       data,
       error
-    } = await supabaseClient.auth.getSession();
+    } =
+      await supabaseClient.auth
+        .getSession();
+
 
     if (error) {
+
       console.warn(
-        'Session Supabase :',
+        'Erreur récupération session :',
         error
       );
     }
 
+
     currentUser =
-      data?.session?.user || null;
+      data?.session?.user ||
+      null;
+
 
     if (currentUser) {
 
@@ -2596,35 +3712,46 @@ async function boot() {
       showLoginForm();
     }
 
+
+    // Valeurs initiales
     setBuyMode();
 
-    selectNetwork('trc20');
+    selectNetwork(
+      'trc20'
+    );
 
     updateRatesUI();
+
+    updateCalculator();
+
 
   } catch (error) {
 
     console.error(
-      'Erreur démarrage application :',
+      'ERREUR DÉMARRAGE APPLICATION :',
       error
     );
 
+
     showAuthPage();
 
+
     showMessage(
-      'Impossible de démarrer l\'application. Rechargez la page.',
+      'Impossible de démarrer l\'application : ' +
+      getSupabaseErrorMessage(error),
       'error'
     );
   }
 }
 
 
-// ------------------------------------------------------------
-// LANCEMENT
-// ------------------------------------------------------------
+// ============================================================
+// LANCEMENT AUTOMATIQUE
+// ============================================================
 
 if (
-  document.readyState === 'loading'
+  document.readyState ===
+  'loading'
 ) {
 
   document.addEventListener(
