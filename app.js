@@ -1,6 +1,6 @@
 // ============================================================
 // NOA DIGIT TRADE
-// APP.JS COMPLET - VERSION CORRIGÉE
+// APP.JS COMPLET - VERSION AVEC PARAMETRES SUPABASE
 //
 // SUPABASE AUTH
 // PROFILES
@@ -10,7 +10,7 @@
 // ORANGE MONEY
 // PAIEMENTS
 // LITIGES
-// RLS
+// PARAMETRES APP_SETTINGS
 // ADMIN / ROLE
 // ============================================================
 
@@ -45,6 +45,10 @@ const supabaseClient =
 
 // ============================================================
 // CONFIGURATION APPLICATION
+//
+// IMPORTANT : ces valeurs sont uniquement des valeurs
+// de secours. Les vraies valeurs sont chargées depuis
+// la table public.app_settings.
 // ============================================================
 
 const CONFIG = {
@@ -57,7 +61,6 @@ const CONFIG = {
 
   maxOrder: 50000,
 
-
   networks: {
 
     trc20: {
@@ -68,9 +71,6 @@ const CONFIG = {
 
     },
 
-
-    // Clé interne utilisée par la base
-    // pour représenter le réseau BEP20.
     bp20: {
 
       name: "USDT BEP20",
@@ -80,7 +80,6 @@ const CONFIG = {
     }
 
   },
-
 
   payment: {
 
@@ -114,6 +113,8 @@ let applicationInitializing = false;
 let authListenerReady = false;
 
 let initializationPromise = null;
+
+let settingsLoaded = false;
 
 
 // ============================================================
@@ -310,6 +311,364 @@ function isValidUUID(value) {
     .test(
       String(value || "")
     );
+
+}
+
+
+// ============================================================
+// CHARGEMENT DES PARAMETRES DEPUIS SUPABASE
+//
+// TABLE : public.app_settings
+//
+// COLONNES :
+// id
+// country
+// buy_rate
+// sell_rate
+// min_order_cfa
+// max_order_cfa
+// trc20_fee_usdt
+// bp20_fee_usdt
+// orange_money_number
+// updated_at
+// ============================================================
+
+async function loadAppSettings() {
+
+  try {
+
+    console.log(
+      "Chargement des paramètres app_settings..."
+    );
+
+
+    const {
+      data,
+      error
+    } =
+      await supabaseClient
+        .from("app_settings")
+        .select(
+          `
+          id,
+          country,
+          buy_rate,
+          sell_rate,
+          min_order_cfa,
+          max_order_cfa,
+          trc20_fee_usdt,
+          bp20_fee_usdt,
+          orange_money_number,
+          updated_at
+          `
+        )
+        .eq(
+          "country",
+          "Burkina Faso"
+        )
+        .order(
+          "updated_at",
+          {
+            ascending: false
+          }
+        )
+        .limit(1)
+        .maybeSingle();
+
+
+    if (error) {
+
+      console.error(
+        "Erreur lecture app_settings :",
+        error
+      );
+
+      throw error;
+
+    }
+
+
+    if (!data) {
+
+      throw new Error(
+        "Aucun paramètre trouvé pour le Burkina Faso dans app_settings."
+      );
+
+    }
+
+
+    // ----------------------------------------------------------
+    // TAUX ACHAT
+    // ----------------------------------------------------------
+
+    const buyRate =
+      Number(
+        data.buy_rate
+      );
+
+
+    if (
+      Number.isFinite(buyRate) &&
+      buyRate > 0
+    ) {
+
+      CONFIG.buyRate =
+        buyRate;
+
+    }
+
+
+    // ----------------------------------------------------------
+    // TAUX VENTE
+    // ----------------------------------------------------------
+
+    const sellRate =
+      Number(
+        data.sell_rate
+      );
+
+
+    if (
+      Number.isFinite(sellRate) &&
+      sellRate > 0
+    ) {
+
+      CONFIG.sellRate =
+        sellRate;
+
+    }
+
+
+    // ----------------------------------------------------------
+    // MINIMUM
+    // ----------------------------------------------------------
+
+    const minOrder =
+      Number(
+        data.min_order_cfa
+      );
+
+
+    if (
+      Number.isFinite(minOrder) &&
+      minOrder >= 0
+    ) {
+
+      CONFIG.minOrder =
+        minOrder;
+
+    }
+
+
+    // ----------------------------------------------------------
+    // MAXIMUM
+    // ----------------------------------------------------------
+
+    const maxOrder =
+      Number(
+        data.max_order_cfa
+      );
+
+
+    if (
+      Number.isFinite(maxOrder) &&
+      maxOrder > 0
+    ) {
+
+      CONFIG.maxOrder =
+        maxOrder;
+
+    }
+
+
+    // ----------------------------------------------------------
+    // FRAIS TRC20
+    // ----------------------------------------------------------
+
+    const trc20Fee =
+      Number(
+        data.trc20_fee_usdt
+      );
+
+
+    if (
+      Number.isFinite(trc20Fee) &&
+      trc20Fee >= 0
+    ) {
+
+      CONFIG.networks.trc20.fee =
+        trc20Fee;
+
+    }
+
+
+    // ----------------------------------------------------------
+    // FRAIS BEP20
+    // ----------------------------------------------------------
+
+    const bp20Fee =
+      Number(
+        data.bp20_fee_usdt
+      );
+
+
+    if (
+      Number.isFinite(bp20Fee) &&
+      bp20Fee >= 0
+    ) {
+
+      CONFIG.networks.bp20.fee =
+        bp20Fee;
+
+    }
+
+
+    // ----------------------------------------------------------
+    // NUMERO ORANGE MONEY
+    // ----------------------------------------------------------
+
+    if (
+      data.orange_money_number !==
+        null &&
+      data.orange_money_number !==
+        undefined &&
+      String(
+        data.orange_money_number
+      ).trim()
+    ) {
+
+      const orangeNumber =
+        normalizePhone(
+          data.orange_money_number
+        );
+
+
+      CONFIG.payment.number =
+        orangeNumber;
+
+
+      // Format visuel du numéro
+      // Exemple : 74602553 -> 74 60 25 53
+
+      if (
+        orangeNumber.length === 8
+      ) {
+
+        CONFIG.payment.displayNumber =
+          orangeNumber.replace(
+            /(\d{2})(?=\d)/g,
+            "$1 "
+          ).trim();
+
+      }
+
+      else {
+
+        CONFIG.payment.displayNumber =
+          orangeNumber;
+
+      }
+
+    }
+
+
+    settingsLoaded =
+      true;
+
+
+    console.log(
+      "Paramètres chargés depuis app_settings :",
+      {
+        buyRate:
+          CONFIG.buyRate,
+
+        sellRate:
+          CONFIG.sellRate,
+
+        minOrder:
+          CONFIG.minOrder,
+
+        maxOrder:
+          CONFIG.maxOrder,
+
+        trc20Fee:
+          CONFIG.networks.trc20.fee,
+
+        bp20Fee:
+          CONFIG.networks.bp20.fee,
+
+        orangeMoney:
+          CONFIG.payment.displayNumber,
+
+        updatedAt:
+          data.updated_at
+      }
+    );
+
+
+    updateRatesUI();
+
+    updateCalculator();
+
+
+    return data;
+
+  }
+
+  catch (error) {
+
+    settingsLoaded =
+      false;
+
+
+    console.error(
+      "Impossible de charger app_settings :",
+      error
+    );
+
+
+    // --------------------------------------------------------
+    // IMPORTANT
+    //
+    // On conserve les valeurs de secours pour que
+    // l'application ne soit pas complètement bloquée.
+    // --------------------------------------------------------
+
+    updateRatesUI();
+
+    updateCalculator();
+
+
+    return null;
+
+  }
+
+}
+
+
+// ============================================================
+// RAFRAICHISSEMENT DES PARAMETRES
+//
+// Permet de récupérer les nouveaux taux lorsqu'un utilisateur
+// revient sur l'application après une modification admin.
+// ============================================================
+
+async function refreshAppSettings() {
+
+  try {
+
+    await loadAppSettings();
+
+  }
+
+  catch (error) {
+
+    console.error(
+      "Erreur rafraîchissement paramètres :",
+      error
+    );
+
+  }
 
 }
 
@@ -716,10 +1075,6 @@ async function registerUser(event) {
       data.user;
 
 
-    // --------------------------------------------------------
-    // SESSION DISPONIBLE
-    // --------------------------------------------------------
-
     if (data.session) {
 
       const profile =
@@ -748,10 +1103,6 @@ async function registerUser(event) {
 
     }
 
-
-    // --------------------------------------------------------
-    // CONFIRMATION EMAIL
-    // --------------------------------------------------------
 
     currentProfile =
       null;
@@ -883,10 +1234,6 @@ async function loadUserProfile() {
       session.user;
 
 
-    // --------------------------------------------------------
-    // LECTURE PROFIL
-    // --------------------------------------------------------
-
     const {
       data: profile,
       error
@@ -921,14 +1268,6 @@ async function loadUserProfile() {
 
     }
 
-
-    // --------------------------------------------------------
-    // PROFIL ABSENT
-    //
-    // On tente de le créer.
-    // Le trigger SQL peut également l'avoir
-    // créé automatiquement.
-    // --------------------------------------------------------
 
     const metadata =
       currentUser.user_metadata ||
@@ -982,10 +1321,6 @@ async function loadUserProfile() {
 
     }
 
-
-    // --------------------------------------------------------
-    // PROFIL DÉJÀ CRÉÉ ENTRE-TEMPS
-    // --------------------------------------------------------
 
     if (
       insertError.code ===
@@ -1140,17 +1475,12 @@ function updateUserInterface() {
   }
 
 
-  // ----------------------------------------------------------
-  // ROLE ADMIN
-  // ----------------------------------------------------------
-
-  if (
-    $("adminBadge")
-  ) {
+  if ($("adminBadge")) {
 
     const isAdmin =
       profile.role ===
       "admin";
+
 
     $("adminBadge")
       .classList
@@ -1187,6 +1517,15 @@ async function initializeApplication() {
       try {
 
         showAppPage();
+
+
+        // ----------------------------------------------------
+        // IMPORTANT
+        // On charge les taux AVANT d'afficher le calculateur.
+        // ----------------------------------------------------
+
+        await loadAppSettings();
+
 
         updateRatesUI();
 
@@ -1541,7 +1880,7 @@ async function logoutUser() {
 
 
 // ============================================================
-// TARIFS
+// TARIFS / PARAMETRES UI
 // ============================================================
 
 function updateRatesUI() {
@@ -1589,9 +1928,10 @@ function updateRatesUI() {
   if ($("homeTrc20Fee")) {
 
     $("homeTrc20Fee").textContent =
-      CONFIG.networks
-        .trc20
-        .fee;
+      formatDecimal(
+        CONFIG.networks.trc20.fee,
+        2
+      );
 
   }
 
@@ -1599,9 +1939,10 @@ function updateRatesUI() {
   if ($("homeBp20Fee")) {
 
     $("homeBp20Fee").textContent =
-      CONFIG.networks
-        .bp20
-        .fee;
+      formatDecimal(
+        CONFIG.networks.bp20.fee,
+        2
+      );
 
   }
 
@@ -1609,9 +1950,10 @@ function updateRatesUI() {
   if ($("trc20Fee")) {
 
     $("trc20Fee").textContent =
-      CONFIG.networks
-        .trc20
-        .fee;
+      formatDecimal(
+        CONFIG.networks.trc20.fee,
+        2
+      );
 
   }
 
@@ -1619,9 +1961,10 @@ function updateRatesUI() {
   if ($("bp20Fee")) {
 
     $("bp20Fee").textContent =
-      CONFIG.networks
-        .bp20
-        .fee;
+      formatDecimal(
+        CONFIG.networks.bp20.fee,
+        2
+      );
 
   }
 
@@ -1782,7 +2125,10 @@ function calculateOrder() {
   let result = 0;
 
 
-  if (amount > 0) {
+  if (
+    amount > 0 &&
+    rate > 0
+  ) {
 
     cryptoAmount =
       amount / rate;
@@ -2043,14 +2389,6 @@ function reviewOrder() {
 
   }
 
-
-  // ----------------------------------------------------------
-  // COMMANDE EN MÉMOIRE
-  //
-  // crypto_amount = montant réellement échangé.
-  // Pour un achat : montant après frais.
-  // Pour une vente : montant USDT envoyé.
-  // ----------------------------------------------------------
 
   currentOrder = {
 
@@ -2334,6 +2672,16 @@ async function placeOrder() {
 
 
   try {
+
+    // --------------------------------------------------------
+    // RECHARGE DES PARAMETRES
+    //
+    // Sécurité supplémentaire :
+    // on récupère les taux avant de créer la commande.
+    // --------------------------------------------------------
+
+    await loadAppSettings();
+
 
     // --------------------------------------------------------
     // SESSION
@@ -2774,10 +3122,6 @@ async function declarePayment() {
 
   try {
 
-    // --------------------------------------------------------
-    // SESSION
-    // --------------------------------------------------------
-
     const {
       data: sessionData,
       error: sessionError
@@ -2810,13 +3154,6 @@ async function declarePayment() {
       session.user;
 
 
-    // --------------------------------------------------------
-    // RPC SUPABASE
-    //
-    // La fonction SQL vérifie que la commande
-    // appartient bien à l'utilisateur connecté.
-    // --------------------------------------------------------
-
     const {
       data,
       error
@@ -2842,10 +3179,6 @@ async function declarePayment() {
       data
     );
 
-
-    // --------------------------------------------------------
-    // RECUPERATION DU NOUVEAU STATUT
-    // --------------------------------------------------------
 
     if (
       data &&
@@ -2965,10 +3298,6 @@ async function loadOrderHistory() {
 
   try {
 
-    // --------------------------------------------------------
-    // SESSION
-    // --------------------------------------------------------
-
     const {
       data: sessionData,
       error: sessionError
@@ -3006,10 +3335,6 @@ async function loadOrderHistory() {
       session.user;
 
 
-    // --------------------------------------------------------
-    // PROFIL
-    // --------------------------------------------------------
-
     if (!currentProfile) {
 
       await loadUserProfile();
@@ -3025,10 +3350,6 @@ async function loadOrderHistory() {
 
     }
 
-
-    // --------------------------------------------------------
-    // COMMANDES
-    // --------------------------------------------------------
 
     const {
       data,
@@ -3488,10 +3809,6 @@ async function submitDispute(event) {
 
   try {
 
-    // --------------------------------------------------------
-    // SESSION
-    // --------------------------------------------------------
-
     const {
       data: sessionData,
       error: sessionError
@@ -3520,10 +3837,6 @@ async function submitDispute(event) {
       sessionData.session.user;
 
 
-    // --------------------------------------------------------
-    // PROFIL
-    // --------------------------------------------------------
-
     if (!currentProfile) {
 
       await loadUserProfile();
@@ -3539,10 +3852,6 @@ async function submitDispute(event) {
 
     }
 
-
-    // --------------------------------------------------------
-    // VERIFICATION COMMANDE
-    // --------------------------------------------------------
 
     const {
       data: order,
@@ -3577,10 +3886,6 @@ async function submitDispute(event) {
 
     }
 
-
-    // --------------------------------------------------------
-    // CREATION LITIGE
-    // --------------------------------------------------------
 
     const {
       data,
@@ -4348,6 +4653,38 @@ function setupAuthListener() {
 
 
 // ============================================================
+// RAFRAICHISSEMENT QUAND L'UTILISATEUR REVIENT SUR LA PAGE
+//
+// Exemple :
+// 1. Admin modifie le taux à 620.
+// 2. Client quitte/revient sur l'application.
+// 3. Les nouveaux paramètres sont relus.
+// ============================================================
+
+document.addEventListener(
+  "visibilitychange",
+  async () => {
+
+    if (
+      document.visibilityState ===
+      "visible" &&
+      currentUser
+    ) {
+
+      console.log(
+        "Application redevenue visible : actualisation des paramètres..."
+      );
+
+
+      await refreshAppSettings();
+
+    }
+
+  }
+);
+
+
+// ============================================================
 // DEMARRAGE
 // ============================================================
 
@@ -4364,6 +4701,13 @@ document.addEventListener(
 
 
     setupAuthListener();
+
+
+    // --------------------------------------------------------
+    // Charge d'abord les valeurs disponibles.
+    // --------------------------------------------------------
+
+    await loadAppSettings();
 
 
     updateRatesUI();
