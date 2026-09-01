@@ -363,6 +363,82 @@ function showRegisterForm() {
 // PROFIL
 // ============================================================
 
+function getBestUserName() {
+
+  if (!currentUser) {
+    return 'Utilisateur';
+  }
+
+  const metadata =
+    currentUser.user_metadata ||
+    {};
+
+  const profileName =
+    String(currentProfile?.full_name || '').trim();
+
+  const metadataName =
+    String(
+      metadata.full_name ||
+      metadata.name ||
+      metadata.fullName ||
+      ''
+    ).trim();
+
+  let cachedName = '';
+
+  try {
+    cachedName =
+      String(
+        localStorage.getItem(
+          `noa_user_name_${currentUser.id}`
+        ) || ''
+      ).trim();
+  } catch (error) {
+    console.warn('Cache nom indisponible :', error);
+  }
+
+  const emailName =
+    String(
+      currentUser.email?.split('@')[0] || ''
+    ).trim();
+
+  return (
+    profileName ||
+    metadataName ||
+    cachedName ||
+    emailName ||
+    'Utilisateur'
+  );
+}
+
+
+function cacheUserProfile(profile) {
+
+  if (!currentUser?.id) {
+    return;
+  }
+
+  const name =
+    String(
+      profile?.full_name ||
+      ''
+    ).trim();
+
+  if (!name) {
+    return;
+  }
+
+  try {
+    localStorage.setItem(
+      `noa_user_name_${currentUser.id}`,
+      name
+    );
+  } catch (error) {
+    console.warn('Impossible de mémoriser le nom :', error);
+  }
+}
+
+
 async function loadUserProfile() {
 
   if (
@@ -383,11 +459,7 @@ async function loadUserProfile() {
       currentUser.id,
 
     full_name:
-      metadata.full_name ||
-      metadata.name ||
-      currentUser.email
-        ?.split('@')[0] ||
-      'Utilisateur',
+      getBestUserName(),
 
     phone:
       metadata.phone ||
@@ -425,12 +497,24 @@ async function loadUserProfile() {
       profile
     ) {
 
-      currentProfile =
-        profile;
+      currentProfile = {
+        ...fallback,
+        ...profile,
+        full_name:
+          String(profile.full_name || '').trim() ||
+          fallback.full_name,
+        phone:
+          String(profile.phone || '').trim() ||
+          fallback.phone,
+        country:
+          String(profile.country || '').trim() ||
+          fallback.country
+      };
 
+      cacheUserProfile(currentProfile);
       updateUserInterface();
 
-      return profile;
+      return currentProfile;
     }
 
 
@@ -472,6 +556,7 @@ async function loadUserProfile() {
         currentProfile =
           inserted;
 
+        cacheUserProfile(currentProfile);
         updateUserInterface();
 
         return inserted;
@@ -528,10 +613,7 @@ function updateUserInterface() {
 
 
   const name =
-    p.full_name ||
-    m.full_name ||
-    m.name ||
-    'Utilisateur';
+    getBestUserName();
 
 
   const phone =
@@ -597,18 +679,22 @@ async function initializeApplication() {
 
   try {
 
-    await loadUserProfile();
-
-    // IMPORTANT :
-    // Charger les tarifs administrateur avant tout affichage/calcul.
-    await loadAppSettings();
-
+    // L'utilisateur est déjà authentifié : afficher immédiatement
+    // l'application pour éviter tout clignotement vers la connexion.
     showAppPage();
 
+    // Affichage immédiat du nom depuis Auth/cache, sans attendre Supabase profiles.
     updateUserInterface();
 
-    updateRatesUI();
+    // Ces chargements sont secondaires : une erreur RLS ne doit jamais
+    // empêcher l'utilisateur d'entrer dans l'application.
+    await Promise.allSettled([
+      loadUserProfile(),
+      loadAppSettings()
+    ]);
 
+    updateUserInterface();
+    updateRatesUI();
     updateCalculator();
 
   } catch (error) {
@@ -618,7 +704,9 @@ async function initializeApplication() {
       error
     );
 
+    // Une erreur non critique ne doit pas renvoyer l'utilisateur vers login.
     showAppPage();
+    updateUserInterface();
 
   } finally {
 
@@ -769,6 +857,9 @@ async function registerUser(event) {
     currentUser =
       data.user;
 
+    cacheUserProfile({
+      full_name: name
+    });
 
     if (data.session) {
 
@@ -921,6 +1012,7 @@ async function loginUser(event) {
     currentUser =
       data.user;
 
+    updateUserInterface();
 
     await initializeApplication();
 
@@ -3226,8 +3318,11 @@ async function saveProfile(
           country
       };
 
+    cacheUserProfile(currentProfile);
 
-    await supabaseClient.auth
+    const {
+      data: updatedAuthData
+    } = await supabaseClient.auth
       .updateUser({
 
         data: {
@@ -3244,6 +3339,10 @@ async function saveProfile(
 
       });
 
+    if (updatedAuthData?.user) {
+      currentUser =
+        updatedAuthData.user;
+    }
 
     updateUserInterface();
 
@@ -3618,7 +3717,7 @@ function setupAuthListener() {
 
         if (
           event === 'SIGNED_OUT' ||
-          !currentUser
+          (!session && event !== 'INITIAL_SESSION')
         ) {
 
           currentProfile =
