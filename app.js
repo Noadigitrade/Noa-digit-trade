@@ -36,6 +36,18 @@ const CONFIG = {
     }
   },
 
+  // ==========================================================
+  // ADRESSES DE DÉPÔT NOA DIGIT TRADE
+  // IMPORTANT : ce sont uniquement des adresses PUBLIQUES.
+  // Ne jamais mettre une clé privée ici.
+  // Remplace les chaînes vides par les adresses de réception
+  // officielles de NOA DIGIT TRADE avant d'activer les ventes.
+  // ==========================================================
+  depositAddresses: {
+    trc20: '',
+    bp20: ''
+  },
+
   payment: {
     method: 'orange_money',
     number: '74602553',
@@ -363,82 +375,6 @@ function showRegisterForm() {
 // PROFIL
 // ============================================================
 
-function getBestUserName() {
-
-  if (!currentUser) {
-    return 'Utilisateur';
-  }
-
-  const metadata =
-    currentUser.user_metadata ||
-    {};
-
-  const profileName =
-    String(currentProfile?.full_name || '').trim();
-
-  const metadataName =
-    String(
-      metadata.full_name ||
-      metadata.name ||
-      metadata.fullName ||
-      ''
-    ).trim();
-
-  let cachedName = '';
-
-  try {
-    cachedName =
-      String(
-        localStorage.getItem(
-          `noa_user_name_${currentUser.id}`
-        ) || ''
-      ).trim();
-  } catch (error) {
-    console.warn('Cache nom indisponible :', error);
-  }
-
-  const emailName =
-    String(
-      currentUser.email?.split('@')[0] || ''
-    ).trim();
-
-  return (
-    profileName ||
-    metadataName ||
-    cachedName ||
-    emailName ||
-    'Utilisateur'
-  );
-}
-
-
-function cacheUserProfile(profile) {
-
-  if (!currentUser?.id) {
-    return;
-  }
-
-  const name =
-    String(
-      profile?.full_name ||
-      ''
-    ).trim();
-
-  if (!name) {
-    return;
-  }
-
-  try {
-    localStorage.setItem(
-      `noa_user_name_${currentUser.id}`,
-      name
-    );
-  } catch (error) {
-    console.warn('Impossible de mémoriser le nom :', error);
-  }
-}
-
-
 async function loadUserProfile() {
 
   if (
@@ -459,7 +395,11 @@ async function loadUserProfile() {
       currentUser.id,
 
     full_name:
-      getBestUserName(),
+      metadata.full_name ||
+      metadata.name ||
+      currentUser.email
+        ?.split('@')[0] ||
+      'Utilisateur',
 
     phone:
       metadata.phone ||
@@ -497,24 +437,12 @@ async function loadUserProfile() {
       profile
     ) {
 
-      currentProfile = {
-        ...fallback,
-        ...profile,
-        full_name:
-          String(profile.full_name || '').trim() ||
-          fallback.full_name,
-        phone:
-          String(profile.phone || '').trim() ||
-          fallback.phone,
-        country:
-          String(profile.country || '').trim() ||
-          fallback.country
-      };
+      currentProfile =
+        profile;
 
-      cacheUserProfile(currentProfile);
       updateUserInterface();
 
-      return currentProfile;
+      return profile;
     }
 
 
@@ -556,7 +484,6 @@ async function loadUserProfile() {
         currentProfile =
           inserted;
 
-        cacheUserProfile(currentProfile);
         updateUserInterface();
 
         return inserted;
@@ -613,7 +540,10 @@ function updateUserInterface() {
 
 
   const name =
-    getBestUserName();
+    p.full_name ||
+    m.full_name ||
+    m.name ||
+    'Utilisateur';
 
 
   const phone =
@@ -679,22 +609,18 @@ async function initializeApplication() {
 
   try {
 
-    // L'utilisateur est déjà authentifié : afficher immédiatement
-    // l'application pour éviter tout clignotement vers la connexion.
+    await loadUserProfile();
+
+    // IMPORTANT :
+    // Charger les tarifs administrateur avant tout affichage/calcul.
+    await loadAppSettings();
+
     showAppPage();
 
-    // Affichage immédiat du nom depuis Auth/cache, sans attendre Supabase profiles.
     updateUserInterface();
 
-    // Ces chargements sont secondaires : une erreur RLS ne doit jamais
-    // empêcher l'utilisateur d'entrer dans l'application.
-    await Promise.allSettled([
-      loadUserProfile(),
-      loadAppSettings()
-    ]);
-
-    updateUserInterface();
     updateRatesUI();
+
     updateCalculator();
 
   } catch (error) {
@@ -704,9 +630,7 @@ async function initializeApplication() {
       error
     );
 
-    // Une erreur non critique ne doit pas renvoyer l'utilisateur vers login.
     showAppPage();
-    updateUserInterface();
 
   } finally {
 
@@ -857,9 +781,6 @@ async function registerUser(event) {
     currentUser =
       data.user;
 
-    cacheUserProfile({
-      full_name: name
-    });
 
     if (data.session) {
 
@@ -1012,7 +933,6 @@ async function loginUser(event) {
     currentUser =
       data.user;
 
-    updateUserInterface();
 
     await initializeApplication();
 
@@ -1307,11 +1227,115 @@ function updateRatesUI() {
 // MODE ACHAT
 // ============================================================
 
+function ensureSellPayoutField() {
+
+  const walletInput = $('walletAddress');
+
+  if (!walletInput) {
+    return null;
+  }
+
+  let field = $('sellPayoutField');
+
+  if (!field) {
+
+    field = document.createElement('div');
+    field.id = 'sellPayoutField';
+    field.className = 'field';
+
+    field.innerHTML = `
+      <label for="sellPayoutPhone">Numéro Orange Money pour recevoir vos FCFA</label>
+      <input
+        type="tel"
+        id="sellPayoutPhone"
+        inputmode="numeric"
+        autocomplete="tel"
+        maxlength="8"
+        placeholder="Exemple : 70 00 00 00"
+      >
+      <div class="small wallet-help">
+        📱 Ce numéro sera utilisé pour vous envoyer le montant en FCFA après réception et vérification de vos USDT.
+      </div>
+    `;
+
+    const walletField =
+      walletInput.closest('.field') ||
+      walletInput.parentElement;
+
+    if (walletField?.parentNode) {
+      walletField.parentNode.insertBefore(
+        field,
+        walletField.nextSibling
+      );
+    }
+  }
+
+  return field;
+}
+
+
+function getDepositAddress() {
+
+  return String(
+    CONFIG.depositAddresses?.[currentNetwork] || ''
+  ).trim();
+}
+
+
+function updateSellDepositUI() {
+
+  if (currentExchangeType !== 'sell') {
+    return;
+  }
+
+  const address =
+    getDepositAddress();
+
+  const walletInput =
+    $('walletAddress');
+
+  if ($('walletLabel')) {
+
+    $('walletLabel').textContent =
+      'Adresse de dépôt NOA DIGIT TRADE';
+  }
+
+  if (walletInput) {
+
+    walletInput.readOnly = true;
+    walletInput.required = false;
+    walletInput.value = address;
+    walletInput.placeholder =
+      address
+        ? 'Adresse de dépôt NOA DIGIT TRADE'
+        : 'Adresse de dépôt non configurée';
+  }
+
+  const help =
+    walletInput
+      ?.closest('.field')
+      ?.querySelector('.wallet-help');
+
+  if (help) {
+
+    help.innerHTML = address
+      ? `⚠️ Envoyez vos USDT <strong>uniquement</strong> à cette adresse et utilisez exactement le réseau <strong>${escapeHtml(CONFIG.networks[currentNetwork]?.name || currentNetwork)}</strong>.`
+      : "⚠️ L'adresse de dépôt n'est pas encore configurée par l'administrateur.";
+  }
+
+  const payoutField =
+    ensureSellPayoutField();
+
+  if (payoutField) {
+    payoutField.style.display = '';
+  }
+}
+
+
 function setBuyMode() {
 
   currentExchangeType =
     'buy';
-
 
   $('buyTab')?.classList.add(
     'active'
@@ -1321,45 +1345,78 @@ function setBuyMode() {
     'active'
   );
 
-
   if ($('amountLabel')) {
-
     $('amountLabel').textContent =
       'Montant à payer';
   }
 
-
   if ($('amountUnit')) {
-
     $('amountUnit').textContent =
       'FCFA';
   }
 
-
-  const input =
-    $('amountInput');
-
+  const input = $('amountInput');
 
   if (input) {
-
     input.placeholder =
-      'Minimum : 2 000 FCFA';
+      'Ex. 10 000';
+    input.min = String(CONFIG.minOrder);
+    input.max = String(CONFIG.maxOrder);
+    input.step = '1';
   }
 
+  const walletInput =
+    $('walletAddress');
+
+  if ($('walletLabel')) {
+    $('walletLabel').textContent =
+      'Adresse de portefeuille USDT';
+  }
+
+  if (walletInput) {
+    walletInput.readOnly = false;
+    walletInput.required = true;
+    walletInput.placeholder =
+      'Collez votre adresse USDT ici';
+  }
+
+  const walletHelp =
+    walletInput
+      ?.closest('.field')
+      ?.querySelector('.wallet-help');
+
+  if (walletHelp) {
+    walletHelp.textContent =
+      "⚠️ Pour un achat, indiquez l'adresse USDT sur laquelle vous souhaitez recevoir vos USDT.";
+  }
+
+  if ($('paymentMethodField')) {
+    $('paymentMethodField').style.display = '';
+  }
+
+  const payoutField =
+    ensureSellPayoutField();
+
+  if (payoutField) {
+    payoutField.style.display = 'none';
+  }
+
+  if ($('exchangeInfo')) {
+    $('exchangeInfo').innerHTML = `
+      💡 Minimum : <strong>${formatNumber(CONFIG.minOrder)} FCFA</strong><br>
+      Maximum : <strong>${formatNumber(CONFIG.maxOrder)} FCFA</strong><br>
+      Le montant exact et les frais sont affichés avant la confirmation.
+    `;
+  }
 
   updateCalculator();
 }
 
 
-// ============================================================
-// MODE VENTE
-// ============================================================
-
 function setSellMode() {
 
   currentExchangeType =
     'sell';
-
 
   $('buyTab')?.classList.remove(
     'active'
@@ -1369,32 +1426,40 @@ function setSellMode() {
     'active'
   );
 
-
   if ($('amountLabel')) {
-
     $('amountLabel').textContent =
       'Quantité à vendre';
   }
 
-
   if ($('amountUnit')) {
-
     $('amountUnit').textContent =
       'USDT';
   }
 
-
-  const input =
-    $('amountInput');
-
+  const input = $('amountInput');
 
   if (input) {
-
     input.placeholder =
       'Exemple : 10 USDT';
+    input.min = '0';
+    input.max = '';
+    input.step = 'any';
   }
 
+  if ($('paymentMethodField')) {
+    $('paymentMethodField').style.display = 'none';
+  }
 
+  if ($('exchangeInfo')) {
+    $('exchangeInfo').innerHTML = `
+      💡 Saisissez la <strong>quantité d'USDT</strong> que vous souhaitez vendre.<br>
+      Nous vous indiquons l'adresse de dépôt NOA selon le réseau choisi.<br>
+      Après réception et vérification des USDT, nous vous envoyons les FCFA sur votre Orange Money.
+    `;
+  }
+
+  ensureSellPayoutField();
+  updateSellDepositUI();
   updateCalculator();
 }
 
@@ -1703,7 +1768,6 @@ function reviewOrder() {
 
   hideMessage();
 
-
   if (!currentUser) {
 
     showMessage(
@@ -1712,69 +1776,40 @@ function reviewOrder() {
     );
 
     showAuthPage();
-
     showLoginForm();
-
     return;
   }
-
 
   const c =
     calculateOrder();
 
-
-  if (
-    !c.usdtAmount ||
-    c.usdtAmount <= 0
-  ) {
+  if (!c.usdtAmount || c.usdtAmount <= 0) {
 
     return showMessage(
-
-      currentExchangeType ===
-      'buy'
-
+      currentExchangeType === 'buy'
         ? 'Veuillez saisir un montant en FCFA.'
-
-        : 'Veuillez saisir la quantité d\'USDT à vendre.',
-
+        : "Veuillez saisir la quantité d'USDT à vendre.",
       'error'
     );
   }
 
+  if (currentExchangeType === 'buy') {
 
-  if (
-    currentExchangeType ===
-    'buy'
-  ) {
-
-    if (
-      c.amountCfa <
-      CONFIG.minOrder
-    ) {
-
+    if (c.amountCfa < CONFIG.minOrder) {
       return showMessage(
         `Le montant minimum est de ${formatNumber(CONFIG.minOrder)} FCFA.`,
         'error'
       );
     }
 
-
-    if (
-      c.amountCfa >
-      CONFIG.maxOrder
-    ) {
-
+    if (c.amountCfa > CONFIG.maxOrder) {
       return showMessage(
         `Le montant maximum est de ${formatNumber(CONFIG.maxOrder)} FCFA.`,
         'error'
       );
     }
 
-
-    if (
-      c.netUsdt <= 0
-    ) {
-
+    if (c.netUsdt <= 0) {
       return showMessage(
         'Le montant USDT après frais est insuffisant.',
         'error'
@@ -1782,114 +1817,92 @@ function reviewOrder() {
     }
   }
 
+  let wallet = '';
+  let payoutPhone = '';
 
-  if (
-    currentExchangeType ===
-    'sell'
-  ) {
+  if (currentExchangeType === 'sell') {
 
     const minimumUsdt =
-      CONFIG.minOrder /
-      CONFIG.sellRate;
-
+      CONFIG.minOrder / CONFIG.sellRate;
 
     const maximumUsdt =
-      CONFIG.maxOrder /
-      CONFIG.sellRate;
+      CONFIG.maxOrder / CONFIG.sellRate;
 
-
-    if (
-      c.usdtAmount <
-      minimumUsdt
-    ) {
-
+    if (c.usdtAmount < minimumUsdt) {
       return showMessage(
         `La quantité minimum est de ${minimumUsdt.toFixed(2)} USDT.`,
         'error'
       );
     }
 
-
-    if (
-      c.usdtAmount >
-      maximumUsdt
-    ) {
-
+    if (c.usdtAmount > maximumUsdt) {
       return showMessage(
         `La quantité maximum est de ${maximumUsdt.toFixed(2)} USDT.`,
         'error'
       );
     }
 
-
-    if (
-      c.netUsdt <= 0
-    ) {
-
+    if (c.netUsdt <= 0) {
       return showMessage(
-        'La quantité d\'USDT après frais est insuffisante.',
+        "La quantité d'USDT après frais est insuffisante.",
+        'error'
+      );
+    }
+
+    wallet = getDepositAddress();
+
+    if (!wallet) {
+      return showMessage(
+        "L'adresse de dépôt de NOA DIGIT TRADE n'est pas encore configurée pour ce réseau. Contactez l'administrateur.",
+        'error'
+      );
+    }
+
+    payoutPhone =
+      normalizePhone($('sellPayoutPhone')?.value);
+
+    if (!payoutPhone) {
+      return showMessage(
+        'Veuillez saisir le numéro Orange Money sur lequel vous souhaitez recevoir vos FCFA.',
+        'error'
+      );
+    }
+
+    if (!/^(0\d{7}|\d{8})$/.test(payoutPhone)) {
+      return showMessage(
+        'Veuillez saisir un numéro Orange Money valide de 8 chiffres.',
+        'error'
+      );
+    }
+  } else {
+
+    wallet = getWalletAddress();
+
+    if (!wallet) {
+      return showMessage(
+        'Veuillez saisir votre adresse de portefeuille USDT.',
         'error'
       );
     }
   }
 
-
-  const wallet =
-    getWalletAddress();
-
-
-  if (!wallet) {
-
-    return showMessage(
-      'Veuillez saisir votre adresse de portefeuille USDT.',
-      'error'
-    );
-  }
-
-
   currentOrder = {
 
-    side:
-      currentExchangeType,
-
-    network:
-      currentNetwork,
-
-    amountCfa:
-      c.amountCfa,
-
-    usdtAmount:
-      c.usdtAmount,
-
-    feeUsdt:
-      c.feeUsdt,
-
-    netUsdt:
-      c.netUsdt,
-
-    receiveCfa:
-      c.receiveCfa,
-
-    rate:
-      c.rate,
-
-    walletAddress:
-      wallet,
-
-    paymentMethod:
-      currentExchangeType ===
-      'buy'
-        ? 'orange_money'
-        : null
+    side: currentExchangeType,
+    network: currentNetwork,
+    amountCfa: c.amountCfa,
+    usdtAmount: c.usdtAmount,
+    feeUsdt: c.feeUsdt,
+    netUsdt: c.netUsdt,
+    receiveCfa: c.receiveCfa,
+    rate: c.rate,
+    walletAddress: wallet,
+    payoutPhone: payoutPhone,
+    paymentMethod: 'orange_money'
   };
 
-
   renderConfirmation();
-
-
-  showSubPage(
-    'confirmationPage'
-  );
+  showSubPage('confirmationPage');
 }
 
 
@@ -1899,160 +1912,101 @@ function reviewOrder() {
 
 function renderConfirmation() {
 
-  const box =
-    $('confirmationSummary');
+  const box = $('confirmationSummary');
 
-  if (
-    !box ||
-    !currentOrder
-  ) {
+  if (!box || !currentOrder) {
     return;
   }
 
-
   const networkName =
-    CONFIG.networks[
-      currentOrder.network
-    ]?.name ||
-    currentOrder.network ||
-    '-';
+    CONFIG.networks[currentOrder.network]?.name ||
+    currentOrder.network || '-';
 
-
-  if (
-    currentOrder.side ===
-    'buy'
-  ) {
+  if (currentOrder.side === 'buy') {
 
     box.innerHTML = `
-
       <div class="summary-row">
         <span>Type</span>
         <strong>Achat USDT</strong>
       </div>
-
       <div class="summary-row">
         <span>Montant à payer</span>
-        <strong>
-          ${formatNumber(currentOrder.amountCfa)} FCFA
-        </strong>
+        <strong>${formatNumber(currentOrder.amountCfa)} FCFA</strong>
       </div>
-
       <div class="summary-row">
         <span>Taux</span>
-        <strong>
-          ${formatNumber(currentOrder.rate)} FCFA / USDT
-        </strong>
+        <strong>${formatNumber(currentOrder.rate)} FCFA / USDT</strong>
       </div>
-
       <div class="summary-row">
         <span>USDT acheté</span>
-        <strong>
-          ${Number(currentOrder.usdtAmount).toFixed(6)} USDT
-        </strong>
+        <strong>${Number(currentOrder.usdtAmount).toFixed(6)} USDT</strong>
       </div>
-
       <div class="summary-row">
         <span>Frais réseau</span>
-        <strong>
-          ${Number(currentOrder.feeUsdt)} USDT
-        </strong>
+        <strong>${Number(currentOrder.feeUsdt)} USDT</strong>
       </div>
-
       <div class="summary-row">
         <span>USDT net reçu</span>
-        <strong>
-          ${Number(currentOrder.netUsdt).toFixed(6)} USDT
-        </strong>
+        <strong>${Number(currentOrder.netUsdt).toFixed(6)} USDT</strong>
       </div>
-
       <div class="summary-row">
         <span>Réseau</span>
-        <strong>
-          ${escapeHtml(networkName)}
-        </strong>
+        <strong>${escapeHtml(networkName)}</strong>
       </div>
-
       <div class="summary-row">
-        <span>Portefeuille</span>
-        <strong class="break-word">
-          ${escapeHtml(currentOrder.walletAddress)}
-        </strong>
+        <span>Portefeuille de réception</span>
+        <strong class="break-word">${escapeHtml(currentOrder.walletAddress)}</strong>
       </div>
-
       <div class="summary-row">
         <span>Paiement</span>
         <strong>Orange Money</strong>
       </div>
-
       <div class="summary-row summary-total">
         <span>Vous recevez</span>
-        <strong>
-          ${Number(currentOrder.netUsdt).toFixed(6)} USDT
-        </strong>
+        <strong>${Number(currentOrder.netUsdt).toFixed(6)} USDT</strong>
       </div>
-
     `;
 
     return;
   }
 
-
   box.innerHTML = `
-
     <div class="summary-row">
       <span>Type</span>
       <strong>Vente USDT</strong>
     </div>
-
     <div class="summary-row">
       <span>Quantité vendue</span>
-      <strong>
-        ${Number(currentOrder.usdtAmount).toFixed(6)} USDT
-      </strong>
+      <strong>${Number(currentOrder.usdtAmount).toFixed(6)} USDT</strong>
     </div>
-
     <div class="summary-row">
       <span>Taux de vente</span>
-      <strong>
-        ${formatNumber(currentOrder.rate)} FCFA / USDT
-      </strong>
+      <strong>${formatNumber(currentOrder.rate)} FCFA / USDT</strong>
     </div>
-
     <div class="summary-row">
       <span>Frais réseau</span>
-      <strong>
-        ${Number(currentOrder.feeUsdt)} USDT
-      </strong>
+      <strong>${Number(currentOrder.feeUsdt)} USDT</strong>
     </div>
-
     <div class="summary-row">
       <span>USDT après frais</span>
-      <strong>
-        ${Number(currentOrder.netUsdt).toFixed(6)} USDT
-      </strong>
+      <strong>${Number(currentOrder.netUsdt).toFixed(6)} USDT</strong>
     </div>
-
     <div class="summary-row">
       <span>Réseau</span>
-      <strong>
-        ${escapeHtml(networkName)}
-      </strong>
+      <strong>${escapeHtml(networkName)}</strong>
     </div>
-
     <div class="summary-row">
-      <span>Adresse d'envoi</span>
-      <strong class="break-word">
-        ${escapeHtml(currentOrder.walletAddress)}
-      </strong>
+      <span>Adresse de dépôt NOA</span>
+      <strong class="break-word">${escapeHtml(currentOrder.walletAddress)}</strong>
     </div>
-
+    <div class="summary-row">
+      <span>Orange Money</span>
+      <strong>${escapeHtml(currentOrder.payoutPhone || '-')}</strong>
+    </div>
     <div class="summary-row summary-total">
-      <span>Vous recevez</span>
-      <strong>
-        ${formatNumber(currentOrder.receiveCfa)} FCFA
-      </strong>
+      <span>Vous recevrez</span>
+      <strong>${formatNumber(currentOrder.receiveCfa)} FCFA</strong>
     </div>
-
   `;
 }
 
@@ -2080,194 +2034,107 @@ async function placeOrder() {
 
   hideMessage();
 
-
   if (!currentUser) {
-
     showMessage(
       'Votre session a expiré. Veuillez vous reconnecter.',
       'error'
     );
-
     showAuthPage();
-
     showLoginForm();
-
     return;
   }
 
-
   if (!currentOrder) {
-
     return showMessage(
       'Aucune commande à enregistrer.',
       'error'
     );
   }
 
-
-  const button =
-    $('placeOrderBtn');
-
-
-  const originalText =
-    button?.textContent;
-
+  const button = $('placeOrderBtn');
+  const originalText = button?.textContent;
 
   if (button) {
-
-    button.disabled =
-      true;
-
-    button.textContent =
-      'Enregistrement...';
+    button.disabled = true;
+    button.textContent = 'Enregistrement...';
   }
-
 
   try {
 
-    const {
-      data: sessionData,
-      error: sessionError
-    } =
-      await supabaseClient.auth
-        .getSession();
-
+    const { data: sessionData, error: sessionError } =
+      await supabaseClient.auth.getSession();
 
     if (sessionError) {
       throw sessionError;
     }
 
-
-    if (
-      !sessionData?.session?.user
-    ) {
-
-      throw new Error(
-        'Votre session n\'est plus active.'
-      );
+    if (!sessionData?.session?.user) {
+      throw new Error('Votre session n\'est plus active.');
     }
 
+    currentUser = sessionData.session.user;
 
-    currentUser =
-      sessionData.session.user;
+    let customerNote = null;
 
+    if (currentOrder.side === 'buy') {
+      customerNote =
+        currentOrder.walletAddress
+          ? `Adresse de réception USDT : ${currentOrder.walletAddress}`
+          : null;
+    } else {
+      customerNote =
+        `Adresse de dépôt NOA : ${currentOrder.walletAddress} | Numéro Orange Money : ${currentOrder.payoutPhone}`;
+    }
 
-    // La table orders ne possède pas de colonne
-    // wallet_address. L'adresse est conservée
-    // dans customer_note.
-    const customerNote =
-      currentOrder.walletAddress
-        ? `Adresse portefeuille : ${currentOrder.walletAddress}`
-        : null;
-
-
-    // receive_cfa est NOT NULL dans orders.
-    // Achat = 0 FCFA reçu.
-    // Vente = montant FCFA réellement reçu.
     const receiveCfa =
       currentOrder.side === 'sell'
         ? Number(currentOrder.receiveCfa || 0)
         : 0;
 
-
     const payload = {
-
-      user_id:
-        currentUser.id,
-
-      side:
-        currentOrder.side,
-
-      network:
-        currentOrder.network,
-
-      payment_method:
-        currentOrder.paymentMethod,
-
-      amount_cfa:
-        Number(
-          currentOrder.amountCfa
-        ),
-
-      usdt_amount:
-        Number(
-          currentOrder.usdtAmount
-        ),
-
-      fee_usdt:
-        Number(
-          currentOrder.feeUsdt
-        ),
-
-      net_usdt:
-        Number(
-          currentOrder.netUsdt
-        ),
-
-      receive_cfa:
-        receiveCfa,
-
-      status:
-        'pending',
-
-      customer_note:
-        customerNote
+      user_id: currentUser.id,
+      side: currentOrder.side,
+      network: currentOrder.network,
+      payment_method: currentOrder.paymentMethod || 'orange_money',
+      amount_cfa: Number(currentOrder.amountCfa),
+      usdt_amount: Number(currentOrder.usdtAmount),
+      fee_usdt: Number(currentOrder.feeUsdt),
+      net_usdt: Number(currentOrder.netUsdt),
+      receive_cfa: receiveCfa,
+      status: 'pending',
+      customer_note: customerNote
     };
-
 
     console.log(
       'Commande envoyée à Supabase :',
       payload
     );
 
-
-    const {
-      data,
-      error
-    } =
+    const { data, error } =
       await supabaseClient
         .from('orders')
-        .insert(
-          payload
-        )
+        .insert(payload)
         .select('*')
         .single();
-
 
     if (error) {
       throw error;
     }
 
-
     if (!data) {
-
       throw new Error(
         'Supabase n\'a retourné aucune commande.'
       );
     }
 
+    currentOrder.id = data.id;
+    currentOrder.createdAt = data.created_at;
+    currentOrder.status = data.status || 'pending';
 
-    currentOrder.id =
-      data.id;
-
-    currentOrder.createdAt =
-      data.created_at;
-
-    currentOrder.status =
-      data.status ||
-      'pending';
-
-
-    if (
-      currentOrder.side ===
-      'buy'
-    ) {
+    if (currentOrder.side === 'buy') {
 
       renderPaymentPage();
-
-      showSubPage(
-        'paymentPage'
-      );
+      showSubPage('paymentPage');
 
       showMessage(
         'Commande enregistrée. Effectuez maintenant le paiement Orange Money.',
@@ -2276,19 +2143,16 @@ async function placeOrder() {
 
     } else {
 
-      showSubPage(
-        'ordersPage'
-      );
+      renderSellPaymentPage();
+      showSubPage('paymentPage');
 
       showMessage(
-        'Votre demande de vente a été enregistrée. Nous allons la traiter.',
+        'Commande de vente enregistrée. Envoyez maintenant les USDT à l\'adresse indiquée.',
         'success'
       );
     }
 
-
     await loadOrderHistory();
-
 
   } catch (error) {
 
@@ -2297,75 +2161,188 @@ async function placeOrder() {
       error
     );
 
-
     showMessage(
       'Impossible d\'enregistrer la commande : ' +
       getSupabaseErrorMessage(error),
       'error'
     );
 
-
   } finally {
 
     if (button) {
-
-      button.disabled =
-        false;
-
+      button.disabled = false;
       button.textContent =
-        originalText ||
-        'Placer la commande';
+        originalText || 'Placer la commande';
     }
   }
 }
 
 
-// ============================================================
-// PAIEMENT ORANGE MONEY
-// ACHAT UNIQUEMENT
-// ============================================================
-
 function renderPaymentPage() {
 
-  if (
-    !currentOrder ||
-    currentOrder.side !== 'buy'
-  ) {
+  if (!currentOrder || currentOrder.side !== 'buy') {
     return;
   }
 
-
   const amount =
-    Number(
-      currentOrder.amountCfa
-    ) || 0;
+    Number(currentOrder.amountCfa) || 0;
 
+  if ($('paymentDescription')) {
+    $('paymentDescription').textContent =
+      'Votre commande a été enregistrée. Effectuez maintenant le paiement Orange Money.';
+  }
+
+  if ($('paymentMethodInfo')) {
+    $('paymentMethodInfo').innerHTML =
+      'Moyen de paiement : <strong>Orange Money</strong>';
+  }
+
+  const numberLabel =
+    $('paymentNumber')?.previousElementSibling;
+
+  if (numberLabel) {
+    numberLabel.textContent =
+      'Numéro de paiement';
+  }
+
+  if ($('paymentNumber')) {
+    $('paymentNumber').textContent =
+      CONFIG.payment.displayNumber;
+    $('paymentNumber').style.fontSize = '';
+    $('paymentNumber').style.wordBreak = '';
+  }
+
+  const codeLabel =
+    $('paymentCode')?.previousElementSibling;
+
+  if (codeLabel) {
+    codeLabel.textContent =
+      'Code de paiement';
+  }
+
+  if ($('paymentCode')) {
+    $('paymentCode').textContent =
+      `*144*10*${CONFIG.payment.number}*${amount}#`;
+  }
 
   if ($('paymentAmount')) {
-
     $('paymentAmount').textContent =
       `Montant : ${formatNumber(amount)} FCFA`;
   }
 
+  const paymentCard =
+    $('paymentPage')?.querySelector('.card');
 
-  if ($('paymentNumber')) {
+  const warning =
+    paymentCard?.querySelector('.warning-box');
 
-    $('paymentNumber').textContent =
-      CONFIG.payment.displayNumber;
+  if (warning) {
+    warning.innerHTML = `
+      ⚠️ IMPORTANT : utilisez obligatoirement votre propre compte Orange Money.
+      Ne partagez jamais votre mot de passe, votre code secret ou votre code de validation.
+    `;
   }
 
+  if ($('paymentDoneBtn')) {
+    $('paymentDoneBtn').style.display = '';
+    $('paymentDoneBtn').textContent =
+      "J'ai effectué le paiement";
+  }
 
-  if ($('paymentCode')) {
-
-    $('paymentCode').textContent =
-      `*144*10*${CONFIG.payment.number}*${amount}#`;
+  if ($('viewOrderBtn')) {
+    $('viewOrderBtn').textContent =
+      'Voir ma commande';
   }
 }
 
 
-// ============================================================
-// DÉCLARATION DU PAIEMENT
-// ============================================================
+function renderSellPaymentPage() {
+
+  if (!currentOrder || currentOrder.side !== 'sell') {
+    return;
+  }
+
+  const networkName =
+    CONFIG.networks[currentOrder.network]?.name ||
+    currentOrder.network || '-';
+
+  const paymentPage = $('paymentPage');
+
+  if ($('paymentDescription')) {
+    $('paymentDescription').textContent =
+      "Votre demande de vente est enregistrée. Envoyez vos USDT à l'adresse de dépôt ci-dessous.";
+  }
+
+  if ($('paymentMethodInfo')) {
+    $('paymentMethodInfo').innerHTML =
+      `Réseau sélectionné : <strong>${escapeHtml(networkName)}</strong>`;
+  }
+
+  const card =
+    paymentPage?.querySelector('.card');
+
+  if (!card) {
+    return;
+  }
+
+  const numberLabel =
+    $('paymentNumber')?.previousElementSibling;
+
+  if (numberLabel) {
+    numberLabel.textContent =
+      'Adresse de dépôt NOA DIGIT TRADE';
+  }
+
+  if ($('paymentNumber')) {
+    $('paymentNumber').textContent =
+      currentOrder.walletAddress;
+    $('paymentNumber').style.fontSize = '14px';
+    $('paymentNumber').style.wordBreak = 'break-all';
+  }
+
+  const codeLabel =
+    $('paymentCode')?.previousElementSibling;
+
+  if (codeLabel) {
+    codeLabel.textContent =
+      'Montant exact à envoyer';
+  }
+
+  if ($('paymentCode')) {
+    $('paymentCode').textContent =
+      `${Number(currentOrder.netUsdt).toFixed(6)} USDT`;
+  }
+
+  if ($('paymentAmount')) {
+    $('paymentAmount').innerHTML =
+      `Vous recevrez : <strong>${formatNumber(currentOrder.receiveCfa)} FCFA</strong><br>Orange Money : <strong>${escapeHtml(currentOrder.payoutPhone || '-')}</strong>`;
+  }
+
+  // Remplace le message d'avertissement de paiement par les consignes de vente.
+  const warning =
+    card.querySelector('.warning-box');
+
+  if (warning) {
+    warning.innerHTML = `
+      ⚠️ <strong>IMPORTANT :</strong> envoyez exactement le montant indiqué,
+      sur le réseau <strong>${escapeHtml(networkName)}</strong>.
+      Une erreur de réseau ou d'adresse peut entraîner une perte des fonds.
+      <br><br>
+      Après réception et vérification de vos USDT, votre paiement de
+      <strong>${formatNumber(currentOrder.receiveCfa)} FCFA</strong> sera effectué sur le numéro Orange Money indiqué.
+    `;
+  }
+
+  if ($('paymentDoneBtn')) {
+    $('paymentDoneBtn').style.display = 'none';
+  }
+
+  if ($('viewOrderBtn')) {
+    $('viewOrderBtn').textContent =
+      'Voir ma commande';
+  }
+}
+
 
 async function declarePayment() {
 
@@ -3318,11 +3295,8 @@ async function saveProfile(
           country
       };
 
-    cacheUserProfile(currentProfile);
 
-    const {
-      data: updatedAuthData
-    } = await supabaseClient.auth
+    await supabaseClient.auth
       .updateUser({
 
         data: {
@@ -3339,10 +3313,6 @@ async function saveProfile(
 
       });
 
-    if (updatedAuthData?.user) {
-      currentUser =
-        updatedAuthData.user;
-    }
 
     updateUserInterface();
 
@@ -3543,6 +3513,19 @@ function setupEvents() {
     );
 
 
+  document.addEventListener(
+    'input',
+    event => {
+      if (event.target?.id === 'sellPayoutPhone') {
+        event.target.value =
+          event.target.value
+            .replace(/\D/g, '')
+            .slice(0, 8);
+      }
+    }
+  );
+
+
   $('reviewOrderBtn')
     ?.addEventListener(
       'click',
@@ -3717,7 +3700,7 @@ function setupAuthListener() {
 
         if (
           event === 'SIGNED_OUT' ||
-          (!session && event !== 'INITIAL_SESSION')
+          !currentUser
         ) {
 
           currentProfile =
