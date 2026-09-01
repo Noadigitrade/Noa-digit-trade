@@ -599,8 +599,8 @@ async function initializeApplication() {
 
     await loadUserProfile();
 
-    // IMPORTANT : récupérer les paramètres administrateur AVANT
-    // l'affichage des tarifs et le calcul des commandes.
+    // IMPORTANT :
+    // Charger les tarifs administrateur avant tout affichage/calcul.
     await loadAppSettings();
 
     showAppPage();
@@ -1025,74 +1025,81 @@ async function logoutUser() {
 
 
 // ============================================================
-// CHARGEMENT DES PARAMÈTRES DEPUIS SUPABASE
-// ============================================================
-// Les valeurs modifiées dans l'espace administrateur sont stockées
-// dans public.app_settings (id = 1). Le client lit cette ligne afin
-// d'utiliser les mêmes taux et frais pour l'affichage ET les calculs.
-// Les valeurs de CONFIG restent des valeurs de secours si la lecture
-// de Supabase échoue.
+// CHARGEMENT DES PARAMÈTRES PUBLICS
 // ============================================================
 
 async function loadAppSettings() {
+  /*
+   * Les tarifs sont gérés par l'administration dans public.app_settings.
+   * Le client peut seulement les LIRE grâce à la policy SELECT.
+   *
+   * Valeurs utilisées :
+   * - buy_rate
+   * - sell_rate
+   * - trc20_fee
+   * - bp20_fee
+   * - min_order / max_order
+   *
+   * min_order_cfa / max_order_cfa sont également acceptés
+   * comme solution de compatibilité si ces noms existent dans la table.
+   */
 
   try {
-
     const {
       data,
       error
     } = await supabaseClient
       .from('app_settings')
-      .select(
-        'id,buy_rate,sell_rate,trc20_fee,bp20_fee,min_order,max_order'
-      )
-      .eq(
-        'id',
-        1
-      )
+      .select('*')
+      .eq('id', 1)
       .maybeSingle();
 
-
     if (error) {
-      console.warn(
-        'Impossible de charger app_settings :',
+      console.error(
+        'Erreur lecture app_settings :',
         error
       );
       return false;
     }
 
-
     if (!data) {
       console.warn(
-        'Configuration app_settings (id = 1) introuvable. Valeurs de secours utilisées.'
+        'Aucune configuration app_settings trouvée.'
       );
       return false;
     }
 
-
     const buyRate = Number(data.buy_rate);
     const sellRate = Number(data.sell_rate);
+
+    const minOrder = Number(
+      data.min_order ??
+      data.min_order_cfa
+    );
+
+    const maxOrder = Number(
+      data.max_order ??
+      data.max_order_cfa
+    );
+
     const trc20Fee = Number(data.trc20_fee);
     const bp20Fee = Number(data.bp20_fee);
-    const minOrder = Number(data.min_order);
-    const maxOrder = Number(data.max_order);
 
-
-    if (
-      Number.isFinite(buyRate) &&
-      buyRate > 0
-    ) {
+    if (Number.isFinite(buyRate) && buyRate > 0) {
       CONFIG.buyRate = buyRate;
     }
 
-
-    if (
-      Number.isFinite(sellRate) &&
-      sellRate > 0
-    ) {
+    if (Number.isFinite(sellRate) && sellRate > 0) {
       CONFIG.sellRate = sellRate;
     }
 
+    if (Number.isFinite(minOrder) && minOrder >= 0) {
+      CONFIG.minOrder = minOrder;
+    }
+
+    if (Number.isFinite(maxOrder) && maxOrder >= 0) {
+      CONFIG.maxOrder = maxOrder;
+    }
 
     if (
       Number.isFinite(trc20Fee) &&
@@ -1101,7 +1108,6 @@ async function loadAppSettings() {
       CONFIG.networks.trc20.fee = trc20Fee;
     }
 
-
     if (
       Number.isFinite(bp20Fee) &&
       bp20Fee >= 0
@@ -1109,42 +1115,23 @@ async function loadAppSettings() {
       CONFIG.networks.bp20.fee = bp20Fee;
     }
 
-
-    if (
-      Number.isFinite(minOrder) &&
-      minOrder > 0
-    ) {
-      CONFIG.minOrder = minOrder;
-    }
-
-
-    if (
-      Number.isFinite(maxOrder) &&
-      maxOrder > 0
-    ) {
-      CONFIG.maxOrder = maxOrder;
-    }
-
-
     console.log(
-      'Tarifs client chargés depuis Supabase :',
+      'Paramètres client chargés depuis app_settings :',
       {
-        achat: CONFIG.buyRate,
-        vente: CONFIG.sellRate,
-        trc20: CONFIG.networks.trc20.fee,
-        bep20: CONFIG.networks.bp20.fee,
-        minimum: CONFIG.minOrder,
-        maximum: CONFIG.maxOrder
+        buyRate: CONFIG.buyRate,
+        sellRate: CONFIG.sellRate,
+        minOrder: CONFIG.minOrder,
+        maxOrder: CONFIG.maxOrder,
+        trc20Fee: CONFIG.networks.trc20.fee,
+        bp20Fee: CONFIG.networks.bp20.fee
       }
     );
-
 
     return true;
 
   } catch (error) {
-
-    console.warn(
-      'Erreur chargement app_settings :',
+    console.error(
+      'Erreur inattendue lecture app_settings :',
       error
     );
 
