@@ -3599,26 +3599,27 @@ function setupAuthListener() {
 
   supabaseClient.auth
     .onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
+
+        /*
+         * IMPORTANT :
+         * signInWithPassword() déclenche SIGNED_IN.
+         * loginUser() initialise déjà l'application.
+         *
+         * On ne relance donc plus initializeApplication()
+         * depuis le listener. Cela évite les doubles initialisations
+         * et le clignotement de l'écran de connexion sur mobile.
+         */
 
         currentUser =
           session?.user ||
           null;
 
 
-        if (currentUser) {
-
-          setTimeout(
-            () => {
-
-              initializeApplication();
-
-            },
-            0
-          );
-
-
-        } else {
+        if (
+          event === 'SIGNED_OUT' ||
+          !currentUser
+        ) {
 
           currentProfile =
             null;
@@ -3627,9 +3628,15 @@ function setupAuthListener() {
             null;
 
           showAuthPage();
-
           showLoginForm();
+
+          return;
         }
+
+        /*
+         * SIGNED_IN / TOKEN_REFRESHED / INITIAL_SESSION :
+         * l'état est simplement synchronisé.
+         */
       }
     );
 }
