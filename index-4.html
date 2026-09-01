@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NOA DIGIT TRADE</title>
+  <meta name="description" content="NOA DIGIT TRADE - Achat et vente de USDT au Burkina Faso">
+  <meta name="theme-color" content="#0757d9">
+
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Arial,Helvetica,sans-serif;background:#f4f7fb;color:#172033;min-height:100vh}
+    button,input,select,textarea{font:inherit}button{cursor:pointer}
+    .app{width:100%;max-width:520px;margin:auto;min-height:100vh;background:#f4f7fb}
+    .header{background:linear-gradient(135deg,#064dcc,#0878e8);color:#fff;padding:28px 20px 32px;border-radius:0 0 28px 28px}
+    .brand{font-size:25px;font-weight:800;letter-spacing:.3px}.subtitle{margin-top:7px;opacity:.9;font-size:14px}
+    .country-badge{display:inline-flex;align-items:center;gap:7px;margin-top:18px;padding:8px 13px;border-radius:30px;background:rgba(255,255,255,.16);font-size:13px;font-weight:600}
+    .content{padding:20px 16px 100px}.card{background:#fff;border-radius:20px;padding:20px;margin-bottom:16px;box-shadow:0 7px 25px rgba(18,46,84,.07)}
+    .card-title{font-size:19px;font-weight:800;margin-bottom:5px}.card-description{color:#7a8495;font-size:13px;line-height:1.5;margin-bottom:18px}
+    .auth-tabs,.exchange-tabs{display:flex;background:#edf2f8;border-radius:14px;padding:4px;margin-bottom:20px}
+    .auth-tab,.exchange-tab{flex:1;border:none;background:transparent;padding:11px;border-radius:11px;font-weight:700;color:#7b8493}
+    .auth-tab.active,.exchange-tab.active{background:#fff;color:#0757d9;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+    .auth-form{display:none}.auth-form.active{display:block}
+    .field{margin-bottom:15px}.field label{display:block;font-size:13px;font-weight:700;margin-bottom:7px;color:#3c4658}
+    .field input,.field select,.field textarea{width:100%;border:1px solid #dce3ed;background:#fafcff;border-radius:13px;padding:13px 14px;outline:none;color:#172033}
+    .field input:focus,.field select:focus,.field textarea:focus{border-color:#0878e8;box-shadow:0 0 0 3px rgba(8,120,232,.09)}
+    .field textarea{resize:vertical;min-height:90px}
+    .password-wrapper{position:relative;width:100%}.password-wrapper input{padding-right:52px}
+    .password-toggle{position:absolute;top:50%;right:8px;transform:translateY(-50%);width:40px;height:40px;border:none;background:transparent;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:19px;color:#667085}
+    .btn{width:100%;border:none;border-radius:14px;padding:14px 16px;font-weight:800;transition:.2s}
+    .btn-primary{background:#0757d9;color:#fff}.btn-primary:hover{background:#0649b6}
+    .btn-secondary{background:#eaf1fb;color:#0757d9}.btn-danger{background:#fee9e9;color:#c62828}.btn-success{background:#e8f8ef;color:#168447}
+    .btn+.btn{margin-top:10px}
+    .amount-box{border:1px solid #e0e6ef;border-radius:17px;padding:16px;margin-bottom:12px;background:#fbfcfe}
+    .amount-label{color:#778194;font-size:13px;font-weight:700;margin-bottom:8px}
+    .amount-input{width:100%;border:none;outline:none;background:transparent;font-size:29px;font-weight:800;color:#172033}
+    .amount-unit{color:#0757d9;font-size:14px;font-weight:800}
+    .network-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+    .network-option{border:2px solid #e0e6ef;background:#fff;border-radius:14px;padding:14px 10px;text-align:center}
+    .network-option.active{border-color:#0757d9;background:#f0f6ff}
+    .network-name{font-weight:800;font-size:14px}.network-fee{margin-top:5px;color:#7d8796;font-size:12px}
+    .summary{background:#f5f8fd;border-radius:16px;padding:16px;margin-top:15px}
+    .summary-row{display:flex;justify-content:space-between;gap:15px;padding:8px 0;font-size:14px}
+    .summary-row span:first-child{color:#737d8e}.summary-row strong{text-align:right}
+    .summary-total{border-top:1px solid #dce3ed;margin-top:7px;padding-top:13px;font-size:17px}.summary-total strong{color:#0757d9}
+    .info-box{background:#eef6ff;border-left:4px solid #0878e8;padding:13px;border-radius:10px;font-size:13px;line-height:1.5;color:#42536a;margin-bottom:15px}
+    .warning-box{background:#fff8e7;border-left:4px solid #f2a900;padding:13px;border-radius:10px;font-size:13px;line-height:1.5;color:#69531f;margin-bottom:15px}
+    .error-box{background:#feecec;border-left:4px solid #c62828;padding:13px;border-radius:10px;font-size:13px;line-height:1.5;color:#a51f1f;margin-bottom:15px}
+    .user-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff;padding:14px 16px;border-radius:16px;margin-bottom:16px;box-shadow:0 5px 18px rgba(18,46,84,.06)}
+    .user-name{font-weight:800}.user-country{color:#7c8695;font-size:12px;margin-top:3px}
+    .logout-btn{border:none;background:#f0f3f7;color:#596577;border-radius:10px;padding:9px 12px;font-size:12px;font-weight:700}
+    .order-card{border:1px solid #e2e7ef;border-radius:15px;padding:15px;margin-top:12px}
+    .order-header{display:flex;justify-content:space-between;gap:10px;margin-bottom:10px}.order-type{font-weight:800}
+    .status{padding:5px 9px;border-radius:20px;font-size:11px;font-weight:800}.status.pending{background:#fff4d7;color:#a16c00}
+    .status.processing{background:#e8f1ff;color:#0757d9}.status.completed{background:#e7f8ee;color:#168447}.status.cancelled{background:#fdeaea;color:#c62828}
+    .order-row{display:flex;justify-content:space-between;padding:5px 0;font-size:13px}.order-row span:first-child{color:#7d8795}
+    .payment-code{background:#101828;color:#fff;padding:17px;border-radius:14px;text-align:center;font-size:19px;font-weight:800;letter-spacing:.5px;margin:14px 0}
+    .payment-number{text-align:center;font-size:22px;font-weight:900;color:#0757d9;margin:10px 0}
+    .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;background:rgba(255,255,255,.96);backdrop-filter:blur(12px);border-top:1px solid #e1e6ed;display:flex;justify-content:space-around;padding:10px 8px;z-index:50}
+    .nav-btn{border:none;background:transparent;color:#7d8795;font-size:12px;font-weight:700;padding:7px 13px;border-radius:10px}.nav-btn.active{color:#0757d9;background:#edf5ff}
+    .page,.sub-page{display:none}.page.active,.sub-page.active{display:block}
+    #appMessage{display:none;padding:13px 15px;border-radius:12px;margin-bottom:15px;font-size:13px;line-height:1.4;font-weight:600}
+    #appMessage.success{display:block;background:#e8f8ef;color:#168447}#appMessage.error{display:block;background:#feecec;color:#c62828}#appMessage.info{display:block;background:#eaf3ff;color:#0757d9}
+    .hidden{display:none!important}.center{text-align:center}.small{font-size:12px;color:#7d8795;line-height:1.5}.mt{margin-top:15px}
+    .wallet-help{margin-top:7px}.wallet-input{font-family:monospace;font-size:14px}
+    @media(min-width:521px){body{padding:20px 0}.app{border-radius:25px;overflow:hidden;box-shadow:0 15px 50px rgba(0,0,0,.08)}.bottom-nav{border-radius:20px 20px 0 0}}
+  </style>
+</head>
+
+<body>
+<div class="app">
+
+<header class="header">
+  <div class="brand">NOA DIGIT TRADE</div>
+  <div class="subtitle">Achat & vente de USDT</div>
+  <div class="country-badge">🇧🇫 Burkina Faso uniquement</div>
+</header>
+
+<main class="content">
+  <div id="appMessage"></div>
+
+  <section id="authPage" class="page active">
+    <div class="card">
+      <div class="card-title">Bienvenue</div>
+      <div class="card-description">Connectez-vous ou créez votre compte pour acheter ou vendre des USDT.</div>
+
+      <div class="auth-tabs">
+        <button type="button" class="auth-tab active" id="loginTab">Connexion</button>
+        <button type="button" class="auth-tab" id="registerTab">Inscription</button>
+      </div>
+
+      <form id="loginForm" class="auth-form active">
+        <div class="field"><label for="loginEmail">Adresse email</label><input type="email" id="loginEmail" placeholder="exemple@email.com" autocomplete="email" required></div>
+        <div class="field"><label for="loginPassword">Mot de passe</label><input type="password" id="loginPassword" placeholder="Votre mot de passe" autocomplete="current-password" required></div>
+        <button type="submit" class="btn btn-primary">Se connecter</button>
+      </form>
+
+      <form id="registerForm" class="auth-form">
+        <div class="info-box">🇧🇫 NOA DIGIT TRADE est réservé aux clients situés au Burkina Faso.</div>
+        <div class="field"><label for="registerName">Nom et prénom</label><input type="text" id="registerName" placeholder="Votre nom complet" autocomplete="name" required></div>
+        <div class="field"><label for="registerPhone">Numéro de téléphone</label><input type="tel" id="registerPhone" placeholder="Ex : 70 00 00 00" autocomplete="tel" required></div>
+        <div class="field"><label for="registerCountry">Pays</label><select id="registerCountry" required><option value="Burkina Faso">🇧🇫 Burkina Faso</option></select></div>
+        <div class="field"><label for="registerEmail">Adresse email</label><input type="email" id="registerEmail" placeholder="exemple@email.com" autocomplete="email" required></div>
+        <div class="field">
+          <label for="registerPassword">Mot de passe</label>
+          <div class="password-wrapper">
+            <input type="password" id="registerPassword" placeholder="Minimum 6 caractères" minlength="6" autocomplete="new-password" required>
+            <button type="button" class="password-toggle" data-password-target="registerPassword" aria-label="Afficher le mot de passe">👁️</button>
+          </div>
+        </div>
+        <div class="field">
+          <label for="registerPasswordConfirm">Confirmer le mot de passe</label>
+          <div class="password-wrapper">
+            <input type="password" id="registerPasswordConfirm" placeholder="Répétez le mot de passe" minlength="6" autocomplete="new-password" required>
+            <button type="button" class="password-toggle" data-password-target="registerPasswordConfirm" aria-label="Afficher la confirmation du mot de passe">👁️</button>
+          </div>
+        </div>
+        <div class="warning-box">⚠️ Utilisez obligatoirement vos informations personnelles réelles pour créer votre compte et effectuer/valider vos paiements.</div>
+        <button type="submit" class="btn btn-primary">Créer mon compte</button>
+      </form>
+    </div>
+
+    <div class="card center"><div class="small">En utilisant NOA DIGIT TRADE, vous acceptez de fournir des informations exactes afin de sécuriser vos transactions.</div></div>
+  </section>
+
+  <section id="appPage" class="page">
+
+    <div class="user-bar">
+      <div>
+        <div id="userName" class="user-name">Utilisateur</div>
+        <div id="userCountry" class="user-country">🇧🇫 Burkina Faso</div>
+      </div>
+      <button type="button" id="logoutBtn" class="logout-btn">Déconnexion</button>
+    </div>
+
+    <div id="homePage" class="sub-page active">
+      <div class="card">
+        <div class="card-title">NOA DIGIT TRADE</div>
+        <div class="card-description">Achetez ou vendez vos USDT simplement et en toute sécurité au Burkina Faso.</div>
+        <button type="button" id="goBuyBtn" class="btn btn-primary">Acheter des USDT</button>
+        <button type="button" id="goSellBtn" class="btn btn-secondary">Vendre des USDT</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Tarifs actuels</div>
+        <div class="summary">
+          <div class="summary-row"><span>Taux achat</span><strong><span id="homeBuyRate">600</span> FCFA</strong></div>
+          <div class="summary-row"><span>Taux vente</span><strong><span id="homeSellRate">570</span> FCFA</strong></div>
+          <div class="summary-row"><span>Commande minimum</span><strong><span id="homeMinOrder">2 000</span> FCFA</strong></div>
+          <div class="summary-row"><span>Commande maximum</span><strong><span id="homeMaxOrder">50 000</span> FCFA</strong></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Réseaux disponibles</div>
+        <div class="summary">
+          <div class="summary-row"><span>USDT TRC20</span><strong>Frais : <span id="homeTrc20Fee">2</span> USDT</strong></div>
+          <div class="summary-row"><span>USDT BEP20</span><strong>Frais : <span id="homeBp20Fee">0</span> USDT</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="exchangePage" class="sub-page hidden">
+      <div class="card">
+        <div class="card-title">Nouvelle commande</div>
+        <div class="card-description">Vérifiez attentivement le montant, le taux et les frais avant de placer votre ordre.</div>
+
+        <div class="exchange-tabs">
+          <button type="button" id="buyTab" class="exchange-tab active">Acheter</button>
+          <button type="button" id="sellTab" class="exchange-tab">Vendre</button>
+        </div>
+
+        <div class="amount-box">
+          <div class="amount-label" id="amountLabel">Montant à payer</div>
+          <input type="number" id="amountInput" class="amount-input" min="2000" max="50000" step="any" placeholder="0" inputmode="decimal" autocomplete="off">
+          <div class="amount-unit" id="amountUnit">FCFA</div>
+        </div>
+
+        <div class="field">
+          <label>Réseau USDT</label>
+          <div class="network-grid">
+            <button type="button" class="network-option active" id="trc20Option" data-network="trc20">
+              <div class="network-name">USDT TRC20</div>
+              <div class="network-fee">Frais : <span id="trc20Fee">2</span> USDT</div>
+            </button>
+            <button type="button" class="network-option" id="bp20Option" data-network="bp20">
+              <div class="network-name">USDT BEP20</div>
+              <div class="network-fee">Frais : <span id="bp20Fee">0</span> USDT</div>
+            </button>
+          </div>
+        </div>
+
+        <div class="field" id="paymentMethodField">
+          <label for="paymentMethod">Moyen de paiement</label>
+          <select id="paymentMethod">
+            <option value="orange_money">Orange Money</option>
+          </select>
+        </div>
+
+        <!-- NOUVEAU : ADRESSE DU PORTEFEUILLE USDT -->
+        <div class="field">
+          <label for="walletAddress" id="walletLabel">Adresse de portefeuille USDT</label>
+          <input
+            type="text"
+            id="walletAddress"
+            class="wallet-input"
+            placeholder="Collez votre adresse USDT ici"
+            autocomplete="off"
+            autocapitalize="none"
+            spellcheck="false"
+            required
+          >
+          <div class="small wallet-help">
+            ⚠️ Saisissez l'adresse du portefeuille USDT utilisée pour cette transaction.
+            Vérifiez qu'elle correspond exactement au réseau sélectionné.
+          </div>
+        </div>
+
+        <div class="summary">
+          <div class="summary-row"><span>Taux</span><strong id="summaryRate">600 FCFA / USDT</strong></div>
+          <div class="summary-row"><span id="summaryCfaLabel">Montant FCFA</span><strong id="summaryCfa">0 FCFA</strong></div>
+          <div class="summary-row"><span id="summaryUsdtLabel">Montant USDT</span><strong id="summaryUsdt">0 USDT</strong></div>
+          <div class="summary-row"><span>Frais réseau</span><strong id="summaryFee">0 USDT</strong></div>
+          <div class="summary-row summary-total"><span id="summaryResultLabel">Vous recevrez</span><strong id="summaryResult">0 USDT</strong></div>
+        </div>
+
+        <div class="info-box mt" id="exchangeInfo">
+          💡 Minimum : <strong>2 000 FCFA</strong><br>
+          Maximum : <strong>50 000 FCFA</strong><br>
+          Le montant exact et les frais sont affichés avant la confirmation.
+        </div>
+
+        <button type="button" id="reviewOrderBtn" class="btn btn-primary">Vérifier la commande</button>
+        <button type="button" id="backHomeBtn" class="btn btn-secondary">Retour</button>
+      </div>
+    </div>
+
+    <div id="confirmationPage" class="sub-page hidden">
+      <div class="card">
+        <div class="card-title">Vérification de votre commande</div>
+        <div class="card-description">Vérifiez toutes les informations avant de placer définitivement votre ordre.</div>
+        <div id="confirmationSummary" class="summary"></div>
+        <div class="warning-box">⚠️ Vérifiez attentivement le montant, le réseau et l'adresse de portefeuille USDT avant de placer la commande.</div>
+        <button type="button" id="placeOrderBtn" class="btn btn-primary">Placer la commande</button>
+        <button type="button" id="cancelReviewBtn" class="btn btn-secondary">Modifier</button>
+      </div>
+    </div>
+
+    <div id="paymentPage" class="sub-page hidden">
+      <div class="card">
+        <div class="card-title">Paiement</div>
+        <div class="card-description" id="paymentDescription">Votre commande a été enregistrée.</div>
+        <div class="info-box" id="paymentMethodInfo">Moyen de paiement : <strong>Orange Money</strong></div>
+        <div class="small center">Numéro de paiement</div>
+        <div class="payment-number">74 60 25 53</div>
+        <div class="small center">Code de paiement</div>
+        <div id="paymentCode" class="payment-code">*144*10*74602553*montant#</div>
+        <div id="paymentAmount" class="summary center">Montant : 0 FCFA</div>
+        <div class="warning-box mt">
+          ⚠️ IMPORTANT : utilisez obligatoirement votre propre compte Orange Money.
+          Ne partagez jamais votre mot de passe, votre code secret ou votre code de validation.
+        </div>
+        <button type="button" id="paymentDoneBtn" class="btn btn-primary">J'ai effectué le paiement</button>
+        <button type="button" id="viewOrderBtn" class="btn btn-secondary">Voir ma commande</button>
+      </div>
+    </div>
+
+    <div id="ordersPage" class="sub-page hidden">
+      <div class="card">
+        <div class="card-title">Mes commandes</div>
+        <div class="card-description">Consultez l'état de vos ordres d'achat et de vente.</div>
+        <div id="ordersList"><div class="small center">Chargement des commandes...</div></div>
+      </div>
+    </div>
+
+    <div id="supportPage" class="sub-page hidden">
+      <div class="card">
+        <div class="card-title">Service client</div>
+        <div class="card-description">Un problème avec une transaction ? Vous pouvez ouvrir un litige concernant une commande.</div>
+        <form id="disputeForm">
+          <div class="field"><label for="disputeOrder">Commande concernée</label><select id="disputeOrder" required><option value="">Sélectionner une commande</option></select></div>
+          <div class="field"><label for="disputeSubject">Sujet</label><input type="text" id="disputeSubject" placeholder="Ex : paiement non confirmé" required></div>
+          <div class="field"><label for="disputeMessage">Décrivez votre problème</label><textarea id="disputeMessage" placeholder="Expliquez votre problème..." required></textarea></div>
+          <button type="submit" class="btn btn-primary">Envoyer au service client</button>
+        </form>
+      </div>
+      <div class="card">
+        <div class="card-title">Mes litiges</div>
+        <div id="disputesList"><div class="small center">Aucun litige chargé.</div></div>
+      </div>
+    </div>
+
+    <div id="profilePage" class="sub-page hidden">
+      <div class="card">
+        <div class="card-title">Mon profil</div>
+        <div class="field"><label>Nom et prénom</label><input type="text" id="profileName" readonly></div>
+        <div class="field"><label>Téléphone</label><input type="tel" id="profilePhone" readonly></div>
+        <div class="field"><label>Pays</label><input type="text" id="profileCountry" value="Burkina Faso" readonly></div>
+        <div class="info-box">🇧🇫 Votre compte est configuré pour le Burkina Faso uniquement.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Sécurité</div>
+        <div class="small">Pour votre sécurité, ne communiquez jamais votre mot de passe, votre code Orange Money ou vos codes de validation à une autre personne.</div>
+      </div>
+    </div>
+
+  </section>
+</main>
+
+<nav id="bottomNav" class="bottom-nav hidden">
+  <button type="button" class="nav-btn active" data-page="homePage">🏠<br>Accueil</button>
+  <button type="button" class="nav-btn" data-page="exchangePage">⇄<br>Échange</button>
+  <button type="button" class="nav-btn" data-page="ordersPage">📋<br>Commandes</button>
+  <button type="button" class="nav-btn" data-page="supportPage">💬<br>Support</button>
+  <button type="button" class="nav-btn" data-page="profilePage">👤<br>Profil</button>
+</nav>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded",function(){
+  document.querySelectorAll(".password-toggle").forEach(function(button){
+    button.addEventListener("click",function(){
+      const input=document.getElementById(button.getAttribute("data-password-target"));
+      if(!input)return;
+      if(input.type==="password"){
+        input.type="text";
+        button.textContent="🙈";
+        button.setAttribute("aria-label","Masquer le mot de passe");
+      }else{
+        input.type="password";
+        button.textContent="👁️";
+        button.setAttribute("aria-label","Afficher le mot de passe");
+      }
+    });
+  });
+});
+</script>
+
+<script src="app.js"></script>
+</body>
+</html>
