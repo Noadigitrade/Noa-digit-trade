@@ -1374,17 +1374,10 @@ function setBuyMode() {
   }
 
   if (walletInput) {
-    // Si le champ contient encore une adresse de dépôt NOA provenant
-    // du mode Vente, on la vide : en Achat, le client doit obligatoirement
-    // fournir sa propre adresse de réception USDT.
-    const currentValue = String(walletInput.value || '').trim();
-    const configuredDepositAddresses = Object.values(
-      CONFIG.depositAddresses || {}
-    ).map(value => String(value || '').trim()).filter(Boolean);
-
-    if (configuredDepositAddresses.includes(currentValue)) {
-      walletInput.value = '';
-    }
+    // En mode ACHAT, le champ doit TOUJOURS être vide au passage
+    // vers Achat. Le client doit saisir sa propre adresse de réception.
+    // On ne conserve jamais une adresse de dépôt NOA provenant du mode Vente.
+    walletInput.value = '';
 
     walletInput.readOnly = false;
     walletInput.required = true;
