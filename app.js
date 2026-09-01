@@ -1374,6 +1374,18 @@ function setBuyMode() {
   }
 
   if (walletInput) {
+    // Si le champ contient encore une adresse de dépôt NOA provenant
+    // du mode Vente, on la vide : en Achat, le client doit obligatoirement
+    // fournir sa propre adresse de réception USDT.
+    const currentValue = String(walletInput.value || '').trim();
+    const configuredDepositAddresses = Object.values(
+      CONFIG.depositAddresses || {}
+    ).map(value => String(value || '').trim()).filter(Boolean);
+
+    if (configuredDepositAddresses.includes(currentValue)) {
+      walletInput.value = '';
+    }
+
     walletInput.readOnly = false;
     walletInput.required = true;
     walletInput.placeholder =
@@ -1482,6 +1494,11 @@ function selectNetwork(
   currentNetwork =
     network;
 
+  // En mode vente, l'adresse de dépôt NOA doit changer
+  // immédiatement lorsque le client change de réseau.
+  if (currentExchangeType === 'sell') {
+    updateSellDepositUI();
+  }
 
   $('trc20Option')
     ?.classList.toggle(
