@@ -44,8 +44,8 @@ const CONFIG = {
   // officielles de NOA DIGIT TRADE avant d'activer les ventes.
   // ==========================================================
   depositAddresses: {
-    trc20: '',
-    bp20: ''
+    trc20: 'THmJUvPgBNa7uyDpPKrmer34JtA5w743vA',
+    bp20: '0x9a4248E584B1e27f4d37ce7Ae355Ca004e439D72'
   },
 
   payment: {
