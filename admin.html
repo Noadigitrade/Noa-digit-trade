@@ -1,23 +1,14 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  >
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <title>NOA DIGIT TRADE — ADMIN</title>
 
-  <meta
-    name="theme-color"
-    content="#0757d9"
-  >
+  <meta name="theme-color" content="#0757d9">
 
   <style>
-
     * {
       box-sizing: border-box;
       margin: 0;
@@ -25,11 +16,7 @@
     }
 
     body {
-      font-family:
-        Arial,
-        Helvetica,
-        sans-serif;
-
+      font-family: Arial, Helvetica, sans-serif;
       background: #f4f7fb;
       color: #172033;
       min-height: 100vh;
@@ -46,6 +33,11 @@
       cursor: pointer;
     }
 
+    button:disabled {
+      opacity: .65;
+      cursor: not-allowed;
+    }
+
     .hidden {
       display: none !important;
     }
@@ -56,71 +48,46 @@
 
     #loginScreen {
       min-height: 100vh;
-
       display: flex;
       align-items: center;
       justify-content: center;
-
       padding: 20px;
     }
 
     .login-card {
       width: 100%;
       max-width: 430px;
-
-      background: white;
-
+      background: #fff;
       border-radius: 24px;
-
       padding: 28px;
-
-      box-shadow:
-        0 15px 50px rgba(18, 46, 84, .10);
+      box-shadow: 0 15px 50px rgba(18,46,84,.10);
     }
 
     .admin-logo {
       width: 68px;
       height: 68px;
-
       margin: 0 auto 18px;
-
       border-radius: 20px;
-
       display: flex;
       align-items: center;
       justify-content: center;
-
-      background:
-        linear-gradient(
-          135deg,
-          #064dcc,
-          #0878e8
-        );
-
+      background: linear-gradient(135deg,#064dcc,#0878e8);
       color: white;
-
       font-size: 30px;
       font-weight: 900;
     }
 
     .login-title {
       text-align: center;
-
       font-size: 25px;
       font-weight: 900;
-
-      color: #172033;
     }
 
     .login-subtitle {
       text-align: center;
-
       color: #7b8493;
-
       font-size: 13px;
-
       line-height: 1.5;
-
       margin-top: 8px;
       margin-bottom: 25px;
     }
@@ -134,32 +101,17 @@
     }
 
     .admin-header {
-      background:
-        linear-gradient(
-          135deg,
-          #064dcc,
-          #0878e8
-        );
-
+      background: linear-gradient(135deg,#064dcc,#0878e8);
       color: white;
-
-      padding:
-        20px
-        max(20px, calc((100% - 1200px) / 2))
-        24px;
+      padding: 20px max(20px,calc((100% - 1200px)/2)) 24px;
     }
 
     .header-inner {
       max-width: 1200px;
-
       margin: auto;
-
       display: flex;
-
       align-items: center;
-
       justify-content: space-between;
-
       gap: 20px;
     }
 
@@ -170,152 +122,97 @@
 
     .brand-area p {
       margin-top: 5px;
-
       font-size: 13px;
-
       opacity: .9;
     }
 
     .admin-badge {
       display: inline-flex;
-
       align-items: center;
-
       gap: 7px;
-
       margin-top: 10px;
-
-      padding:
-        7px
-        11px;
-
-      background:
-        rgba(255,255,255,.16);
-
+      padding: 7px 11px;
+      background: rgba(255,255,255,.16);
       border-radius: 20px;
-
       font-size: 12px;
-
       font-weight: 800;
     }
 
     .logout-header {
       border: none;
-
-      background:
-        rgba(255,255,255,.15);
-
+      background: rgba(255,255,255,.15);
       color: white;
-
       border-radius: 11px;
-
-      padding:
-        10px
-        14px;
-
+      padding: 10px 14px;
       font-size: 12px;
-
       font-weight: 800;
     }
-
-    /* =====================================================
-       LAYOUT
-    ====================================================== */
 
     .admin-container {
       width: 100%;
       max-width: 1200px;
-
       margin: auto;
-
-      padding:
-        22px
-        18px
-        80px;
+      padding: 22px 18px 80px;
     }
+
+    /* =====================================================
+       DASHBOARD
+    ====================================================== */
 
     .dashboard-grid {
       display: grid;
-
-      grid-template-columns:
-        repeat(4, 1fr);
-
+      grid-template-columns: repeat(4,1fr);
       gap: 15px;
-
       margin-bottom: 20px;
     }
 
-    .stat-card {
+    .stat-card,
+    .card {
       background: white;
+      box-shadow: 0 7px 25px rgba(18,46,84,.07);
+    }
 
+    .stat-card {
       border-radius: 18px;
-
       padding: 18px;
-
-      box-shadow:
-        0 7px 25px rgba(18,46,84,.07);
     }
 
     .stat-label {
       color: #7b8493;
-
       font-size: 12px;
-
       font-weight: 700;
     }
 
     .stat-value {
       margin-top: 9px;
-
       font-size: 26px;
-
       font-weight: 900;
-
       color: #0757d9;
     }
 
-    /* =====================================================
-       CARDS
-    ====================================================== */
-
     .card {
-      background: white;
-
       border-radius: 20px;
-
       padding: 20px;
-
       margin-bottom: 18px;
-
-      box-shadow:
-        0 7px 25px rgba(18,46,84,.07);
     }
 
     .card-header {
       display: flex;
-
       justify-content: space-between;
-
       align-items: center;
-
       gap: 15px;
-
       margin-bottom: 18px;
     }
 
     .card-title {
       font-size: 19px;
-
       font-weight: 900;
     }
 
     .card-description {
       color: #7b8493;
-
       font-size: 13px;
-
       line-height: 1.5;
-
       margin-top: 5px;
     }
 
@@ -325,54 +222,31 @@
 
     .admin-nav {
       display: flex;
-
       gap: 7px;
-
       overflow-x: auto;
-
       background: white;
-
       border-radius: 16px;
-
       padding: 6px;
-
       margin-bottom: 20px;
-
-      box-shadow:
-        0 5px 20px rgba(18,46,84,.06);
+      box-shadow: 0 5px 20px rgba(18,46,84,.06);
     }
 
     .admin-nav button {
       flex: 1;
-
       min-width: 120px;
-
       border: none;
-
       background: transparent;
-
       color: #727d8d;
-
-      padding:
-        11px
-        12px;
-
+      padding: 11px 12px;
       border-radius: 11px;
-
       font-size: 12px;
-
       font-weight: 800;
     }
 
     .admin-nav button.active {
       background: #edf5ff;
-
       color: #0757d9;
     }
-
-    /* =====================================================
-       PAGES
-    ====================================================== */
 
     .admin-page {
       display: none;
@@ -383,7 +257,7 @@
     }
 
     /* =====================================================
-       INPUTS
+       FORMULAIRES
     ====================================================== */
 
     .field {
@@ -392,13 +266,9 @@
 
     .field label {
       display: block;
-
       margin-bottom: 7px;
-
       color: #3c4658;
-
       font-size: 13px;
-
       font-weight: 800;
     }
 
@@ -406,20 +276,11 @@
     .field select,
     .field textarea {
       width: 100%;
-
-      border:
-        1px solid #dce3ed;
-
+      border: 1px solid #dce3ed;
       background: #fafcff;
-
       border-radius: 12px;
-
-      padding:
-        12px
-        13px;
-
+      padding: 12px 13px;
       outline: none;
-
       color: #172033;
     }
 
@@ -427,47 +288,29 @@
     .field select:focus,
     .field textarea:focus {
       border-color: #0878e8;
-
-      box-shadow:
-        0 0 0 3px
-        rgba(8,120,232,.09);
+      box-shadow: 0 0 0 3px rgba(8,120,232,.09);
     }
-
-    /* =====================================================
-       GRID
-    ====================================================== */
 
     .form-grid {
       display: grid;
-
-      grid-template-columns:
-        repeat(2, 1fr);
-
+      grid-template-columns: repeat(2,1fr);
       gap: 15px;
     }
 
     .form-grid-4 {
       display: grid;
-
-      grid-template-columns:
-        repeat(4, 1fr);
-
+      grid-template-columns: repeat(4,1fr);
       gap: 15px;
     }
 
     /* =====================================================
-       BUTTONS
+       BOUTONS
     ====================================================== */
 
     .btn {
       border: none;
-
       border-radius: 12px;
-
-      padding:
-        12px
-        15px;
-
+      padding: 12px 15px;
       font-weight: 800;
     }
 
@@ -492,108 +335,84 @@
     }
 
     .btn-small {
-      padding:
-        8px
-        10px;
-
+      padding: 8px 10px;
       font-size: 11px;
     }
 
     /* =====================================================
-       SETTINGS
+       PARAMETRES
     ====================================================== */
 
     .setting-box {
-      border:
-        1px solid #e2e7ef;
-
+      border: 1px solid #e2e7ef;
       border-radius: 15px;
-
       padding: 16px;
-
       background: #fbfcfe;
     }
 
     .setting-title {
       font-size: 15px;
-
       font-weight: 900;
-
       margin-bottom: 13px;
     }
 
     .setting-help {
       font-size: 12px;
-
       color: #7b8493;
-
       line-height: 1.5;
-
       margin-top: 7px;
     }
 
+    .save-info {
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 12px;
+      background: #f5f8fd;
+      color: #667085;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
     /* =====================================================
-       TABLE
+       TABLEAUX
     ====================================================== */
 
     .table-wrapper {
       width: 100%;
-
       overflow-x: auto;
     }
 
     table {
       width: 100%;
-
       border-collapse: collapse;
-
       min-width: 760px;
     }
 
     th {
       text-align: left;
-
       background: #f5f8fd;
-
       color: #667085;
-
-      padding:
-        11px
-        10px;
-
+      padding: 11px 10px;
       font-size: 11px;
-
       text-transform: uppercase;
     }
 
     td {
-      padding:
-        12px
-        10px;
-
-      border-bottom:
-        1px solid #edf0f4;
-
+      padding: 12px 10px;
+      border-bottom: 1px solid #edf0f4;
       font-size: 12px;
-
       vertical-align: middle;
     }
 
     /* =====================================================
-       STATUS
+       STATUTS
     ====================================================== */
 
     .status {
       display: inline-block;
-
-      padding:
-        5px
-        9px;
-
+      padding: 5px 9px;
       border-radius: 20px;
-
       font-size: 10px;
-
       font-weight: 900;
     }
 
@@ -623,78 +442,49 @@
     }
 
     /* =====================================================
-       MESSAGE
+       MESSAGES
     ====================================================== */
 
     #adminMessage {
       display: none;
-
-      padding:
-        13px
-        15px;
-
+      padding: 13px 15px;
       border-radius: 12px;
-
       margin-bottom: 15px;
-
       font-size: 13px;
-
       font-weight: 700;
-
       line-height: 1.4;
     }
 
     #adminMessage.success {
       display: block;
-
       background: #e8f8ef;
-
       color: #168447;
     }
 
     #adminMessage.error {
       display: block;
-
       background: #feecec;
-
       color: #c62828;
     }
 
     #adminMessage.info {
       display: block;
-
       background: #eaf3ff;
-
       color: #0757d9;
     }
 
-    /* =====================================================
-       EMPTY
-    ====================================================== */
-
     .empty {
       padding: 30px;
-
       text-align: center;
-
       color: #7b8493;
-
       font-size: 13px;
     }
 
-    /* =====================================================
-       ORDER DETAILS
-    ====================================================== */
-
     .order-detail {
       background: #f7f9fc;
-
       border-radius: 12px;
-
       padding: 13px;
-
       line-height: 1.6;
-
       font-size: 12px;
     }
 
@@ -703,32 +493,23 @@
     ====================================================== */
 
     @media (max-width: 900px) {
-
       .dashboard-grid {
-        grid-template-columns:
-          repeat(2, 1fr);
+        grid-template-columns: repeat(2,1fr);
       }
 
       .form-grid-4 {
-        grid-template-columns:
-          repeat(2, 1fr);
+        grid-template-columns: repeat(2,1fr);
       }
-
     }
 
     @media (max-width: 650px) {
-
       .header-inner {
         align-items: flex-start;
-      }
-
-      .header-inner {
         flex-direction: column;
       }
 
       .dashboard-grid {
-        grid-template-columns:
-          repeat(2, 1fr);
+        grid-template-columns: repeat(2,1fr);
       }
 
       .form-grid,
@@ -737,34 +518,27 @@
       }
 
       .admin-container {
-        padding:
-          15px
-          12px
-          70px;
+        padding: 15px 12px 70px;
       }
 
       .card {
         padding: 16px;
       }
-
     }
-
   </style>
 </head>
 
 <body>
 
 <!-- =========================================================
-     LOGIN ADMIN
+     LOGIN
 ========================================================== -->
 
 <section id="loginScreen">
 
   <div class="login-card">
 
-    <div class="admin-logo">
-      N
-    </div>
+    <div class="admin-logo">N</div>
 
     <div class="login-title">
       NOA DIGIT TRADE
@@ -779,7 +553,6 @@
     <form id="adminLoginForm">
 
       <div class="field">
-
         <label for="adminEmail">
           Email administrateur
         </label>
@@ -791,11 +564,9 @@
           autocomplete="username"
           required
         >
-
       </div>
 
       <div class="field">
-
         <label for="adminPassword">
           Mot de passe
         </label>
@@ -807,7 +578,6 @@
           autocomplete="current-password"
           required
         >
-
       </div>
 
       <button
@@ -819,7 +589,6 @@
       </button>
 
     </form>
-
   </div>
 
 </section>
@@ -829,12 +598,7 @@
      APPLICATION ADMIN
 ========================================================== -->
 
-<div
-  id="adminApp"
-  class="hidden"
->
-
-  <!-- HEADER -->
+<div id="adminApp" class="hidden">
 
   <header class="admin-header">
 
@@ -842,13 +606,9 @@
 
       <div class="brand-area">
 
-        <h1>
-          NOA DIGIT TRADE
-        </h1>
+        <h1>NOA DIGIT TRADE</h1>
 
-        <p>
-          Panneau d'administration
-        </p>
+        <p>Panneau d'administration</p>
 
         <div class="admin-badge">
           🔐 ADMINISTRATEUR
@@ -871,12 +631,12 @@
 
   <main class="admin-container">
 
-    <!-- MESSAGE -->
-
     <div id="adminMessage"></div>
 
 
-    <!-- NAVIGATION -->
+    <!-- =====================================================
+         NAVIGATION
+    ====================================================== -->
 
     <nav class="admin-nav">
 
@@ -924,7 +684,7 @@
 
 
     <!-- =====================================================
-         TABLEAU DE BORD
+         DASHBOARD
     ====================================================== -->
 
     <section
@@ -935,85 +695,40 @@
       <div class="dashboard-grid">
 
         <div class="stat-card">
-
-          <div class="stat-label">
-            Total commandes
-          </div>
-
-          <div
-            id="statOrders"
-            class="stat-value"
-          >
-            0
-          </div>
-
+          <div class="stat-label">Total commandes</div>
+          <div id="statOrders" class="stat-value">0</div>
         </div>
 
         <div class="stat-card">
-
-          <div class="stat-label">
-            En attente
-          </div>
-
-          <div
-            id="statPending"
-            class="stat-value"
-          >
-            0
-          </div>
-
+          <div class="stat-label">En attente</div>
+          <div id="statPending" class="stat-value">0</div>
         </div>
 
         <div class="stat-card">
-
-          <div class="stat-label">
-            En traitement
-          </div>
-
-          <div
-            id="statProcessing"
-            class="stat-value"
-          >
-            0
-          </div>
-
+          <div class="stat-label">En traitement</div>
+          <div id="statProcessing" class="stat-value">0</div>
         </div>
 
         <div class="stat-card">
-
-          <div class="stat-label">
-            Utilisateurs
-          </div>
-
-          <div
-            id="statUsers"
-            class="stat-value"
-          >
-            0
-          </div>
-
+          <div class="stat-label">Utilisateurs</div>
+          <div id="statUsers" class="stat-value">0</div>
         </div>
 
       </div>
 
-
-      <!-- TARIFS RAPIDES -->
 
       <div class="card">
 
         <div class="card-header">
 
           <div>
-
             <div class="card-title">
               Configuration actuelle
             </div>
 
             <div class="card-description">
-              Vérifiez rapidement les paramètres utilisés par
-              l'application client.
+              Paramètres utilisés par l'application client.
             </div>
-
           </div>
 
           <button
@@ -1030,66 +745,35 @@
         <div class="form-grid-4">
 
           <div class="setting-box">
-
-            <div class="setting-title">
-              Achat
-            </div>
-
+            <div class="setting-title">Achat</div>
             <strong>
-              <span id="dashboardBuyRate">
-                —
-              </span>
+              <span id="dashboardBuyRate">—</span>
               FCFA
             </strong>
-
           </div>
 
-
           <div class="setting-box">
-
-            <div class="setting-title">
-              Vente
-            </div>
-
+            <div class="setting-title">Vente</div>
             <strong>
-              <span id="dashboardSellRate">
-                —
-              </span>
+              <span id="dashboardSellRate">—</span>
               FCFA
             </strong>
-
           </div>
 
-
           <div class="setting-box">
-
-            <div class="setting-title">
-              TRC20
-            </div>
-
+            <div class="setting-title">TRC20</div>
             <strong>
-              <span id="dashboardTrc20Fee">
-                —
-              </span>
+              <span id="dashboardTrc20Fee">—</span>
               USDT
             </strong>
-
           </div>
 
-
           <div class="setting-box">
-
-            <div class="setting-title">
-              BP20
-            </div>
-
+            <div class="setting-title">BEP20</div>
             <strong>
-              <span id="dashboardBp20Fee">
-                —
-              </span>
+              <span id="dashboardBp20Fee">—</span>
               USDT
             </strong>
-
           </div>
 
         </div>
@@ -1097,14 +781,11 @@
       </div>
 
 
-      <!-- COMMANDES RECENTES -->
-
       <div class="card">
 
         <div class="card-header">
 
           <div>
-
             <div class="card-title">
               Commandes récentes
             </div>
@@ -1112,7 +793,6 @@
             <div class="card-description">
               Les dernières commandes reçues.
             </div>
-
           </div>
 
           <button
@@ -1126,11 +806,9 @@
         </div>
 
         <div id="recentOrders">
-
           <div class="empty">
             Chargement...
           </div>
-
         </div>
 
       </div>
@@ -1152,16 +830,13 @@
         <div class="card-header">
 
           <div>
-
             <div class="card-title">
               Gestion des commandes
             </div>
 
             <div class="card-description">
-              Consultez et mettez à jour les commandes des
-              clients.
+              Consultez et mettez à jour les commandes.
             </div>
-
           </div>
 
           <button
@@ -1178,60 +853,30 @@
         <div class="form-grid">
 
           <div class="field">
-
             <label for="orderStatusFilter">
               Filtrer par statut
             </label>
 
             <select id="orderStatusFilter">
-
-              <option value="">
-                Tous les statuts
-              </option>
-
-              <option value="pending">
-                En attente
-              </option>
-
-              <option value="processing">
-                En traitement
-              </option>
-
-              <option value="completed">
-                Terminée
-              </option>
-
-              <option value="cancelled">
-                Annulée
-              </option>
-
+              <option value="">Tous les statuts</option>
+              <option value="pending">En attente</option>
+              <option value="processing">En traitement</option>
+              <option value="completed">Terminée</option>
+              <option value="cancelled">Annulée</option>
             </select>
-
           </div>
 
 
           <div class="field">
-
             <label for="orderTypeFilter">
               Type de commande
             </label>
 
             <select id="orderTypeFilter">
-
-              <option value="">
-                Achat + Vente
-              </option>
-
-              <option value="buy">
-                Achat
-              </option>
-
-              <option value="sell">
-                Vente
-              </option>
-
+              <option value="">Achat + Vente</option>
+              <option value="buy">Achat</option>
+              <option value="sell">Vente</option>
             </select>
-
           </div>
 
         </div>
@@ -1242,55 +887,26 @@
           <table>
 
             <thead>
-
               <tr>
-
-                <th>
-                  Commande
-                </th>
-
-                <th>
-                  Client
-                </th>
-
-                <th>
-                  Type
-                </th>
-
-                <th>
-                  Montant
-                </th>
-
-                <th>
-                  Réseau
-                </th>
-
-                <th>
-                  Statut
-                </th>
-
-                <th>
-                  Date
-                </th>
-
-                <th>
-                  Action
-                </th>
-
+                <th>Commande</th>
+                <th>Client</th>
+                <th>Type</th>
+                <th>Montant</th>
+                <th>Réseau</th>
+                <th>Statut</th>
+                <th>Date</th>
+                <th>Action</th>
               </tr>
-
             </thead>
 
             <tbody id="ordersTableBody">
 
               <tr>
-
                 <td colspan="8">
                   <div class="empty">
                     Chargement...
                   </div>
                 </td>
-
               </tr>
 
             </tbody>
@@ -1320,8 +936,8 @@
         </div>
 
         <div class="card-description">
-          Ces paramètres sont utilisés pour calculer les
-          commandes des clients.
+          Ces paramètres sont utilisés pour calculer
+          les commandes des clients.
         </div>
 
       </div>
@@ -1450,8 +1066,7 @@
           </div>
 
           <div class="card-description">
-            Définissez les montants minimum et maximum
-            autorisés pour les clients.
+            Définissez les montants minimum et maximum.
           </div>
 
 
@@ -1495,10 +1110,18 @@
 
           <button
             type="submit"
+            id="saveSettingsBtn"
             class="btn btn-primary"
           >
             💾 Enregistrer les paramètres
           </button>
+
+
+          <div class="save-info">
+            Les modifications sont enregistrées directement
+            dans la configuration administrateur Supabase.
+            Elles ne sont pas modifiables depuis l'espace client.
+          </div>
 
         </div>
 
@@ -1521,7 +1144,6 @@
         <div class="card-header">
 
           <div>
-
             <div class="card-title">
               Utilisateurs
             </div>
@@ -1529,7 +1151,6 @@
             <div class="card-description">
               Liste des comptes clients enregistrés.
             </div>
-
           </div>
 
           <button
@@ -1548,45 +1169,23 @@
           <table>
 
             <thead>
-
               <tr>
-
-                <th>
-                  Nom
-                </th>
-
-                <th>
-                  Téléphone
-                </th>
-
-                <th>
-                  Email
-                </th>
-
-                <th>
-                  Pays
-                </th>
-
-                <th>
-                  Inscription
-                </th>
-
+                <th>Nom</th>
+                <th>Téléphone</th>
+                <th>Email</th>
+                <th>Pays</th>
+                <th>Inscription</th>
               </tr>
-
             </thead>
 
             <tbody id="usersTableBody">
 
               <tr>
-
                 <td colspan="5">
-
                   <div class="empty">
                     Chargement...
                   </div>
-
                 </td>
-
               </tr>
 
             </tbody>
@@ -1614,7 +1213,6 @@
         <div class="card-header">
 
           <div>
-
             <div class="card-title">
               Litiges clients
             </div>
@@ -1622,7 +1220,6 @@
             <div class="card-description">
               Consultez les problèmes signalés par les clients.
             </div>
-
           </div>
 
           <button
@@ -1659,30 +1256,13 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-
 <script>
 
 /* ============================================================
    NOA DIGIT TRADE
-   ADMIN.JS — VERSION CORRIGÉE
-   ============================================================
-
-   Tables utilisées :
-   - profiles
-   - orders
-   - app_settings
-   - disputes
-
-   Sécurité :
-   - Auth Supabase obligatoire
-   - rôle "admin" obligatoire
-   - RLS côté Supabase indispensable
+   ADMIN
+   VERSION CORRIGÉE
    ============================================================ */
-
-
-/* ============================================================
-   CONFIGURATION SUPABASE
-============================================================ */
 
 const SUPABASE_URL =
   'https://vowafwsvrjpkhkocptih.supabase.co';
@@ -1698,17 +1278,14 @@ const supabaseClient =
 
 
 /* ============================================================
-   VARIABLES GLOBALES
+   VARIABLES
 ============================================================ */
 
 let currentAdmin = null;
-
 let adminProfile = null;
 
 let allOrders = [];
-
 let allUsers = [];
-
 let allDisputes = [];
 
 let settings = null;
@@ -1740,7 +1317,7 @@ const adminMessage =
 
 
 /* ============================================================
-   MESSAGE LOGIN
+   MESSAGES
 ============================================================ */
 
 function showLoginMessage(
@@ -1748,135 +1325,85 @@ function showLoginMessage(
   type = 'error'
 ) {
 
-  if (!loginMessage) {
-    return;
-  }
+  if (!loginMessage) return;
 
-  loginMessage.textContent =
-    message;
-
-  loginMessage.style.display =
-    'block';
-
-  loginMessage.style.padding =
-    '12px 14px';
-
-  loginMessage.style.borderRadius =
-    '10px';
-
-  loginMessage.style.marginBottom =
-    '15px';
-
-  loginMessage.style.fontSize =
-    '13px';
-
-  loginMessage.style.fontWeight =
-    '700';
+  loginMessage.textContent = message;
+  loginMessage.style.display = 'block';
+  loginMessage.style.padding = '12px 14px';
+  loginMessage.style.borderRadius = '10px';
+  loginMessage.style.marginBottom = '15px';
+  loginMessage.style.fontSize = '13px';
+  loginMessage.style.fontWeight = '700';
 
   if (type === 'success') {
 
-    loginMessage.style.background =
-      '#e8f8ef';
-
-    loginMessage.style.color =
-      '#168447';
+    loginMessage.style.background = '#e8f8ef';
+    loginMessage.style.color = '#168447';
 
   } else if (type === 'info') {
 
-    loginMessage.style.background =
-      '#eaf3ff';
-
-    loginMessage.style.color =
-      '#0757d9';
+    loginMessage.style.background = '#eaf3ff';
+    loginMessage.style.color = '#0757d9';
 
   } else {
 
-    loginMessage.style.background =
-      '#feecec';
-
-    loginMessage.style.color =
-      '#c62828';
+    loginMessage.style.background = '#feecec';
+    loginMessage.style.color = '#c62828';
 
   }
 
 }
 
-
-/* ============================================================
-   MASQUER MESSAGE LOGIN
-============================================================ */
 
 function hideLoginMessage() {
 
-  if (!loginMessage) {
-    return;
-  }
+  if (!loginMessage) return;
 
-  loginMessage.style.display =
-    'none';
-
-  loginMessage.textContent =
-    '';
+  loginMessage.style.display = 'none';
+  loginMessage.textContent = '';
 
 }
 
-
-/* ============================================================
-   MESSAGE ADMIN
-============================================================ */
 
 function showAdminMessage(
   message,
   type = 'info'
 ) {
 
-  if (!adminMessage) {
-    return;
-  }
+  if (!adminMessage) return;
 
-  adminMessage.textContent =
-    message;
+  adminMessage.textContent = message;
+  adminMessage.className = '';
 
-  adminMessage.className =
-    '';
+  adminMessage.classList.add(type);
 
-  adminMessage.classList.add(
-    type
-  );
-
-  window.clearTimeout(
+  clearTimeout(
     showAdminMessage.timeout
   );
 
   showAdminMessage.timeout =
-    window.setTimeout(
+    setTimeout(
       function() {
 
-        adminMessage.className =
-          '';
+        adminMessage.className = '';
 
       },
-      5000
+      6000
     );
 
 }
 
 
 /* ============================================================
-   FORMAT NOMBRE
+   FORMAT
 ============================================================ */
 
 function formatNumber(value) {
 
-  const number =
-    Number(value);
+  const number = Number(value);
 
-  if (
-    !Number.isFinite(number)
-  ) {
-
+  if (!Number.isFinite(number)) {
     return '0';
-
   }
 
   return new Intl.NumberFormat(
@@ -1886,21 +1413,12 @@ function formatNumber(value) {
 }
 
 
-/* ============================================================
-   FORMAT USDT
-============================================================ */
-
 function formatUsdt(value) {
 
-  const number =
-    Number(value);
+  const number = Number(value);
 
-  if (
-    !Number.isFinite(number)
-  ) {
-
+  if (!Number.isFinite(number)) {
     return '0';
-
   }
 
   return new Intl.NumberFormat(
@@ -1914,29 +1432,14 @@ function formatUsdt(value) {
 }
 
 
-/* ============================================================
-   FORMAT DATE
-============================================================ */
-
 function formatDate(value) {
 
-  if (!value) {
+  if (!value) return '—';
 
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
     return '—';
-
-  }
-
-  const date =
-    new Date(value);
-
-  if (
-    Number.isNaN(
-      date.getTime()
-    )
-  ) {
-
-    return '—';
-
   }
 
   return date.toLocaleString(
@@ -1951,7 +1454,7 @@ function formatDate(value) {
 
 
 /* ============================================================
-   ESCAPE HTML
+   SECURITE HTML
 ============================================================ */
 
 function escapeHtml(value) {
@@ -1960,268 +1463,137 @@ function escapeHtml(value) {
     value === null ||
     value === undefined
   ) {
-
     return '';
-
   }
 
   return String(value)
-    .replaceAll(
-      '&',
-      '&amp;'
-    )
-    .replaceAll(
-      '<',
-      '&lt;'
-    )
-    .replaceAll(
-      '>',
-      '&gt;'
-    )
-    .replaceAll(
-      '"',
-      '&quot;'
-    )
-    .replaceAll(
-      "'",
-      '&#039;'
-    );
+    .replaceAll('&','&amp;')
+    .replaceAll('<','&lt;')
+    .replaceAll('>','&gt;')
+    .replaceAll('"','&quot;')
+    .replaceAll("'",'&#039;');
 
 }
 
 
 /* ============================================================
-   NORMALISATION STATUT
+   STATUT
 ============================================================ */
 
 function normalizeStatus(status) {
 
-  if (!status) {
+  if (!status) return 'pending';
 
-    return 'pending';
-
-  }
-
-  return String(
-    status
-  )
+  return String(status)
     .trim()
     .toLowerCase();
 
 }
 
 
-/* ============================================================
-   LABEL STATUT
-============================================================ */
-
 function statusLabel(status) {
 
-  const normalized =
-    normalizeStatus(
-      status
-    );
+  const value =
+    normalizeStatus(status);
 
   const labels = {
-
-    pending:
-      'En attente',
-
-    processing:
-      'En traitement',
-
-    completed:
-      'Terminée',
-
-    cancelled:
-      'Annulée',
-
-    disputed:
-      'Litige',
-
-    dispute:
-      'Litige'
-
+    pending: 'En attente',
+    processing: 'En traitement',
+    completed: 'Terminée',
+    cancelled: 'Annulée',
+    disputed: 'Litige',
+    dispute: 'Litige'
   };
 
-  return (
-    labels[normalized] ||
-    normalized ||
-    'Inconnu'
-  );
+  return labels[value] || value || 'Inconnu';
 
 }
 
-
-/* ============================================================
-   CLASSE CSS STATUT
-============================================================ */
 
 function statusClass(status) {
 
-  const normalized =
-    normalizeStatus(
-      status
-    );
+  const value =
+    normalizeStatus(status);
 
   if (
-    normalized ===
-    'disputed'
+    value === 'disputed' ||
+    value === 'dispute'
   ) {
-
     return 'dispute';
-
   }
 
-  return normalized;
+  return value;
 
 }
 
-
-/* ============================================================
-   LABEL TYPE COMMANDE
-============================================================ */
 
 function orderTypeLabel(type) {
 
-  const normalized =
-    String(
-      type || ''
-    )
+  const value =
+    String(type || '')
       .trim()
       .toLowerCase();
 
-  if (
-    normalized === 'buy'
-  ) {
+  if (value === 'buy') return 'Achat';
+  if (value === 'sell') return 'Vente';
 
-    return 'Achat';
-
-  }
-
-  if (
-    normalized === 'sell'
-  ) {
-
-    return 'Vente';
-
-  }
-
-  return (
-    type ||
-    '—'
-  );
+  return type || '—';
 
 }
 
 
-/* ============================================================
-   LABEL RESEAU
-============================================================ */
-
 function networkLabel(network) {
 
-  if (!network) {
-
-    return '—';
-
-  }
+  if (!network) return '—';
 
   const value =
-    String(
-      network
-    )
+    String(network)
       .trim()
       .toUpperCase();
 
-  if (
-    value === 'TRC20'
-  ) {
-
+  if (value === 'TRC20') {
     return 'TRC20';
-
   }
 
   if (
     value === 'BEP20' ||
     value === 'BP20'
   ) {
-
     return 'BEP20';
-
   }
 
-  return escapeHtml(
-    network
-  );
+  return escapeHtml(network);
 
 }
 
 
 /* ============================================================
-   AFFICHER LOGIN
+   AFFICHAGE
 ============================================================ */
 
 function showLogin() {
 
-  if (loginScreen) {
-
-    loginScreen.classList.remove(
-      'hidden'
-    );
-
-  }
-
-  if (adminApp) {
-
-    adminApp.classList.add(
-      'hidden'
-    );
-
-  }
+  loginScreen?.classList.remove('hidden');
+  adminApp?.classList.add('hidden');
 
 }
 
-
-/* ============================================================
-   AFFICHER ADMIN
-============================================================ */
 
 function showAdmin() {
 
-  if (loginScreen) {
-
-    loginScreen.classList.add(
-      'hidden'
-    );
-
-  }
-
-  if (adminApp) {
-
-    adminApp.classList.remove(
-      'hidden'
-    );
-
-  }
+  loginScreen?.classList.add('hidden');
+  adminApp?.classList.remove('hidden');
 
 }
 
-
-/* ============================================================
-   RESET DONNEES
-============================================================ */
 
 function resetAdminData() {
 
   currentAdmin = null;
-
   adminProfile = null;
 
   allOrders = [];
-
   allUsers = [];
-
   allDisputes = [];
 
   settings = null;
@@ -2230,16 +1602,12 @@ function resetAdminData() {
 
 
 /* ============================================================
-   VERIFICATION SESSION
+   SESSION
 ============================================================ */
 
 async function checkSession() {
 
-  if (isCheckingSession) {
-
-    return;
-
-  }
+  if (isCheckingSession) return;
 
   isCheckingSession = true;
 
@@ -2262,12 +1630,10 @@ async function checkSession() {
       );
 
       resetAdminData();
-
       showLogin();
 
       showLoginMessage(
-        'Impossible de vérifier la session.',
-        'error'
+        'Impossible de vérifier la session.'
       );
 
       return;
@@ -2282,7 +1648,6 @@ async function checkSession() {
     ) {
 
       resetAdminData();
-
       showLogin();
 
       return;
@@ -2293,13 +1658,11 @@ async function checkSession() {
     currentAdmin =
       data.session.user;
 
-
     await verifyAdmin();
 
   } finally {
 
-    isCheckingSession =
-      false;
+    isCheckingSession = false;
 
   }
 
@@ -2318,7 +1681,6 @@ async function verifyAdmin() {
   ) {
 
     showLogin();
-
     return false;
 
   }
@@ -2352,12 +1714,10 @@ async function verifyAdmin() {
       .signOut();
 
     resetAdminData();
-
     showLogin();
 
     showLoginMessage(
-      'Impossible de vérifier les droits administrateur.',
-      'error'
+      'Impossible de vérifier les droits administrateur.'
     );
 
     return false;
@@ -2367,9 +1727,7 @@ async function verifyAdmin() {
 
   if (
     !data ||
-    String(data.role)
-      .toLowerCase() !==
-      'admin'
+    String(data.role).toLowerCase() !== 'admin'
   ) {
 
     await supabaseClient
@@ -2377,12 +1735,10 @@ async function verifyAdmin() {
       .signOut();
 
     resetAdminData();
-
     showLogin();
 
     showLoginMessage(
-      'Accès refusé : ce compte n’est pas administrateur.',
-      'error'
+      'Accès refusé : ce compte n’est pas administrateur.'
     );
 
     return false;
@@ -2390,15 +1746,11 @@ async function verifyAdmin() {
   }
 
 
-  adminProfile =
-    data;
-
+  adminProfile = data;
 
   showAdmin();
 
-
   await loadEverything();
-
 
   return true;
 
@@ -2406,7 +1758,7 @@ async function verifyAdmin() {
 
 
 /* ============================================================
-   CONNEXION ADMIN
+   LOGIN
 ============================================================ */
 
 if (adminLoginForm) {
@@ -2417,27 +1769,15 @@ if (adminLoginForm) {
 
       event.preventDefault();
 
-
-      const emailInput =
+      const email =
         document.getElementById(
           'adminEmail'
-        );
-
-      const passwordInput =
-        document.getElementById(
-          'adminPassword'
-        );
-
-
-      const email =
-        emailInput
-          ? emailInput.value.trim()
-          : '';
+        )?.value.trim();
 
       const password =
-        passwordInput
-          ? passwordInput.value
-          : '';
+        document.getElementById(
+          'adminPassword'
+        )?.value || '';
 
 
       if (!email) {
@@ -2475,13 +1815,8 @@ if (adminLoginForm) {
         await supabaseClient
           .auth
           .signInWithPassword({
-
-            email:
-              email,
-
-            password:
-              password
-
+            email,
+            password
           });
 
 
@@ -2501,10 +1836,7 @@ if (adminLoginForm) {
       }
 
 
-      if (
-        !data ||
-        !data.user
-      ) {
+      if (!data?.user) {
 
         showLoginMessage(
           'Connexion impossible.'
@@ -2515,9 +1847,7 @@ if (adminLoginForm) {
       }
 
 
-      currentAdmin =
-        data.user;
-
+      currentAdmin = data.user;
 
       showLoginMessage(
         'Connexion réussie. Vérification des droits...',
@@ -2534,7 +1864,7 @@ if (adminLoginForm) {
 
 
 /* ============================================================
-   DECONNEXION
+   LOGOUT
 ============================================================ */
 
 if (logoutAdminBtn) {
@@ -2569,9 +1899,7 @@ if (logoutAdminBtn) {
 
 
       resetAdminData();
-
       showLogin();
-
       hideLoginMessage();
 
     }
@@ -2585,9 +1913,7 @@ if (logoutAdminBtn) {
 ============================================================ */
 
 document
-  .querySelectorAll(
-    '.admin-nav-btn'
-  )
+  .querySelectorAll('.admin-nav-btn')
   .forEach(
     function(button) {
 
@@ -2607,9 +1933,7 @@ document
 
 
 document
-  .querySelectorAll(
-    '[data-go-page]'
-  )
+  .querySelectorAll('[data-go-page]')
   .forEach(
     function(button) {
 
@@ -2628,91 +1952,55 @@ document
   );
 
 
-function switchAdminPage(
-  pageId
-) {
+function switchAdminPage(pageId) {
 
-  if (!pageId) {
-
-    return;
-
-  }
+  if (!pageId) return;
 
 
   document
-    .querySelectorAll(
-      '.admin-page'
-    )
+    .querySelectorAll('.admin-page')
     .forEach(
       function(page) {
 
-        page.classList.remove(
-          'active'
-        );
+        page.classList.remove('active');
 
       }
     );
 
 
-  const targetPage =
-    document.getElementById(
-      pageId
-    );
+  const target =
+    document.getElementById(pageId);
 
 
-  if (targetPage) {
-
-    targetPage.classList.add(
-      'active'
-    );
-
+  if (target) {
+    target.classList.add('active');
   }
 
 
   document
-    .querySelectorAll(
-      '.admin-nav-btn'
-    )
+    .querySelectorAll('.admin-nav-btn')
     .forEach(
       function(button) {
 
         button.classList.toggle(
           'active',
-          button.dataset.page ===
-          pageId
+          button.dataset.page === pageId
         );
 
       }
     );
 
 
-  if (
-    pageId ===
-    'ordersAdminPage'
-  ) {
-
+  if (pageId === 'ordersAdminPage') {
     renderOrders();
-
   }
 
-
-  if (
-    pageId ===
-    'usersAdminPage'
-  ) {
-
+  if (pageId === 'usersAdminPage') {
     renderUsers();
-
   }
 
-
-  if (
-    pageId ===
-    'disputesAdminPage'
-  ) {
-
+  if (pageId === 'disputesAdminPage') {
     renderDisputes();
-
   }
 
 }
@@ -2734,27 +2022,20 @@ async function loadEverything() {
     await Promise.allSettled([
 
       loadSettings(),
-
       loadOrders(),
-
       loadUsers(),
-
       loadDisputes()
 
     ]);
 
 
   results.forEach(
-    function(result, index) {
+    function(result,index) {
 
-      if (
-        result.status ===
-        'rejected'
-      ) {
+      if (result.status === 'rejected') {
 
         console.error(
-          'Erreur chargement #' +
-          index,
+          'Erreur chargement #' + index,
           result.reason
         );
 
@@ -2770,7 +2051,7 @@ async function loadEverything() {
 
 
 /* ============================================================
-   CHARGEMENT PARAMETRES
+   CHARGEMENT APP_SETTINGS
 ============================================================ */
 
 async function loadSettings() {
@@ -2781,7 +2062,9 @@ async function loadSettings() {
   } =
     await supabaseClient
       .from('app_settings')
-      .select('*')
+      .select(
+        'id,country,buy_rate,sell_rate,min_order_cfa,max_order_cfa,trc20_fee_usdt,bp20_fee_usdt,orange_money_number,updated_at'
+      )
       .eq(
         'id',
         1
@@ -2798,8 +2081,11 @@ async function loadSettings() {
 
     settings = null;
 
+    updateSettingsDisplay(null);
+
     showAdminMessage(
-      'Impossible de charger les paramètres commerciaux.',
+      'Impossible de charger les paramètres commerciaux : ' +
+      error.message,
       'error'
     );
 
@@ -2812,8 +2098,11 @@ async function loadSettings() {
 
     settings = null;
 
-    updateSettingsDisplay(
-      null
+    updateSettingsDisplay(null);
+
+    showAdminMessage(
+      'La configuration app_settings avec id = 1 est introuvable.',
+      'error'
     );
 
     return;
@@ -2821,13 +2110,9 @@ async function loadSettings() {
   }
 
 
-  settings =
-    data;
+  settings = data;
 
-
-  updateSettingsDisplay(
-    data
-  );
+  updateSettingsDisplay(data);
 
 }
 
@@ -2836,102 +2121,71 @@ async function loadSettings() {
    AFFICHAGE PARAMETRES
 ============================================================ */
 
-function updateSettingsDisplay(
-  data
-) {
+function updateSettingsDisplay(data) {
 
   const buyRate =
-    document.getElementById(
-      'buyRate'
-    );
+    document.getElementById('buyRate');
 
   const sellRate =
-    document.getElementById(
-      'sellRate'
-    );
+    document.getElementById('sellRate');
 
   const trc20Fee =
-    document.getElementById(
-      'trc20FeeInput'
-    );
+    document.getElementById('trc20FeeInput');
 
   const bp20Fee =
-    document.getElementById(
-      'bp20FeeInput'
-    );
+    document.getElementById('bp20FeeInput');
 
   const minOrder =
-    document.getElementById(
-      'minOrderInput'
-    );
+    document.getElementById('minOrderInput');
 
   const maxOrder =
-    document.getElementById(
-      'maxOrderInput'
-    );
+    document.getElementById('maxOrderInput');
 
 
   if (!data) {
 
     if (buyRate) buyRate.value = '';
-
     if (sellRate) sellRate.value = '';
-
     if (trc20Fee) trc20Fee.value = '';
-
     if (bp20Fee) bp20Fee.value = '';
-
     if (minOrder) minOrder.value = '';
-
     if (maxOrder) maxOrder.value = '';
 
   } else {
 
-    if (buyRate) {
+    /*
+     * IMPORTANT :
+     * vrais noms des colonnes Supabase
+     */
 
+    if (buyRate) {
       buyRate.value =
         data.buy_rate ?? '';
-
     }
-
 
     if (sellRate) {
-
       sellRate.value =
         data.sell_rate ?? '';
-
     }
-
 
     if (trc20Fee) {
-
       trc20Fee.value =
-        data.trc20_fee ?? '';
-
+        data.trc20_fee_usdt ?? '';
     }
-
 
     if (bp20Fee) {
-
       bp20Fee.value =
-        data.bp20_fee ?? '';
-
+        data.bp20_fee_usdt ?? '';
     }
-
 
     if (minOrder) {
-
       minOrder.value =
-        data.min_order ?? '';
-
+        data.min_order_cfa ?? '';
     }
 
-
     if (maxOrder) {
-
       maxOrder.value =
-        data.max_order ?? '';
-
+        data.max_order_cfa ?? '';
     }
 
   }
@@ -2962,9 +2216,7 @@ function updateSettingsDisplay(
 
     dashboardBuyRate.textContent =
       data
-        ? formatNumber(
-            data.buy_rate
-          )
+        ? formatNumber(data.buy_rate)
         : '—';
 
   }
@@ -2974,9 +2226,7 @@ function updateSettingsDisplay(
 
     dashboardSellRate.textContent =
       data
-        ? formatNumber(
-            data.sell_rate
-          )
+        ? formatNumber(data.sell_rate)
         : '—';
 
   }
@@ -2986,9 +2236,7 @@ function updateSettingsDisplay(
 
     dashboardTrc20Fee.textContent =
       data
-        ? formatUsdt(
-            data.trc20_fee
-          )
+        ? formatUsdt(data.trc20_fee_usdt)
         : '—';
 
   }
@@ -2998,9 +2246,7 @@ function updateSettingsDisplay(
 
     dashboardBp20Fee.textContent =
       data
-        ? formatUsdt(
-            data.bp20_fee
-          )
+        ? formatUsdt(data.bp20_fee_usdt)
         : '—';
 
   }
@@ -3009,7 +2255,8 @@ function updateSettingsDisplay(
 
 
 /* ============================================================
-   ENREGISTREMENT PARAMETRES
+   SAUVEGARDE PARAMETRES
+   CORRECTION PRINCIPALE
 ============================================================ */
 
 const settingsForm =
@@ -3027,6 +2274,10 @@ if (settingsForm) {
       event.preventDefault();
 
 
+      /* ------------------------------------------------------
+         Vérification configuration
+      ------------------------------------------------------ */
+
       if (
         !settings ||
         settings.id === undefined ||
@@ -3042,6 +2293,10 @@ if (settingsForm) {
 
       }
 
+
+      /* ------------------------------------------------------
+         Lecture des champs
+      ------------------------------------------------------ */
 
       const buyRate =
         Number(
@@ -3091,6 +2346,10 @@ if (settingsForm) {
         );
 
 
+      /* ------------------------------------------------------
+         Validation
+      ------------------------------------------------------ */
+
       const values = [
         buyRate,
         sellRate,
@@ -3104,9 +2363,7 @@ if (settingsForm) {
       if (
         values.some(
           value =>
-            !Number.isFinite(
-              value
-            )
+            !Number.isFinite(value)
         )
       ) {
 
@@ -3166,8 +2423,7 @@ if (settingsForm) {
 
 
       if (
-        minOrder >
-        maxOrder
+        minOrder > maxOrder
       ) {
 
         showAdminMessage(
@@ -3180,88 +2436,289 @@ if (settingsForm) {
       }
 
 
+      /* ------------------------------------------------------
+         BOUTON
+      ------------------------------------------------------ */
+
+      const saveButton =
+        document.getElementById(
+          'saveSettingsBtn'
+        );
+
+
+      if (saveButton) {
+
+        saveButton.disabled = true;
+        saveButton.textContent =
+          '⏳ Enregistrement...';
+
+      }
+
+
       showAdminMessage(
         'Enregistrement des paramètres...',
         'info'
       );
 
 
-      const {
-        data,
-        error
-      } =
-        await supabaseClient
-          .from('app_settings')
-          .update({
+      try {
 
-            buy_rate:
+        /* ----------------------------------------------------
+           UPDATE AVEC LES VRAIS NOMS DE COLONNES
+        ---------------------------------------------------- */
+
+        const updateValues = {
+
+          buy_rate:
+            buyRate,
+
+          sell_rate:
+            sellRate,
+
+          min_order_cfa:
+            minOrder,
+
+          max_order_cfa:
+            maxOrder,
+
+          trc20_fee_usdt:
+            trc20Fee,
+
+          bp20_fee_usdt:
+            bp20Fee,
+
+          updated_at:
+            new Date().toISOString()
+
+        };
+
+
+        console.log(
+          'Valeurs envoyées à app_settings:',
+          updateValues
+        );
+
+
+        const {
+          error
+        } =
+          await supabaseClient
+            .from('app_settings')
+            .update(
+              updateValues
+            )
+            .eq(
+              'id',
+              settings.id
+            );
+
+
+        /* ----------------------------------------------------
+           ERREUR SUPABASE
+        ---------------------------------------------------- */
+
+        if (error) {
+
+          console.error(
+            'ERREUR SUPABASE SAUVEGARDE:',
+            error
+          );
+
+          showAdminMessage(
+            '❌ Erreur Supabase : ' +
+            (
+              error.message ||
+              'erreur inconnue'
+            ),
+            'error'
+          );
+
+          return;
+
+        }
+
+
+        /* ----------------------------------------------------
+           RELECTURE DIRECTE DE LA BASE
+        ---------------------------------------------------- */
+
+        const {
+          data: verifyData,
+          error: verifyError
+        } =
+          await supabaseClient
+            .from('app_settings')
+            .select(
+              'id,buy_rate,sell_rate,min_order_cfa,max_order_cfa,trc20_fee_usdt,bp20_fee_usdt,updated_at'
+            )
+            .eq(
+              'id',
+              settings.id
+            )
+            .maybeSingle();
+
+
+        if (verifyError) {
+
+          console.error(
+            'Erreur vérification:',
+            verifyError
+          );
+
+          showAdminMessage(
+            'Les données ont été envoyées, mais leur vérification a échoué : ' +
+            verifyError.message,
+            'error'
+          );
+
+          return;
+
+        }
+
+
+        if (!verifyData) {
+
+          showAdminMessage(
+            'La sauvegarde a été envoyée mais aucune configuration n’a pu être relue.',
+            'error'
+          );
+
+          return;
+
+        }
+
+
+        /* ----------------------------------------------------
+           VERIFICATION VALEURS
+        ---------------------------------------------------- */
+
+        const savedBuy =
+          Number(
+            verifyData.buy_rate
+          );
+
+        const savedSell =
+          Number(
+            verifyData.sell_rate
+          );
+
+        const savedMin =
+          Number(
+            verifyData.min_order_cfa
+          );
+
+        const savedMax =
+          Number(
+            verifyData.max_order_cfa
+          );
+
+        const savedTrc =
+          Number(
+            verifyData.trc20_fee_usdt
+          );
+
+        const savedBp =
+          Number(
+            verifyData.bp20_fee_usdt
+          );
+
+
+        const success =
+          savedBuy === buyRate &&
+          savedSell === sellRate &&
+          savedMin === minOrder &&
+          savedMax === maxOrder &&
+          savedTrc === trc20Fee &&
+          savedBp === bp20Fee;
+
+
+        if (!success) {
+
+          console.error(
+            'Valeurs demandées:',
+            {
               buyRate,
-
-            sell_rate:
               sellRate,
-
-            trc20_fee:
-              trc20Fee,
-
-            bp20_fee:
-              bp20Fee,
-
-            min_order:
               minOrder,
-
-            max_order:
               maxOrder,
+              trc20Fee,
+              bp20Fee
+            }
+          );
 
-            updated_at:
-              new Date().toISOString()
-
-          })
-          .eq(
-            'id',
-            settings.id
-          )
-          .select()
-          .maybeSingle();
+          console.error(
+            'Valeurs relues:',
+            verifyData
+          );
 
 
-      if (error) {
+          showAdminMessage(
+            '❌ La base a répondu, mais les valeurs enregistrées ne correspondent pas aux valeurs demandées.',
+            'error'
+          );
+
+          return;
+
+        }
+
+
+        /* ----------------------------------------------------
+           ACTUALISATION LOCALE
+        ---------------------------------------------------- */
+
+        settings = {
+          ...settings,
+          ...verifyData
+        };
+
+
+        updateSettingsDisplay(
+          settings
+        );
+
+
+        updateDashboard();
+
+
+        showAdminMessage(
+          '✅ Les paramètres ont été enregistrés avec succès.',
+          'success'
+        );
+
+
+        console.log(
+          'SAUVEGARDE PARAMETRES REUSSIE:',
+          settings
+        );
+
+      } catch (error) {
 
         console.error(
-          'Erreur sauvegarde paramètres:',
+          'Erreur inattendue:',
           error
         );
 
         showAdminMessage(
-          'Impossible d’enregistrer les paramètres. Vérifiez les policies RLS admin.',
+          '❌ Une erreur inattendue est survenue : ' +
+          (
+            error.message ||
+            error
+          ),
           'error'
         );
 
-        return;
+      } finally {
+
+        if (saveButton) {
+
+          saveButton.disabled = false;
+
+          saveButton.textContent =
+            '💾 Enregistrer les paramètres';
+
+        }
 
       }
-
-
-      if (data) {
-
-        settings =
-          data;
-
-      } else {
-
-        await loadSettings();
-
-      }
-
-
-      updateSettingsDisplay(
-        settings
-      );
-
-
-      showAdminMessage(
-        'Les paramètres commerciaux ont été enregistrés avec succès.',
-        'success'
-      );
 
     }
   );
@@ -3270,7 +2727,7 @@ if (settingsForm) {
 
 
 /* ============================================================
-   CHARGEMENT COMMANDES
+   COMMANDES
 ============================================================ */
 
 async function loadOrders() {
@@ -3300,13 +2757,7 @@ async function loadOrders() {
     allOrders = [];
 
     renderOrders();
-
     renderRecentOrders();
-
-    showAdminMessage(
-      'Impossible de charger les commandes.',
-      'error'
-    );
 
     return;
 
@@ -3320,15 +2771,10 @@ async function loadOrders() {
 
 
   renderOrders();
-
   renderRecentOrders();
 
 }
 
-
-/* ============================================================
-   RENDU COMMANDES
-============================================================ */
 
 function renderOrders() {
 
@@ -3338,11 +2784,7 @@ function renderOrders() {
     );
 
 
-  if (!tbody) {
-
-    return;
-
-  }
+  if (!tbody) return;
 
 
   const statusFilter =
@@ -3365,14 +2807,10 @@ function renderOrders() {
 
     orders =
       orders.filter(
-        function(order) {
-
-          return normalizeStatus(
+        order =>
+          normalizeStatus(
             order.status
-          ) ===
-          statusFilter;
-
-        }
+          ) === statusFilter
       );
 
   }
@@ -3382,16 +2820,11 @@ function renderOrders() {
 
     orders =
       orders.filter(
-        function(order) {
-
-          return String(
-            order.order_type ||
-            ''
-          )
-            .toLowerCase() ===
-            typeFilter;
-
-        }
+        order =>
+          String(
+            order.order_type || ''
+          ).toLowerCase() ===
+          typeFilter
       );
 
   }
@@ -3415,115 +2848,90 @@ function renderOrders() {
 
 
   tbody.innerHTML =
-    orders
-      .map(
-        function(order) {
+    orders.map(
+      function(order) {
 
-          const type =
-            orderTypeLabel(
-              order.order_type
-            );
+        const status =
+          normalizeStatus(
+            order.status
+          );
 
+        const orderId =
+          escapeHtml(
+            order.id
+          );
 
-          const status =
-            normalizeStatus(
-              order.status
-            );
+        return `
+          <tr>
 
+            <td>
+              <strong>
+                ${orderId}
+              </strong>
+            </td>
 
-          const amountCfa =
-            order.amount_cfa;
+            <td>
+              ${escapeHtml(
+                order.user_id || '—'
+              )}
+            </td>
 
+            <td>
+              ${escapeHtml(
+                orderTypeLabel(
+                  order.order_type
+                )
+              )}
+            </td>
 
-          const orderId =
-            escapeHtml(
-              order.id
-            );
+            <td>
+              ${formatNumber(
+                order.amount_cfa
+              )}
+              FCFA
+            </td>
 
+            <td>
+              ${networkLabel(
+                order.network
+              )}
+            </td>
 
-          return `
-            <tr>
-
-              <td>
-                <strong>
-                  ${orderId}
-                </strong>
-              </td>
-
-              <td>
-                <span
-                  title="${escapeHtml(
-                    order.user_id || ''
-                  )}"
-                >
-                  ${escapeHtml(
-                    order.user_id ||
-                    '—'
-                  )}
-                </span>
-              </td>
-
-              <td>
+            <td>
+              <span
+                class="status ${escapeHtml(
+                  statusClass(status)
+                )}"
+              >
                 ${escapeHtml(
-                  type
+                  statusLabel(status)
                 )}
-              </td>
+              </span>
+            </td>
 
-              <td>
-                ${formatNumber(
-                  amountCfa
-                )}
-                FCFA
-              </td>
+            <td>
+              ${formatDate(
+                order.created_at
+              )}
+            </td>
 
-              <td>
-                ${networkLabel(
-                  order.network
-                )}
-              </td>
+            <td>
 
-              <td>
+              <button
+                type="button"
+                class="btn btn-primary btn-small"
+                data-order-id="${orderId}"
+              >
+                Modifier
+              </button>
 
-                <span
-                  class="status ${escapeHtml(
-                    statusClass(
-                      status
-                    )
-                  )}"
-                >
-                  ${escapeHtml(
-                    statusLabel(
-                      status
-                    )
-                  )}
-                </span>
+            </td>
 
-              </td>
+          </tr>
+        `;
 
-              <td>
-                ${formatDate(
-                  order.created_at
-                )}
-              </td>
-
-              <td>
-
-                <button
-                  type="button"
-                  class="btn btn-primary btn-small"
-                  data-order-id="${orderId}"
-                >
-                  Modifier
-                </button>
-
-              </td>
-
-            </tr>
-          `;
-
-        }
-      )
-      .join('');
+      }
+    ).join('');
 
 
   tbody
@@ -3550,105 +2958,13 @@ function renderOrders() {
 }
 
 
-/* ============================================================
-   FILTRES COMMANDES
-============================================================ */
-
-const orderStatusFilter =
-  document.getElementById(
-    'orderStatusFilter'
-  );
-
-
-if (orderStatusFilter) {
-
-  orderStatusFilter.addEventListener(
-    'change',
-    renderOrders
-  );
-
-}
-
-
-const orderTypeFilter =
-  document.getElementById(
-    'orderTypeFilter'
-  );
-
-
-if (orderTypeFilter) {
-
-  orderTypeFilter.addEventListener(
-    'change',
-    renderOrders
-  );
-
-}
-
-
-/* ============================================================
-   ACTUALISER COMMANDES
-============================================================ */
-
-const refreshOrdersBtn =
-  document.getElementById(
-    'refreshOrdersBtn'
-  );
-
-
-if (refreshOrdersBtn) {
-
-  refreshOrdersBtn.addEventListener(
-    'click',
-    async function() {
-
-      refreshOrdersBtn.disabled =
-        true;
-
-      try {
-
-        await loadOrders();
-
-        updateDashboard();
-
-        showAdminMessage(
-          'Commandes actualisées.',
-          'success'
-        );
-
-      } finally {
-
-        refreshOrdersBtn.disabled =
-          false;
-
-      }
-
-    }
-  );
-
-}
-
-
-/* ============================================================
-   MODIFIER STATUT COMMANDE
-============================================================ */
-
-async function openOrderStatus(
-  orderId
-) {
+async function openOrderStatus(orderId) {
 
   const order =
     allOrders.find(
-      function(item) {
-
-        return String(
-          item.id
-        ) ===
-        String(
-          orderId
-        );
-
-      }
+      item =>
+        String(item.id) ===
+        String(orderId)
     );
 
 
@@ -3676,8 +2992,7 @@ async function openOrderStatus(
 
 Statut actuel : ${statusLabel(currentStatus)}
 
-Entrez le nouveau statut :
-
+Entrez :
 pending
 processing
 completed
@@ -3686,42 +3001,29 @@ cancelled`,
     );
 
 
-  if (
-    newStatus === null
-  ) {
-
+  if (newStatus === null) {
     return;
-
   }
 
 
-  const normalizedStatus =
+  const normalized =
     newStatus
       .trim()
       .toLowerCase();
 
 
-  const allowedStatuses = [
-
+  const allowed = [
     'pending',
-
     'processing',
-
     'completed',
-
     'cancelled'
-
   ];
 
 
-  if (
-    !allowedStatuses.includes(
-      normalizedStatus
-    )
-  ) {
+  if (!allowed.includes(normalized)) {
 
     showAdminMessage(
-      'Statut invalide. Utilisez pending, processing, completed ou cancelled.',
+      'Statut invalide.',
       'error'
     );
 
@@ -3730,10 +3032,7 @@ cancelled`,
   }
 
 
-  if (
-    normalizedStatus ===
-    currentStatus
-  ) {
+  if (normalized === currentStatus) {
 
     showAdminMessage(
       'Le statut est déjà identique.',
@@ -3758,13 +3057,9 @@ cancelled`,
     await supabaseClient
       .from('orders')
       .update({
-
-        status:
-          normalizedStatus,
-
+        status: normalized,
         updated_at:
           new Date().toISOString()
-
       })
       .eq(
         'id',
@@ -3782,7 +3077,8 @@ cancelled`,
     );
 
     showAdminMessage(
-      'Impossible de modifier le statut. Vérifiez les policies RLS admin.',
+      'Impossible de modifier le statut : ' +
+      error.message,
       'error'
     );
 
@@ -3795,49 +3091,31 @@ cancelled`,
 
     const index =
       allOrders.findIndex(
-        function(item) {
-
-          return String(
-            item.id
-          ) ===
-          String(
-            order.id
-          );
-
-        }
+        item =>
+          String(item.id) ===
+          String(order.id)
       );
 
 
-    if (
-      index !== -1
-    ) {
-
-      allOrders[index] =
-        data;
-
+    if (index !== -1) {
+      allOrders[index] = data;
     }
 
   }
 
 
   renderOrders();
-
   renderRecentOrders();
-
   updateDashboard();
 
 
   showAdminMessage(
-    'Statut de la commande mis à jour avec succès.',
+    'Statut de la commande mis à jour.',
     'success'
   );
 
 }
 
-
-/* ============================================================
-   COMMANDES RECENTES
-============================================================ */
 
 function renderRecentOrders() {
 
@@ -3847,18 +3125,11 @@ function renderRecentOrders() {
     );
 
 
-  if (!container) {
-
-    return;
-
-  }
+  if (!container) return;
 
 
   const recent =
-    allOrders.slice(
-      0,
-      5
-    );
+    allOrders.slice(0,5);
 
 
   if (!recent.length) {
@@ -3875,88 +3146,128 @@ function renderRecentOrders() {
 
 
   container.innerHTML =
-    recent
-      .map(
-        function(order) {
+    recent.map(
+      function(order) {
 
-          const status =
-            normalizeStatus(
-              order.status
-            );
+        const status =
+          normalizeStatus(
+            order.status
+          );
 
 
-          return `
-            <div
-              class="order-detail"
-              style="margin-bottom:10px;"
+        return `
+          <div
+            class="order-detail"
+            style="margin-bottom:10px;"
+          >
+
+            <strong>
+              ${escapeHtml(order.id)}
+            </strong>
+
+            —
+            ${escapeHtml(
+              orderTypeLabel(
+                order.order_type
+              )
+            )}
+
+            —
+            ${formatNumber(
+              order.amount_cfa
+            )}
+            FCFA
+
+            <br>
+
+            ${
+              order.amount_usdt !== null &&
+              order.amount_usdt !== undefined
+                ? `
+                  ${formatUsdt(
+                    order.amount_usdt
+                  )}
+                  USDT
+                  <br>
+                `
+                : ''
+            }
+
+            <span
+              class="status ${escapeHtml(
+                statusClass(status)
+              )}"
             >
-
-              <strong>
-                ${escapeHtml(
-                  order.id
-                )}
-              </strong>
-
-              —
-
               ${escapeHtml(
-                orderTypeLabel(
-                  order.order_type
-                )
+                statusLabel(status)
               )}
+            </span>
 
-              —
+          </div>
+        `;
 
-              ${formatNumber(
-                order.amount_cfa
-              )}
-              FCFA
-
-              <br>
-
-              ${
-                order.amount_usdt !==
-                null &&
-                order.amount_usdt !==
-                undefined
-                  ? `
-                    <span>
-                      ${formatUsdt(
-                        order.amount_usdt
-                      )}
-                      USDT
-                    </span>
-                    <br>
-                  `
-                  : ''
-              }
-
-              <span
-                class="status ${escapeHtml(
-                  statusClass(
-                    status
-                  )
-                )}"
-              >
-                ${escapeHtml(
-                  statusLabel(
-                    status
-                  )
-                )}
-              </span>
-
-            </div>
-          `;
-
-        }
-      )
-      .join('');
+      }
+    ).join('');
 
 }
 
 
 /* ============================================================
-   CHARGEMENT UTILISATEURS
+   FILTRES COMMANDES
+============================================================ */
+
+document
+  .getElementById('orderStatusFilter')
+  ?.addEventListener(
+    'change',
+    renderOrders
+  );
+
+
+document
+  .getElementById('orderTypeFilter')
+  ?.addEventListener(
+    'change',
+    renderOrders
+  );
+
+
+/* ============================================================
+   ACTUALISER COMMANDES
+============================================================ */
+
+document
+  .getElementById('refreshOrdersBtn')
+  ?.addEventListener(
+    'click',
+    async function() {
+
+      const button = this;
+
+      button.disabled = true;
+
+      try {
+
+        await loadOrders();
+        updateDashboard();
+
+        showAdminMessage(
+          'Commandes actualisées.',
+          'success'
+        );
+
+      } finally {
+
+        button.disabled = false;
+
+      }
+
+    }
+  );
+
+
+/* ============================================================
+   UTILISATEURS
 ============================================================ */
 
 async function loadUsers() {
@@ -3989,11 +3300,6 @@ async function loadUsers() {
 
     renderUsers();
 
-    showAdminMessage(
-      'Impossible de charger les utilisateurs.',
-      'error'
-    );
-
     return;
 
   }
@@ -4010,10 +3316,6 @@ async function loadUsers() {
 }
 
 
-/* ============================================================
-   RENDU UTILISATEURS
-============================================================ */
-
 function renderUsers() {
 
   const tbody =
@@ -4022,11 +3324,7 @@ function renderUsers() {
     );
 
 
-  if (!tbody) {
-
-    return;
-
-  }
+  if (!tbody) return;
 
 
   if (!allUsers.length) {
@@ -4047,83 +3345,65 @@ function renderUsers() {
 
 
   tbody.innerHTML =
-    allUsers
-      .map(
-        function(user) {
+    allUsers.map(
+      function(user) {
 
-          return `
-            <tr>
+        return `
+          <tr>
 
-              <td>
-
-                <strong>
-                  ${escapeHtml(
-                    user.full_name ||
-                    '—'
-                  )}
-                </strong>
-
-              </td>
-
-              <td>
+            <td>
+              <strong>
                 ${escapeHtml(
-                  user.phone ||
-                  '—'
+                  user.full_name || '—'
                 )}
-              </td>
+              </strong>
+            </td>
 
-              <td>
-                —
-              </td>
+            <td>
+              ${escapeHtml(
+                user.phone || '—'
+              )}
+            </td>
 
-              <td>
+            <td>
+              —
+            </td>
 
-                ${escapeHtml(
-                  user.country ||
-                  'Burkina Faso'
-                )}
+            <td>
+              ${escapeHtml(
+                user.country ||
+                'Burkina Faso'
+              )}
+            </td>
 
-              </td>
+            <td>
+              ${formatDate(
+                user.created_at
+              )}
+            </td>
 
-              <td>
-                ${formatDate(
-                  user.created_at
-                )}
-              </td>
+          </tr>
+        `;
 
-            </tr>
-          `;
-
-        }
-      )
-      .join('');
+      }
+    ).join('');
 
 }
 
 
-/* ============================================================
-   ACTUALISER UTILISATEURS
-============================================================ */
-
-const refreshUsersBtn =
-  document.getElementById(
-    'refreshUsersBtn'
-  );
-
-
-if (refreshUsersBtn) {
-
-  refreshUsersBtn.addEventListener(
+document
+  .getElementById('refreshUsersBtn')
+  ?.addEventListener(
     'click',
     async function() {
 
-      refreshUsersBtn.disabled =
-        true;
+      const button = this;
+
+      button.disabled = true;
 
       try {
 
         await loadUsers();
-
         updateDashboard();
 
         showAdminMessage(
@@ -4133,19 +3413,16 @@ if (refreshUsersBtn) {
 
       } finally {
 
-        refreshUsersBtn.disabled =
-          false;
+        button.disabled = false;
 
       }
 
     }
   );
 
-}
-
 
 /* ============================================================
-   CHARGEMENT LITIGES
+   LITIGES
 ============================================================ */
 
 async function loadDisputes() {
@@ -4176,11 +3453,6 @@ async function loadDisputes() {
 
     renderDisputes();
 
-    showAdminMessage(
-      'Impossible de charger les litiges.',
-      'error'
-    );
-
     return;
 
   }
@@ -4197,10 +3469,6 @@ async function loadDisputes() {
 }
 
 
-/* ============================================================
-   RENDU LITIGES
-============================================================ */
-
 function renderDisputes() {
 
   const container =
@@ -4209,11 +3477,7 @@ function renderDisputes() {
     );
 
 
-  if (!container) {
-
-    return;
-
-  }
+  if (!container) return;
 
 
   if (!allDisputes.length) {
@@ -4230,112 +3494,96 @@ function renderDisputes() {
 
 
   container.innerHTML =
-    allDisputes
-      .map(
-        function(dispute) {
+    allDisputes.map(
+      function(dispute) {
 
-          const isClosed =
-            String(
-              dispute.status ||
-              ''
-            )
-              .toLowerCase() ===
-            'closed';
+        const closed =
+          String(
+            dispute.status || ''
+          ).toLowerCase() === 'closed';
 
 
-          return `
-            <div
-              class="order-detail"
-              style="margin-bottom:12px;"
+        return `
+          <div
+            class="order-detail"
+            style="margin-bottom:12px;"
+          >
+
+            <strong>
+              ${escapeHtml(
+                dispute.subject ||
+                'Litige'
+              )}
+            </strong>
+
+            <br>
+
+            Commande :
+            ${escapeHtml(
+              dispute.order_id || '—'
+            )}
+
+            <br>
+
+            Client :
+            ${escapeHtml(
+              dispute.user_id || '—'
+            )}
+
+            <br><br>
+
+            ${escapeHtml(
+              dispute.message ||
+              'Aucun message.'
+            )}
+
+            <br><br>
+
+            <span
+              class="status ${
+                closed
+                  ? 'completed'
+                  : 'dispute'
+              }"
             >
-
-              <strong>
-                ${escapeHtml(
-                  dispute.subject ||
-                  'Litige'
-                )}
-              </strong>
-
-              <br>
-
-              Commande :
-              ${escapeHtml(
-                dispute.order_id ||
-                '—'
-              )}
-
-              <br>
-
-              Client :
-              ${escapeHtml(
-                dispute.user_id ||
-                '—'
-              )}
-
-              <br><br>
-
-              ${escapeHtml(
-                dispute.message ||
-                'Aucun message.'
-              )}
-
-              <br><br>
-
-              <span
-                class="status ${
-                  isClosed
-                    ? 'completed'
-                    : 'dispute'
-                }"
-              >
-                ${
-                  isClosed
-                    ? 'Fermé'
-                    : 'Ouvert'
-                }
-              </span>
-
               ${
-                dispute.created_at
-                  ? `
-                    <br><br>
-                    <small>
-                      ${formatDate(
-                        dispute.created_at
-                      )}
-                    </small>
-                  `
-                  : ''
+                closed
+                  ? 'Fermé'
+                  : 'Ouvert'
               }
+            </span>
 
-            </div>
-          `;
+            ${
+              dispute.created_at
+                ? `
+                  <br><br>
+                  <small>
+                    ${formatDate(
+                      dispute.created_at
+                    )}
+                  </small>
+                `
+                : ''
+            }
 
-        }
-      )
-      .join('');
+          </div>
+        `;
+
+      }
+    ).join('');
 
 }
 
 
-/* ============================================================
-   ACTUALISER LITIGES
-============================================================ */
-
-const refreshDisputesBtn =
-  document.getElementById(
-    'refreshDisputesBtn'
-  );
-
-
-if (refreshDisputesBtn) {
-
-  refreshDisputesBtn.addEventListener(
+document
+  .getElementById('refreshDisputesBtn')
+  ?.addEventListener(
     'click',
     async function() {
 
-      refreshDisputesBtn.disabled =
-        true;
+      const button = this;
+
+      button.disabled = true;
 
       try {
 
@@ -4348,15 +3596,12 @@ if (refreshDisputesBtn) {
 
       } finally {
 
-        refreshDisputesBtn.disabled =
-          false;
+        button.disabled = false;
 
       }
 
     }
   );
-
-}
 
 
 /* ============================================================
@@ -4371,27 +3616,19 @@ function updateDashboard() {
 
   const pending =
     allOrders.filter(
-      function(order) {
-
-        return normalizeStatus(
+      order =>
+        normalizeStatus(
           order.status
-        ) ===
-        'pending';
-
-      }
+        ) === 'pending'
     ).length;
 
 
   const processing =
     allOrders.filter(
-      function(order) {
-
-        return normalizeStatus(
+      order =>
+        normalizeStatus(
           order.status
-        ) ===
-        'processing';
-
-      }
+        ) === 'processing'
     ).length;
 
 
@@ -4400,18 +3637,15 @@ function updateDashboard() {
       'statOrders'
     );
 
-
   const statPending =
     document.getElementById(
       'statPending'
     );
 
-
   const statProcessing =
     document.getElementById(
       'statProcessing'
     );
-
 
   const statUsers =
     document.getElementById(
@@ -4420,42 +3654,25 @@ function updateDashboard() {
 
 
   if (statOrders) {
-
     statOrders.textContent =
-      formatNumber(
-        total
-      );
-
+      formatNumber(total);
   }
-
 
   if (statPending) {
-
     statPending.textContent =
-      formatNumber(
-        pending
-      );
-
+      formatNumber(pending);
   }
-
 
   if (statProcessing) {
-
     statProcessing.textContent =
-      formatNumber(
-        processing
-      );
-
+      formatNumber(processing);
   }
 
-
   if (statUsers) {
-
     statUsers.textContent =
       formatNumber(
         allUsers.length
       );
-
   }
 
 
@@ -4465,29 +3682,17 @@ function updateDashboard() {
 
 
 /* ============================================================
-   ECOUTE SESSION SUPABASE
+   AUTH STATE
 ============================================================ */
 
 supabaseClient
   .auth
   .onAuthStateChange(
-    function(
-      event,
-      session
-    ) {
+    function(event, session) {
 
-      /*
-       * On ne relance pas inutilement toute la logique
-       * pour TOKEN_REFRESHED.
-       */
-
-      if (
-        event ===
-        'SIGNED_OUT'
-      ) {
+      if (event === 'SIGNED_OUT') {
 
         resetAdminData();
-
         showLogin();
 
         return;
@@ -4496,16 +3701,9 @@ supabaseClient
 
 
       if (
-        event ===
-        'SIGNED_IN' &&
-        session &&
-        session.user
+        event === 'SIGNED_IN' &&
+        session?.user
       ) {
-
-        /*
-         * setTimeout évite certains problèmes de concurrence
-         * avec le callback interne Supabase Auth.
-         */
 
         setTimeout(
           async function() {
@@ -4540,7 +3738,7 @@ document.addEventListener(
 
 
 /* ============================================================
-   PROTECTION CONTRE ERREURS NON GEREES
+   ERREURS
 ============================================================ */
 
 window.addEventListener(
@@ -4556,3 +3754,6 @@ window.addEventListener(
 );
 
 </script>
+
+</body>
+</html>
