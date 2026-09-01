@@ -1,28 +1,26 @@
 // ============================================================
-// NOA DIGIT TRADE - APP.JS FINAL CORRIGÉ
+// NOA DIGIT TRADE - APP.JS FINAL
 // Supabase Auth + Profiles + Orders + Paiement + Litiges
-//
-// CORRECTION PRINCIPALE :
-// orders.receive_cfa est NOT NULL.
-// - Achat  : receive_cfa = 0
-// - Vente  : receive_cfa = montant FCFA réellement reçu
+// Correction : receive_cfa ne peut plus être NULL.
 // ============================================================
 
 const SUPABASE_URL = 'https://vowafwsvrjpkhkocptih.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_umIa4749av8722xus6aQHw_1nf8b-PC';
 
 if (!window.supabase) {
-  console.error("Supabase JS n'a pas été chargé.");
+  console.error('Supabase JS n\'a pas été chargé.');
 }
 
-const supabaseClient = window.supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_KEY
-);
+const supabaseClient =
+  window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+  );
 
 const CONFIG = {
   buyRate: 600,
   sellRate: 570,
+
   minOrder: 2000,
   maxOrder: 50000,
 
@@ -45,6 +43,7 @@ const CONFIG = {
   }
 };
 
+
 let currentUser = null;
 let currentProfile = null;
 let currentOrder = null;
@@ -60,38 +59,53 @@ let authListenerReady = false;
 // UTILITAIRES
 // ============================================================
 
-const $ = id => document.getElementById(id);
+const $ = id =>
+  document.getElementById(id);
 
 
-function showMessage(message, type = 'info') {
+function showMessage(
+  message,
+  type = 'info'
+) {
 
-  const box = $('appMessage');
+  const box =
+    $('appMessage');
 
   if (!box) return;
 
-  box.textContent = String(message || '');
+  box.textContent =
+    String(message || '');
 
-  box.className = type;
+  box.className =
+    type;
 
-  box.id = 'appMessage';
+  box.id =
+    'appMessage';
 }
 
 
 function hideMessage() {
 
-  const box = $('appMessage');
+  const box =
+    $('appMessage');
 
   if (!box) return;
 
-  box.textContent = '';
+  box.textContent =
+    '';
 
-  box.className = '';
+  box.className =
+    '';
 }
 
 
-function formatNumber(value, max = 0) {
+function formatNumber(
+  value,
+  max = 0
+) {
 
-  const n = Number(value);
+  const n =
+    Number(value);
 
   return (
     Number.isFinite(n)
@@ -111,9 +125,14 @@ function formatDate(value) {
 
   if (!value) return '-';
 
-  const d = new Date(value);
+  const d =
+    new Date(value);
 
-  if (Number.isNaN(d.getTime())) {
+  if (
+    Number.isNaN(
+      d.getTime()
+    )
+  ) {
     return '-';
   }
 
@@ -132,24 +151,48 @@ function formatDate(value) {
 
 function normalizePhone(phone) {
 
-  return String(phone || '')
-    .replace(/\s+/g, '')
+  return String(
+    phone || ''
+  )
+    .replace(
+      /\s+/g,
+      ''
+    )
     .trim();
 }
 
 
 function escapeHtml(value) {
 
-  return String(value ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+  return String(
+    value ?? ''
+  )
+    .replace(
+      /&/g,
+      '&amp;'
+    )
+    .replace(
+      /</g,
+      '&lt;'
+    )
+    .replace(
+      />/g,
+      '&gt;'
+    )
+    .replace(
+      /"/g,
+      '&quot;'
+    )
+    .replace(
+      /'/g,
+      '&#039;'
+    );
 }
 
 
-function getSupabaseErrorMessage(error) {
+function getSupabaseErrorMessage(
+  error
+) {
 
   return (
     error?.message ||
@@ -167,53 +210,81 @@ function getSupabaseErrorMessage(error) {
 
 function showAuthPage() {
 
-  $('authPage')?.classList.add('active');
+  $('authPage')?.classList.add(
+    'active'
+  );
 
-  $('appPage')?.classList.remove('active');
+  $('appPage')?.classList.remove(
+    'active'
+  );
 
-  $('bottomNav')?.classList.add('hidden');
+  $('bottomNav')?.classList.add(
+    'hidden'
+  );
 }
 
 
 function showAppPage() {
 
-  $('authPage')?.classList.remove('active');
+  $('authPage')?.classList.remove(
+    'active'
+  );
 
-  $('appPage')?.classList.add('active');
+  $('appPage')?.classList.add(
+    'active'
+  );
 
-  $('bottomNav')?.classList.remove('hidden');
+  $('bottomNav')?.classList.remove(
+    'hidden'
+  );
 }
 
 
-function showSubPage(pageId) {
+function showSubPage(
+  pageId
+) {
 
   document
-    .querySelectorAll('.sub-page')
+    .querySelectorAll(
+      '.sub-page'
+    )
     .forEach(page => {
 
-      page.classList.add('hidden');
+      page.classList.add(
+        'hidden'
+      );
 
-      page.classList.remove('active');
+      page.classList.remove(
+        'active'
+      );
     });
 
 
-  const target = $(pageId);
+  const target =
+    $(pageId);
 
   if (target) {
 
-    target.classList.remove('hidden');
+    target.classList.remove(
+      'hidden'
+    );
 
-    target.classList.add('active');
+    target.classList.add(
+      'active'
+    );
   }
 
 
   document
-    .querySelectorAll('.nav-btn')
+    .querySelectorAll(
+      '.nav-btn'
+    )
     .forEach(button => {
 
       button.classList.toggle(
         'active',
-        button.dataset.page === pageId
+        button.dataset.page ===
+          pageId
       );
     });
 
@@ -224,16 +295,21 @@ function showSubPage(pageId) {
   });
 
 
-  if (pageId === 'ordersPage') {
+  if (
+    pageId ===
+    'ordersPage'
+  ) {
 
     loadOrderHistory();
   }
 
 
-  if (pageId === 'supportPage') {
+  if (
+    pageId ===
+    'supportPage'
+  ) {
 
     loadDisputes();
-
     loadOrdersForDispute();
   }
 }
@@ -245,25 +321,41 @@ function showSubPage(pageId) {
 
 function showLoginForm() {
 
-  $('loginTab')?.classList.add('active');
+  $('loginTab')?.classList.add(
+    'active'
+  );
 
-  $('registerTab')?.classList.remove('active');
+  $('registerTab')?.classList.remove(
+    'active'
+  );
 
-  $('loginForm')?.classList.add('active');
+  $('loginForm')?.classList.add(
+    'active'
+  );
 
-  $('registerForm')?.classList.remove('active');
+  $('registerForm')?.classList.remove(
+    'active'
+  );
 }
 
 
 function showRegisterForm() {
 
-  $('loginTab')?.classList.remove('active');
+  $('loginTab')?.classList.remove(
+    'active'
+  );
 
-  $('registerTab')?.classList.add('active');
+  $('registerTab')?.classList.add(
+    'active'
+  );
 
-  $('loginForm')?.classList.remove('active');
+  $('loginForm')?.classList.remove(
+    'active'
+  );
 
-  $('registerForm')?.classList.add('active');
+  $('registerForm')?.classList.add(
+    'active'
+  );
 }
 
 
@@ -273,13 +365,16 @@ function showRegisterForm() {
 
 async function loadUserProfile() {
 
-  if (!currentUser?.id) {
+  if (
+    !currentUser?.id
+  ) {
     return null;
   }
 
 
   const metadata =
-    currentUser.user_metadata || {};
+    currentUser.user_metadata ||
+    {};
 
 
   const fallback = {
@@ -290,11 +385,13 @@ async function loadUserProfile() {
     full_name:
       metadata.full_name ||
       metadata.name ||
-      currentUser.email?.split('@')[0] ||
+      currentUser.email
+        ?.split('@')[0] ||
       'Utilisateur',
 
     phone:
-      metadata.phone || '',
+      metadata.phone ||
+      '',
 
     country:
       metadata.country ||
@@ -323,7 +420,10 @@ async function loadUserProfile() {
         .maybeSingle();
 
 
-    if (!error && profile) {
+    if (
+      !error &&
+      profile
+    ) {
 
       currentProfile =
         profile;
@@ -334,35 +434,40 @@ async function loadUserProfile() {
     }
 
 
-    if (!error && !profile) {
+    if (
+      !error &&
+      !profile
+    ) {
 
       const {
         data: inserted,
         error: insertError
       } =
-        await supabaseClient
-          .from('profiles')
-          .insert({
+      await supabaseClient
+        .from('profiles')
+        .insert({
+          id:
+            currentUser.id,
 
-            id:
-              currentUser.id,
+          full_name:
+            fallback.full_name,
 
-            full_name:
-              fallback.full_name,
+          phone:
+            fallback.phone,
 
-            phone:
-              fallback.phone,
-
-            country:
-              fallback.country
-          })
-          .select(
-            'id,full_name,phone,country'
-          )
-          .maybeSingle();
+          country:
+            fallback.country
+        })
+        .select(
+          'id,full_name,phone,country'
+        )
+        .maybeSingle();
 
 
-      if (!insertError && inserted) {
+      if (
+        !insertError &&
+        inserted
+      ) {
 
         currentProfile =
           inserted;
@@ -418,7 +523,8 @@ function updateUserInterface() {
     currentProfile || {};
 
   const m =
-    currentUser.user_metadata || {};
+    currentUser.user_metadata ||
+    {};
 
 
   const name =
@@ -478,7 +584,9 @@ function updateUserInterface() {
 
 async function initializeApplication() {
 
-  if (applicationInitializing) {
+  if (
+    applicationInitializing
+  ) {
     return;
   }
 
@@ -490,6 +598,10 @@ async function initializeApplication() {
   try {
 
     await loadUserProfile();
+
+    // IMPORTANT : récupérer les paramètres administrateur AVANT
+    // l'affichage des tarifs et le calcul des commandes.
+    await loadAppSettings();
 
     showAppPage();
 
@@ -514,6 +626,8 @@ async function initializeApplication() {
       false;
   }
 }
+
+
 // ============================================================
 // AUTHENTIFICATION
 // ============================================================
@@ -550,7 +664,6 @@ async function registerUser(event) {
 
 
   if (!name) {
-
     return showMessage(
       'Veuillez saisir votre nom et prénom.',
       'error'
@@ -559,7 +672,6 @@ async function registerUser(event) {
 
 
   if (!phone) {
-
     return showMessage(
       'Veuillez saisir votre numéro de téléphone.',
       'error'
@@ -568,7 +680,6 @@ async function registerUser(event) {
 
 
   if (!email) {
-
     return showMessage(
       'Veuillez saisir votre adresse email.',
       'error'
@@ -577,7 +688,6 @@ async function registerUser(event) {
 
 
   if (password.length < 6) {
-
     return showMessage(
       'Le mot de passe doit contenir au moins 6 caractères.',
       'error'
@@ -586,7 +696,6 @@ async function registerUser(event) {
 
 
   if (password !== confirmPassword) {
-
     return showMessage(
       'Les deux mots de passe ne correspondent pas.',
       'error'
@@ -629,9 +738,7 @@ async function registerUser(event) {
         password,
 
         options: {
-
           data: {
-
             full_name:
               name,
 
@@ -642,6 +749,7 @@ async function registerUser(event) {
               country
           }
         }
+
       });
 
 
@@ -734,9 +842,9 @@ async function registerUser(event) {
 }
 
 
-// ============================================================
+// ------------------------------------------------------------
 // CONNEXION
-// ============================================================
+// ------------------------------------------------------------
 
 async function loginUser(event) {
 
@@ -878,9 +986,9 @@ async function loginUser(event) {
 }
 
 
-// ============================================================
+// ------------------------------------------------------------
 // DÉCONNEXION
-// ============================================================
+// ------------------------------------------------------------
 
 async function logoutUser() {
 
@@ -913,6 +1021,135 @@ async function logoutUser() {
   showLoginForm();
 
   hideMessage();
+}
+
+
+// ============================================================
+// CHARGEMENT DES PARAMÈTRES DEPUIS SUPABASE
+// ============================================================
+// Les valeurs modifiées dans l'espace administrateur sont stockées
+// dans public.app_settings (id = 1). Le client lit cette ligne afin
+// d'utiliser les mêmes taux et frais pour l'affichage ET les calculs.
+// Les valeurs de CONFIG restent des valeurs de secours si la lecture
+// de Supabase échoue.
+// ============================================================
+
+async function loadAppSettings() {
+
+  try {
+
+    const {
+      data,
+      error
+    } = await supabaseClient
+      .from('app_settings')
+      .select(
+        'id,buy_rate,sell_rate,trc20_fee,bp20_fee,min_order,max_order'
+      )
+      .eq(
+        'id',
+        1
+      )
+      .maybeSingle();
+
+
+    if (error) {
+      console.warn(
+        'Impossible de charger app_settings :',
+        error
+      );
+      return false;
+    }
+
+
+    if (!data) {
+      console.warn(
+        'Configuration app_settings (id = 1) introuvable. Valeurs de secours utilisées.'
+      );
+      return false;
+    }
+
+
+    const buyRate = Number(data.buy_rate);
+    const sellRate = Number(data.sell_rate);
+    const trc20Fee = Number(data.trc20_fee);
+    const bp20Fee = Number(data.bp20_fee);
+    const minOrder = Number(data.min_order);
+    const maxOrder = Number(data.max_order);
+
+
+    if (
+      Number.isFinite(buyRate) &&
+      buyRate > 0
+    ) {
+      CONFIG.buyRate = buyRate;
+    }
+
+
+    if (
+      Number.isFinite(sellRate) &&
+      sellRate > 0
+    ) {
+      CONFIG.sellRate = sellRate;
+    }
+
+
+    if (
+      Number.isFinite(trc20Fee) &&
+      trc20Fee >= 0
+    ) {
+      CONFIG.networks.trc20.fee = trc20Fee;
+    }
+
+
+    if (
+      Number.isFinite(bp20Fee) &&
+      bp20Fee >= 0
+    ) {
+      CONFIG.networks.bp20.fee = bp20Fee;
+    }
+
+
+    if (
+      Number.isFinite(minOrder) &&
+      minOrder > 0
+    ) {
+      CONFIG.minOrder = minOrder;
+    }
+
+
+    if (
+      Number.isFinite(maxOrder) &&
+      maxOrder > 0
+    ) {
+      CONFIG.maxOrder = maxOrder;
+    }
+
+
+    console.log(
+      'Tarifs client chargés depuis Supabase :',
+      {
+        achat: CONFIG.buyRate,
+        vente: CONFIG.sellRate,
+        trc20: CONFIG.networks.trc20.fee,
+        bep20: CONFIG.networks.bp20.fee,
+        minimum: CONFIG.minOrder,
+        maximum: CONFIG.maxOrder
+      }
+    );
+
+
+    return true;
+
+  } catch (error) {
+
+    console.warn(
+      'Erreur chargement app_settings :',
+      error
+    );
+
+    return false;
+  }
 }
 
 
@@ -1054,9 +1291,6 @@ function setSellMode() {
   );
 
 
-  // En vente, le client saisit directement
-  // la quantité d'USDT à vendre.
-
   if ($('amountLabel')) {
 
     $('amountLabel').textContent =
@@ -1087,10 +1321,12 @@ function setSellMode() {
 
 
 // ============================================================
-// SÉLECTION DU RÉSEAU
+// RÉSEAU
 // ============================================================
 
-function selectNetwork(network) {
+function selectNetwork(
+  network
+) {
 
   if (
     !CONFIG.networks[network]
@@ -1183,10 +1419,10 @@ function calculateOrder() {
       netUsdt:
         netUsdt,
 
-      // IMPORTANT :
-      // receive_cfa est NOT NULL dans orders.
-      // Pour un achat, cette valeur doit être 0.
-
+      // La colonne orders.receive_cfa
+      // est NOT NULL. Pour un achat,
+      // le client reçoit des USDT et
+      // non des FCFA : on enregistre 0.
       receiveCfa:
         0,
 
@@ -1264,10 +1500,6 @@ function updateCalculator() {
   }
 
 
-  // ==========================================================
-  // ACHAT
-  // ==========================================================
-
   if (
     currentExchangeType ===
     'buy'
@@ -1312,10 +1544,6 @@ function updateCalculator() {
   }
 
 
-  // ==========================================================
-  // VENTE
-  // ==========================================================
-
   if ($('summaryCfa')) {
 
     $('summaryCfa').textContent =
@@ -1359,17 +1587,11 @@ function updateCalculator() {
 function getWalletAddress() {
 
   const ids = [
-
     'walletAddress',
-
     'wallet',
-
     'walletInput',
-
     'userWallet',
-
     'wallet_address'
-
   ];
 
 
@@ -1392,6 +1614,8 @@ function getWalletAddress() {
 
   return '';
 }
+
+
 // ============================================================
 // VÉRIFICATION DE LA COMMANDE
 // ============================================================
@@ -1427,7 +1651,8 @@ function reviewOrder() {
 
     return showMessage(
 
-      currentExchangeType === 'buy'
+      currentExchangeType ===
+      'buy'
 
         ? 'Veuillez saisir un montant en FCFA.'
 
@@ -1438,12 +1663,9 @@ function reviewOrder() {
   }
 
 
-  // ==========================================================
-  // ACHAT
-  // ==========================================================
-
   if (
-    currentExchangeType === 'buy'
+    currentExchangeType ===
+    'buy'
   ) {
 
     if (
@@ -1482,12 +1704,9 @@ function reviewOrder() {
   }
 
 
-  // ==========================================================
-  // VENTE
-  // ==========================================================
-
   if (
-    currentExchangeType === 'sell'
+    currentExchangeType ===
+    'sell'
   ) {
 
     const minimumUsdt =
@@ -1549,10 +1768,6 @@ function reviewOrder() {
   }
 
 
-  // ==========================================================
-  // CONSERVATION TEMPORAIRE DE LA COMMANDE
-  // ==========================================================
-
   currentOrder = {
 
     side:
@@ -1573,12 +1788,8 @@ function reviewOrder() {
     netUsdt:
       c.netUsdt,
 
-    // IMPORTANT :
-    // Pour un achat, cette valeur vaut 0.
-    // Pour une vente, elle contient le FCFA réellement reçu.
-
     receiveCfa:
-      Number(c.receiveCfa || 0),
+      c.receiveCfa,
 
     rate:
       c.rate,
@@ -1587,7 +1798,8 @@ function reviewOrder() {
       wallet,
 
     paymentMethod:
-      currentExchangeType === 'buy'
+      currentExchangeType ===
+      'buy'
         ? 'orange_money'
         : null
   };
@@ -1611,7 +1823,6 @@ function renderConfirmation() {
   const box =
     $('confirmationSummary');
 
-
   if (
     !box ||
     !currentOrder
@@ -1628,12 +1839,9 @@ function renderConfirmation() {
     '-';
 
 
-  // ==========================================================
-  // ACHAT
-  // ==========================================================
-
   if (
-    currentOrder.side === 'buy'
+    currentOrder.side ===
+    'buy'
   ) {
 
     box.innerHTML = `
@@ -1710,10 +1918,6 @@ function renderConfirmation() {
   }
 
 
-  // ==========================================================
-  // VENTE
-  // ==========================================================
-
   box.innerHTML = `
 
     <div class="summary-row">
@@ -1760,16 +1964,6 @@ function renderConfirmation() {
       <span>Adresse d'envoi</span>
       <strong class="break-word">
         ${escapeHtml(currentOrder.walletAddress)}
-      </strong>
-    </div>
-
-    <div class="summary-row">
-      <span>Montant brut</span>
-      <strong>
-        ${formatNumber(
-          Number(currentOrder.usdtAmount) *
-          Number(currentOrder.rate)
-        )} FCFA
       </strong>
     </div>
 
@@ -1852,10 +2046,6 @@ async function placeOrder() {
 
   try {
 
-    // --------------------------------------------------------
-    // VÉRIFICATION DE SESSION
-    // --------------------------------------------------------
-
     const {
       data: sessionData,
       error: sessionError
@@ -1883,35 +2073,21 @@ async function placeOrder() {
       sessionData.session.user;
 
 
-    // --------------------------------------------------------
-    // NOTE CLIENT
-    // --------------------------------------------------------
-
+    // La table orders ne possède pas de colonne
+    // wallet_address. L'adresse est conservée
+    // dans customer_note.
     const customerNote =
       currentOrder.walletAddress
         ? `Adresse portefeuille : ${currentOrder.walletAddress}`
         : null;
 
 
-    // --------------------------------------------------------
-    // PAYLOAD ORDERS
-    // --------------------------------------------------------
-    //
-    // IMPORTANT :
-    // receive_cfa ne doit JAMAIS être null.
-    //
-    // ACHAT :
-    // receive_cfa = 0
-    //
-    // VENTE :
-    // receive_cfa = montant FCFA réellement reçu.
-    // --------------------------------------------------------
-
+    // receive_cfa est NOT NULL dans orders.
+    // Achat = 0 FCFA reçu.
+    // Vente = montant FCFA réellement reçu.
     const receiveCfa =
       currentOrder.side === 'sell'
-        ? Number(
-            currentOrder.receiveCfa || 0
-          )
+        ? Number(currentOrder.receiveCfa || 0)
         : 0;
 
 
@@ -1931,22 +2107,22 @@ async function placeOrder() {
 
       amount_cfa:
         Number(
-          currentOrder.amountCfa || 0
+          currentOrder.amountCfa
         ),
 
       usdt_amount:
         Number(
-          currentOrder.usdtAmount || 0
+          currentOrder.usdtAmount
         ),
 
       fee_usdt:
         Number(
-          currentOrder.feeUsdt || 0
+          currentOrder.feeUsdt
         ),
 
       net_usdt:
         Number(
-          currentOrder.netUsdt || 0
+          currentOrder.netUsdt
         ),
 
       receive_cfa:
@@ -1965,10 +2141,6 @@ async function placeOrder() {
       payload
     );
 
-
-    // --------------------------------------------------------
-    // INSERTION SUPABASE
-    // --------------------------------------------------------
 
     const {
       data,
@@ -1996,10 +2168,6 @@ async function placeOrder() {
     }
 
 
-    // --------------------------------------------------------
-    // COMMANDE ENREGISTRÉE
-    // --------------------------------------------------------
-
     currentOrder.id =
       data.id;
 
@@ -2011,12 +2179,9 @@ async function placeOrder() {
       'pending';
 
 
-    // ========================================================
-    // ACHAT
-    // ========================================================
-
     if (
-      currentOrder.side === 'buy'
+      currentOrder.side ===
+      'buy'
     ) {
 
       renderPaymentPage();
@@ -2030,14 +2195,7 @@ async function placeOrder() {
         'success'
       );
 
-    }
-
-
-    // ========================================================
-    // VENTE
-    // ========================================================
-
-    else {
+    } else {
 
       showSubPage(
         'ordersPage'
@@ -2050,7 +2208,6 @@ async function placeOrder() {
     }
 
 
-    // Actualiser l'historique
     await loadOrderHistory();
 
 
@@ -2082,6 +2239,8 @@ async function placeOrder() {
     }
   }
 }
+
+
 // ============================================================
 // PAIEMENT ORANGE MONEY
 // ACHAT UNIQUEMENT
@@ -2134,7 +2293,9 @@ async function declarePayment() {
   hideMessage();
 
 
-  if (!currentOrder?.id) {
+  if (
+    !currentOrder?.id
+  ) {
 
     return showMessage(
       'Commande introuvable.',
@@ -2144,20 +2305,12 @@ async function declarePayment() {
 
 
   if (
-    currentOrder.side !== 'buy'
+    currentOrder.side !==
+    'buy'
   ) {
 
     return showMessage(
       'Cette opération ne nécessite pas de paiement Orange Money.',
-      'error'
-    );
-  }
-
-
-  if (!currentUser?.id) {
-
-    return showMessage(
-      'Votre session a expiré. Veuillez vous reconnecter.',
       'error'
     );
   }
@@ -2183,41 +2336,6 @@ async function declarePayment() {
 
   try {
 
-    // --------------------------------------------------------
-    // Vérification de la session
-    // --------------------------------------------------------
-
-    const {
-      data: sessionData,
-      error: sessionError
-    } =
-      await supabaseClient.auth
-        .getSession();
-
-
-    if (sessionError) {
-      throw sessionError;
-    }
-
-
-    if (
-      !sessionData?.session?.user
-    ) {
-
-      throw new Error(
-        'Votre session n\'est plus active.'
-      );
-    }
-
-
-    currentUser =
-      sessionData.session.user;
-
-
-    // --------------------------------------------------------
-    // MISE À JOUR DE LA COMMANDE
-    // --------------------------------------------------------
-
     const {
       data,
       error
@@ -2225,10 +2343,8 @@ async function declarePayment() {
       await supabaseClient
         .from('orders')
         .update({
-
           status:
             'payment_declared'
-
         })
         .eq(
           'id',
@@ -2256,8 +2372,7 @@ async function declarePayment() {
 
 
     currentOrder.status =
-      data.status ||
-      'payment_declared';
+      data.status;
 
 
     showMessage(
@@ -2300,7 +2415,7 @@ async function declarePayment() {
 
 
 // ============================================================
-// HISTORIQUE DES COMMANDES
+// HISTORIQUE
 // ============================================================
 
 async function loadOrderHistory() {
@@ -2397,7 +2512,9 @@ async function loadOrderHistory() {
 // CARTE HISTORIQUE
 // ============================================================
 
-function renderOrderCard(order) {
+function renderOrderCard(
+  order
+) {
 
   const side =
     order.side;
@@ -2427,10 +2544,6 @@ function renderOrderCard(order) {
     order.network ||
     '-';
 
-
-  // ==========================================================
-  // ACHAT
-  // ==========================================================
 
   if (
     side === 'buy'
@@ -2464,9 +2577,7 @@ function renderOrderCard(order) {
         <div class="order-row">
           <span>USDT acheté</span>
           <strong>
-            ${Number(
-              order.usdt_amount || 0
-            ).toFixed(6)} USDT
+            ${Number(order.usdt_amount || 0).toFixed(6)} USDT
           </strong>
         </div>
 
@@ -2474,9 +2585,7 @@ function renderOrderCard(order) {
         <div class="order-row">
           <span>Frais</span>
           <strong>
-            ${Number(
-              order.fee_usdt || 0
-            )} USDT
+            ${Number(order.fee_usdt || 0)} USDT
           </strong>
         </div>
 
@@ -2484,9 +2593,7 @@ function renderOrderCard(order) {
         <div class="order-row">
           <span>USDT net reçu</span>
           <strong>
-            ${Number(
-              order.net_usdt || 0
-            ).toFixed(6)} USDT
+            ${Number(order.net_usdt || 0).toFixed(6)} USDT
           </strong>
         </div>
 
@@ -2512,10 +2619,6 @@ function renderOrderCard(order) {
   }
 
 
-  // ==========================================================
-  // VENTE
-  // ==========================================================
-
   return `
 
     <div class="order-card">
@@ -2536,9 +2639,7 @@ function renderOrderCard(order) {
       <div class="order-row">
         <span>USDT vendu</span>
         <strong>
-          ${Number(
-            order.usdt_amount || 0
-          ).toFixed(6)} USDT
+          ${Number(order.usdt_amount || 0).toFixed(6)} USDT
         </strong>
       </div>
 
@@ -2546,9 +2647,7 @@ function renderOrderCard(order) {
       <div class="order-row">
         <span>Frais réseau</span>
         <strong>
-          ${Number(
-            order.fee_usdt || 0
-          ).toFixed(6)} USDT
+          ${Number(order.fee_usdt || 0).toFixed(6)} USDT
         </strong>
       </div>
 
@@ -2556,9 +2655,7 @@ function renderOrderCard(order) {
       <div class="order-row">
         <span>USDT net</span>
         <strong>
-          ${Number(
-            order.net_usdt || 0
-          ).toFixed(6)} USDT
+          ${Number(order.net_usdt || 0).toFixed(6)} USDT
         </strong>
       </div>
 
@@ -2566,9 +2663,7 @@ function renderOrderCard(order) {
       <div class="order-row">
         <span>Montant reçu</span>
         <strong>
-          ${formatNumber(
-            order.receive_cfa || 0
-          )} FCFA
+          ${formatNumber(order.receive_cfa || 0)} FCFA
         </strong>
       </div>
 
@@ -2598,7 +2693,9 @@ function renderOrderCard(order) {
 // STATUTS
 // ============================================================
 
-function getStatusLabel(status) {
+function getStatusLabel(
+  status
+) {
 
   const labels = {
 
@@ -2629,6 +2726,8 @@ function getStatusLabel(status) {
     'En attente'
   );
 }
+
+
 // ============================================================
 // SUPPORT / LITIGES
 // ============================================================
@@ -2644,7 +2743,6 @@ async function loadOrdersForDispute() {
   ) {
     return;
   }
-
 
   try {
 
@@ -2713,10 +2811,6 @@ async function loadOrdersForDispute() {
       'Erreur commandes support :',
       error
     );
-
-
-    select.innerHTML =
-      '<option value="">Impossible de charger les commandes</option>';
   }
 }
 
@@ -2725,14 +2819,16 @@ async function loadOrdersForDispute() {
 // ENVOYER UN LITIGE
 // ============================================================
 
-async function submitDispute(event) {
+async function submitDispute(
+  event
+) {
 
   event.preventDefault();
 
   hideMessage();
 
 
-  if (!currentUser?.id) {
+  if (!currentUser) {
 
     return showMessage(
       'Vous devez être connecté.',
@@ -2809,45 +2905,6 @@ async function submitDispute(event) {
 
   try {
 
-    // --------------------------------------------------------
-    // Vérifier que la commande appartient bien à l'utilisateur
-    // --------------------------------------------------------
-
-    const {
-      data: order,
-      error: orderError
-    } =
-      await supabaseClient
-        .from('orders')
-        .select('id')
-        .eq(
-          'id',
-          orderId
-        )
-        .eq(
-          'user_id',
-          currentUser.id
-        )
-        .maybeSingle();
-
-
-    if (orderError) {
-      throw orderError;
-    }
-
-
-    if (!order) {
-
-      throw new Error(
-        'La commande sélectionnée est introuvable.'
-      );
-    }
-
-
-    // --------------------------------------------------------
-    // Création du litige
-    // --------------------------------------------------------
-
     const payload = {
 
       user_id:
@@ -2868,28 +2925,17 @@ async function submitDispute(event) {
 
 
     const {
-      data,
       error
     } =
       await supabaseClient
         .from('disputes')
         .insert(
           payload
-        )
-        .select('*')
-        .single();
+        );
 
 
     if (error) {
       throw error;
-    }
-
-
-    if (!data) {
-
-      throw new Error(
-        'Le litige n\'a pas pu être créé.'
-      );
     }
 
 
@@ -2946,16 +2992,10 @@ async function loadDisputes() {
     $('disputesList');
 
 
-  if (!list) {
-    return;
-  }
-
-
-  if (!currentUser?.id) {
-
-    list.innerHTML =
-      '<div class="small center">Connectez-vous pour voir vos demandes.</div>';
-
+  if (
+    !list ||
+    !currentUser
+  ) {
     return;
   }
 
@@ -3021,10 +3061,6 @@ async function loadDisputes() {
     list.innerHTML =
       `<div class="small center">
         Impossible de charger les demandes.
-        <br>
-        ${escapeHtml(
-          getSupabaseErrorMessage(error)
-        )}
       </div>`;
   }
 }
@@ -3034,7 +3070,9 @@ async function loadDisputes() {
 // CARTE LITIGE
 // ============================================================
 
-function renderDisputeCard(dispute) {
+function renderDisputeCard(
+  dispute
+) {
 
   const status =
     dispute.status ||
@@ -3046,9 +3084,7 @@ function renderDisputeCard(dispute) {
       ? 'Ouvert'
       : status === 'closed'
         ? 'Fermé'
-        : status === 'resolved'
-          ? 'Résolu'
-          : status;
+        : status;
 
 
   return `
@@ -3070,14 +3106,12 @@ function renderDisputeCard(dispute) {
 
       </div>
 
-
       <p>
         ${escapeHtml(
           dispute.message ||
           ''
         )}
       </p>
-
 
       <div class="small">
         ${formatDate(
@@ -3095,14 +3129,16 @@ function renderDisputeCard(dispute) {
 // SAUVEGARDE DU PROFIL
 // ============================================================
 
-async function saveProfile(event) {
+async function saveProfile(
+  event
+) {
 
   event?.preventDefault();
 
   hideMessage();
 
 
-  if (!currentUser?.id) {
+  if (!currentUser) {
 
     return showMessage(
       'Vous devez être connecté.',
@@ -3149,33 +3185,7 @@ async function saveProfile(event) {
   }
 
 
-  const button =
-    event?.submitter ||
-    $('profileForm')
-      ?.querySelector(
-        'button[type="submit"]'
-      );
-
-
-  const originalText =
-    button?.textContent;
-
-
-  if (button) {
-
-    button.disabled =
-      true;
-
-    button.textContent =
-      'Enregistrement...';
-  }
-
-
   try {
-
-    // --------------------------------------------------------
-    // Sauvegarde dans profiles
-    // --------------------------------------------------------
 
     const {
       data,
@@ -3230,38 +3240,22 @@ async function saveProfile(event) {
       };
 
 
-    // --------------------------------------------------------
-    // Synchronisation avec Auth
-    // --------------------------------------------------------
+    await supabaseClient.auth
+      .updateUser({
 
-    const {
-      error: authError
-    } =
-      await supabaseClient.auth
-        .updateUser({
+        data: {
 
-          data: {
+          full_name:
+            name,
 
-            full_name:
-              name,
+          phone:
+            phone,
 
-            phone:
-              phone,
+          country:
+            country
+        }
 
-            country:
-              country
-
-          }
-
-        });
-
-
-    if (authError) {
-      console.warn(
-        'Métadonnées Auth non mises à jour :',
-        authError
-      );
-    }
+      });
 
 
     updateUserInterface();
@@ -3286,39 +3280,21 @@ async function saveProfile(event) {
       getSupabaseErrorMessage(error),
       'error'
     );
-
-
-  } finally {
-
-    if (button) {
-
-      button.disabled =
-        false;
-
-      button.textContent =
-        originalText ||
-        'Enregistrer';
-    }
   }
 }
+
+
 // ============================================================
 // MODIFIER LE MOT DE PASSE
 // ============================================================
 
-async function changePassword(event) {
+async function changePassword(
+  event
+) {
 
   event?.preventDefault();
 
   hideMessage();
-
-
-  if (!currentUser?.id) {
-
-    return showMessage(
-      'Vous devez être connecté.',
-      'error'
-    );
-  }
 
 
   const password =
@@ -3331,7 +3307,9 @@ async function changePassword(event) {
       ?.value || '';
 
 
-  if (password.length < 6) {
+  if (
+    password.length < 6
+  ) {
 
     return showMessage(
       'Le nouveau mot de passe doit contenir au moins 6 caractères.',
@@ -3352,28 +3330,6 @@ async function changePassword(event) {
   }
 
 
-  const button =
-    event?.submitter ||
-    $('passwordForm')
-      ?.querySelector(
-        'button[type="submit"]'
-      );
-
-
-  const originalText =
-    button?.textContent;
-
-
-  if (button) {
-
-    button.disabled =
-      true;
-
-    button.textContent =
-      'Modification...';
-  }
-
-
   try {
 
     const {
@@ -3381,10 +3337,7 @@ async function changePassword(event) {
     } =
       await supabaseClient.auth
         .updateUser({
-
-          password:
-            password
-
+          password
         });
 
 
@@ -3416,309 +3369,15 @@ async function changePassword(event) {
       getSupabaseErrorMessage(error),
       'error'
     );
-
-
-  } finally {
-
-    if (button) {
-
-      button.disabled =
-        false;
-
-      button.textContent =
-        originalText ||
-        'Modifier le mot de passe';
-    }
   }
 }
 
 
 // ============================================================
-// RAFRAÎCHIR LES DONNÉES UTILISATEUR
-// ============================================================
-
-async function refreshCurrentUser() {
-
-  try {
-
-    const {
-      data,
-      error
-    } =
-      await supabaseClient.auth
-        .getUser();
-
-
-    if (error) {
-      throw error;
-    }
-
-
-    if (data?.user) {
-
-      currentUser =
-        data.user;
-
-      await loadUserProfile();
-
-      return currentUser;
-    }
-
-
-    currentUser =
-      null;
-
-    currentProfile =
-      null;
-
-    return null;
-
-
-  } catch (error) {
-
-    console.error(
-      'Erreur actualisation utilisateur :',
-      error
-    );
-
-    return null;
-  }
-}
-
-
-// ============================================================
-// VÉRIFICATION DE SESSION
-// ============================================================
-
-async function ensureAuthenticated() {
-
-  try {
-
-    const {
-      data,
-      error
-    } =
-      await supabaseClient.auth
-        .getSession();
-
-
-    if (error) {
-      throw error;
-    }
-
-
-    const user =
-      data?.session?.user ||
-      null;
-
-
-    currentUser =
-      user;
-
-
-    if (!user) {
-
-      currentProfile =
-        null;
-
-      return false;
-    }
-
-
-    return true;
-
-
-  } catch (error) {
-
-    console.error(
-      'Erreur vérification session :',
-      error
-    );
-
-
-    currentUser =
-      null;
-
-    currentProfile =
-      null;
-
-    return false;
-  }
-}
-
-
-// ============================================================
-// RETOUR À L'ACCUEIL
-// ============================================================
-
-function goHome() {
-
-  if (!currentUser) {
-
-    showAuthPage();
-
-    showLoginForm();
-
-    return;
-  }
-
-
-  showSubPage(
-    'homePage'
-  );
-}
-
-
-// ============================================================
-// OUVRIR LA PAGE ÉCHANGE
-// ============================================================
-
-function openExchange() {
-
-  if (!currentUser) {
-
-    showMessage(
-      'Connectez-vous pour effectuer une opération.',
-      'error'
-    );
-
-    showAuthPage();
-
-    showLoginForm();
-
-    return;
-  }
-
-
-  showSubPage(
-    'exchangePage'
-  );
-}
-
-
-// ============================================================
-// OUVRIR L'HISTORIQUE
-// ============================================================
-
-async function openOrdersPage() {
-
-  if (!currentUser) {
-
-    showMessage(
-      'Connectez-vous pour consulter vos commandes.',
-      'error'
-    );
-
-    showAuthPage();
-
-    showLoginForm();
-
-    return;
-  }
-
-
-  showSubPage(
-    'ordersPage'
-  );
-
-
-  await loadOrderHistory();
-}
-
-
-// ============================================================
-// OUVRIR LE SUPPORT
-// ============================================================
-
-async function openSupportPage() {
-
-  if (!currentUser) {
-
-    showMessage(
-      'Connectez-vous pour contacter le support.',
-      'error'
-    );
-
-    showAuthPage();
-
-    showLoginForm();
-
-    return;
-  }
-
-
-  showSubPage(
-    'supportPage'
-  );
-
-
-  await Promise.all([
-    loadDisputes(),
-    loadOrdersForDispute()
-  ]);
-}
-
-
-// ============================================================
-// RÉINITIALISER LE FORMULAIRE D'ÉCHANGE
-// ============================================================
-
-function resetExchangeForm() {
-
-  const input =
-    $('amountInput');
-
-
-  if (input) {
-
-    input.value =
-      '';
-  }
-
-
-  document
-    .querySelectorAll(
-      'input[name="wallet"], input[data-wallet]'
-    )
-    .forEach(input => {
-
-      if (
-        input &&
-        input.id !== 'profilePhone'
-      ) {
-
-        input.value =
-          '';
-      }
-    });
-
-
-  currentOrder =
-    null;
-
-
-  setBuyMode();
-
-  selectNetwork(
-    'trc20'
-  );
-
-
-  hideMessage();
-
-  updateCalculator();
-}
-
-
-// ============================================================
-// INITIALISATION DES ÉVÉNEMENTS
+// ÉVÉNEMENTS
 // ============================================================
 
 function setupEvents() {
-
-  // ----------------------------------------------------------
-  // FORMULAIRE CONNEXION
-  // ----------------------------------------------------------
 
   $('loginForm')
     ?.addEventListener(
@@ -3727,10 +3386,6 @@ function setupEvents() {
     );
 
 
-  // ----------------------------------------------------------
-  // FORMULAIRE INSCRIPTION
-  // ----------------------------------------------------------
-
   $('registerForm')
     ?.addEventListener(
       'submit',
@@ -3738,20 +3393,12 @@ function setupEvents() {
     );
 
 
-  // ----------------------------------------------------------
-  // DÉCONNEXION
-  // ----------------------------------------------------------
-
   $('logoutBtn')
     ?.addEventListener(
       'click',
       logoutUser
     );
 
-
-  // ----------------------------------------------------------
-  // ONGLETS AUTH
-  // ----------------------------------------------------------
 
   $('loginTab')
     ?.addEventListener(
@@ -3767,10 +3414,6 @@ function setupEvents() {
     );
 
 
-  // ----------------------------------------------------------
-  // ACHAT / VENTE
-  // ----------------------------------------------------------
-
   $('buyTab')
     ?.addEventListener(
       'click',
@@ -3785,19 +3428,13 @@ function setupEvents() {
     );
 
 
-  // ----------------------------------------------------------
-  // RÉSEAUX
-  // ----------------------------------------------------------
-
   $('trc20Option')
     ?.addEventListener(
       'click',
       () => {
-
         selectNetwork(
           'trc20'
         );
-
       }
     );
 
@@ -3806,18 +3443,12 @@ function setupEvents() {
     ?.addEventListener(
       'click',
       () => {
-
         selectNetwork(
           'bp20'
         );
-
       }
     );
 
-
-  // ----------------------------------------------------------
-  // CALCUL AUTOMATIQUE
-  // ----------------------------------------------------------
 
   $('amountInput')
     ?.addEventListener(
@@ -3826,20 +3457,12 @@ function setupEvents() {
     );
 
 
-  // ----------------------------------------------------------
-  // VALIDATION COMMANDE
-  // ----------------------------------------------------------
-
   $('reviewOrderBtn')
     ?.addEventListener(
       'click',
       reviewOrder
     );
 
-
-  // ----------------------------------------------------------
-  // PLACER COMMANDE
-  // ----------------------------------------------------------
 
   $('placeOrderBtn')
     ?.addEventListener(
@@ -3848,20 +3471,12 @@ function setupEvents() {
     );
 
 
-  // ----------------------------------------------------------
-  // ANNULER CONFIRMATION
-  // ----------------------------------------------------------
-
   $('cancelReviewBtn')
     ?.addEventListener(
       'click',
       cancelReview
     );
 
-
-  // ----------------------------------------------------------
-  // PAIEMENT
-  // ----------------------------------------------------------
 
   $('paymentDoneBtn')
     ?.addEventListener(
@@ -3870,20 +3485,18 @@ function setupEvents() {
     );
 
 
-  // ----------------------------------------------------------
-  // VOIR COMMANDE
-  // ----------------------------------------------------------
-
   $('viewOrderBtn')
     ?.addEventListener(
       'click',
-      openOrdersPage
+      () => {
+
+        showSubPage(
+          'ordersPage'
+        );
+
+      }
     );
 
-
-  // ----------------------------------------------------------
-  // PROFIL
-  // ----------------------------------------------------------
 
   $('profileForm')
     ?.addEventListener(
@@ -3892,10 +3505,6 @@ function setupEvents() {
     );
 
 
-  // ----------------------------------------------------------
-  // MOT DE PASSE
-  // ----------------------------------------------------------
-
   $('passwordForm')
     ?.addEventListener(
       'submit',
@@ -3903,20 +3512,12 @@ function setupEvents() {
     );
 
 
-  // ----------------------------------------------------------
-  // SUPPORT / LITIGE
-  // ----------------------------------------------------------
-
   $('disputeForm')
     ?.addEventListener(
       'submit',
       submitDispute
     );
 
-
-  // ----------------------------------------------------------
-  // NAVIGATION BASSE
-  // ----------------------------------------------------------
 
   document
     .querySelectorAll(
@@ -3926,54 +3527,34 @@ function setupEvents() {
 
       button.addEventListener(
         'click',
-        async () => {
+        () => {
 
           const page =
             button.dataset.page;
 
 
-          if (!page) {
-            return;
+          if (page) {
+
+            showSubPage(
+              page
+            );
           }
-
-
-          if (
-            page !== 'homePage' &&
-            !currentUser
-          ) {
-
-            showAuthPage();
-
-            showLoginForm();
-
-            return;
-          }
-
-
-          showSubPage(
-            page
-          );
-
         }
       );
-
     });
 
-
-  // ----------------------------------------------------------
-  // BOUTON COMMENCER
-  // ----------------------------------------------------------
 
   $('startBtn')
     ?.addEventListener(
       'click',
-      openExchange
+      () => {
+
+        showSubPage(
+          'exchangePage'
+        );
+      }
     );
 
-
-  // ----------------------------------------------------------
-  // OUVRIR ÉCHANGE
-  // ----------------------------------------------------------
 
   document
     .querySelectorAll(
@@ -3983,15 +3564,15 @@ function setupEvents() {
 
       button.addEventListener(
         'click',
-        openExchange
-      );
+        () => {
 
+          showSubPage(
+            'exchangePage'
+          );
+        }
+      );
     });
 
-
-  // ----------------------------------------------------------
-  // RETOUR ACCUEIL
-  // ----------------------------------------------------------
 
   document
     .querySelectorAll(
@@ -4001,72 +3582,26 @@ function setupEvents() {
 
       button.addEventListener(
         'click',
-        goHome
+        () => {
+
+          showSubPage(
+            'homePage'
+          );
+        }
       );
-
-    });
-
-
-  // ----------------------------------------------------------
-  // BOUTONS HISTORIQUE
-  // ----------------------------------------------------------
-
-  document
-    .querySelectorAll(
-      '[data-orders]'
-    )
-    .forEach(button => {
-
-      button.addEventListener(
-        'click',
-        openOrdersPage
-      );
-
-    });
-
-
-  // ----------------------------------------------------------
-  // BOUTONS SUPPORT
-  // ----------------------------------------------------------
-
-  document
-    .querySelectorAll(
-      '[data-support]'
-    )
-    .forEach(button => {
-
-      button.addEventListener(
-        'click',
-        openSupportPage
-      );
-
-    });
-
-
-  // ----------------------------------------------------------
-  // ANNULER / RETOUR ÉCHANGE
-  // ----------------------------------------------------------
-
-  document
-    .querySelectorAll(
-      '[data-reset-exchange]'
-    )
-    .forEach(button => {
-
-      button.addEventListener(
-        'click',
-        resetExchangeForm
-      );
-
     });
 }
+
+
 // ============================================================
 // LISTENER SUPABASE AUTH
 // ============================================================
 
 function setupAuthListener() {
 
-  if (authListenerReady) {
+  if (
+    authListenerReady
+  ) {
     return;
   }
 
@@ -4077,101 +3612,54 @@ function setupAuthListener() {
 
   supabaseClient.auth
     .onAuthStateChange(
-      async (event, session) => {
-
-        console.log(
-          'Événement Auth :',
-          event
-        );
-
+      (_event, session) => {
 
         currentUser =
           session?.user ||
           null;
 
 
-        // ------------------------------------------------------
-        // UTILISATEUR CONNECTÉ
-        // ------------------------------------------------------
-
         if (currentUser) {
 
-          // Évite de bloquer le listener Auth.
           setTimeout(
-            async () => {
+            () => {
 
-              try {
-
-                await initializeApplication();
-
-              } catch (error) {
-
-                console.error(
-                  'Erreur après changement Auth :',
-                  error
-                );
-
-                showAppPage();
-              }
+              initializeApplication();
 
             },
             0
           );
 
 
-          return;
+        } else {
+
+          currentProfile =
+            null;
+
+          currentOrder =
+            null;
+
+          showAuthPage();
+
+          showLoginForm();
         }
-
-
-        // ------------------------------------------------------
-        // UTILISATEUR DÉCONNECTÉ
-        // ------------------------------------------------------
-
-        currentProfile =
-          null;
-
-        currentOrder =
-          null;
-
-
-        showAuthPage();
-
-        showLoginForm();
       }
     );
 }
 
 
 // ============================================================
-// DÉMARRAGE DE L'APPLICATION
+// DÉMARRAGE
 // ============================================================
 
 async function boot() {
 
   try {
 
-    console.log(
-      'NOA DIGIT TRADE : démarrage...'
-    );
-
-
-    // --------------------------------------------------------
-    // Initialiser les événements
-    // --------------------------------------------------------
-
     setupEvents();
-
-
-    // --------------------------------------------------------
-    // Initialiser Supabase Auth
-    // --------------------------------------------------------
 
     setupAuthListener();
 
-
-    // --------------------------------------------------------
-    // Récupérer la session existante
-    // --------------------------------------------------------
 
     const {
       data,
@@ -4195,22 +3683,11 @@ async function boot() {
       null;
 
 
-    // --------------------------------------------------------
-    // UTILISATEUR DÉJÀ CONNECTÉ
-    // --------------------------------------------------------
-
     if (currentUser) {
 
       await initializeApplication();
 
-    }
-
-
-    // --------------------------------------------------------
-    // PAS DE SESSION
-    // --------------------------------------------------------
-
-    else {
+    } else {
 
       showAuthPage();
 
@@ -4218,27 +3695,15 @@ async function boot() {
     }
 
 
-    // --------------------------------------------------------
-    // VALEURS INITIALES DE L'ÉCHANGE
-    // --------------------------------------------------------
-
     setBuyMode();
-
 
     selectNetwork(
       'trc20'
     );
 
-
     updateRatesUI();
 
-
     updateCalculator();
-
-
-    console.log(
-      'NOA DIGIT TRADE : application prête.'
-    );
 
 
   } catch (error) {
@@ -4272,102 +3737,10 @@ if (
 
   document.addEventListener(
     'DOMContentLoaded',
-    boot,
-    {
-      once: true
-    }
+    boot
   );
 
 } else {
 
   boot();
 }
-// ============================================================
-// SÉCURITÉ ET EXPOSITION DES FONCTIONS
-// ============================================================
-
-// Les fonctions principales restent accessibles aux boutons
-// déjà présents dans index.html.
-//
-// On expose uniquement les fonctions nécessaires à l'interface.
-
-window.NOADigitTrade = {
-
-  loginUser,
-  registerUser,
-  logoutUser,
-
-  setBuyMode,
-  setSellMode,
-
-  selectNetwork,
-
-  calculateOrder,
-  updateCalculator,
-
-  reviewOrder,
-  placeOrder,
-
-  declarePayment,
-
-  loadOrderHistory,
-
-  loadDisputes,
-  loadOrdersForDispute,
-  submitDispute,
-
-  saveProfile,
-  changePassword,
-
-  showLoginForm,
-  showRegisterForm,
-
-  showSubPage,
-
-  openExchange,
-  openOrdersPage,
-  openSupportPage,
-  goHome
-
-};
-
-
-// ============================================================
-// PROTECTION CONTRE LES ERREURS NON GÉRÉES
-// ============================================================
-
-window.addEventListener(
-  'error',
-  event => {
-
-    console.error(
-      'Erreur JavaScript :',
-      event.error ||
-      event.message
-    );
-
-  }
-);
-
-
-window.addEventListener(
-  'unhandledrejection',
-  event => {
-
-    console.error(
-      'Erreur Promise non gérée :',
-      event.reason
-    );
-
-  }
-);
-
-
-// ============================================================
-// FIN APP.JS
-// ============================================================
-
-console.log(
-  'NOA DIGIT TRADE - APP.JS chargé avec succès.'
-);
-
