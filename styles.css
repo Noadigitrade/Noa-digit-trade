@@ -650,3 +650,74 @@ footer {
   font-weight:700;
   margin-top:15px;
 }
+.payment-amount-box {
+  background: #f1f5f9;
+  border-radius: 16px;
+  padding: 18px;
+  text-align: center;
+  margin: 18px 0;
+}
+
+.payment-amount-label {
+  font-size: 14px;
+  color: #667085;
+  margin-bottom: 6px;
+}
+
+.payment-amount-value {
+  font-size: 28px;
+  font-weight: 900;
+  color: #0757d9;
+}
+
+.payment-qr-box {
+  background: #fff;
+  border: 1px solid #e4e7ec;
+  border-radius: 18px;
+  padding: 20px;
+  text-align: center;
+  margin: 18px 0;
+}
+
+.payment-qr-text {
+  font-size: 14px;
+  color: #475467;
+  margin-bottom: 15px;
+}
+
+#orangeMoneyQr {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 220px;
+}
+
+#orangeMoneyQr img {
+  width: 220px;
+  height: 220px;
+  max-width: 100%;
+}
+
+.payment-or {
+  text-align: center;
+  font-weight: 800;
+  color: #667085;
+  margin: 15px 0;
+}
+
+.payment-main-button {
+  width: 100%;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.payment-security-box {
+  background: #ecfdf3;
+  color: #027a48;
+  border-radius: 12px;
+  padding: 12px;
+  margin: 15px 0;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+}
