@@ -1,6 +1,6 @@
 // ============================================================
 // NOA DIGIT TRADE
-// ADMIN.JS — VERSION COMPLETE CORRIGEE
+// ADMIN.JS — VERSION COMPLETE
 //
 // ESPACE ADMINISTRATEUR
 //
@@ -13,12 +13,9 @@
 // - Frais TRC20 / BEP20
 // - Numéro Orange Money
 // - Toutes les commandes
-// - ACHATS USDT / VENTES USDT
-// - Wallet client + bouton copier
-// - Réseau TRC20 / BEP20
-// - Numéro Orange Money client + bouton copier
 // - Modification des statuts
 // - Litiges
+// - Modification des statuts de litiges
 // - Utilisateurs
 // - Statistiques
 // - Déconnexion
@@ -35,104 +32,19 @@ const SUPABASE_URL =
 const SUPABASE_KEY =
   "sb_publishable_umIa4749av8722xus6aQHw_1nf8b-PC";
 
-let supabaseClient = null;
 
-
-// ============================================================
-// INITIALISATION SUPABASE
-// ============================================================
-
-function initSupabase() {
-
-  if (
-    !window.supabase ||
-    typeof window.supabase.createClient !== "function"
-  ) {
-
-    console.warn(
-      "Supabase JS n'est pas encore disponible."
-    );
-
-    return false;
-
-  }
-
-
-  if (!supabaseClient) {
-
-    try {
-
-      supabaseClient =
-        window.supabase.createClient(
-          SUPABASE_URL,
-          SUPABASE_KEY
-        );
-
-      console.log(
-        "Supabase initialisé avec succès."
-      );
-
-    }
-
-    catch (error) {
-
-      console.error(
-        "Erreur création client Supabase:",
-        error
-      );
-
-      return false;
-
-    }
-
-  }
-
-
-  return true;
-
-}
-
-
-// ============================================================
-// ATTENDRE SUPABASE
-// ============================================================
-
-async function waitForSupabase(
-  maxAttempts = 100
-) {
-
-  for (
-    let attempt = 0;
-    attempt < maxAttempts;
-    attempt++
-  ) {
-
-    if (initSupabase()) {
-
-      return true;
-
-    }
-
-
-    await new Promise(
-      resolve =>
-        setTimeout(
-          resolve,
-          100
-        )
-    );
-
-  }
-
-
+if (!window.supabase) {
   console.error(
-    "Impossible de charger Supabase JS après attente."
+    "Supabase JS n'est pas chargé."
   );
-
-
-  return false;
-
 }
+
+
+const supabaseClient =
+  window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+  );
 
 
 // ============================================================
@@ -195,284 +107,153 @@ const DEFAULT_SETTINGS = {
 
 function extractWalletAddress(order) {
 
-  if (order?.wallet_address) {
-
-    return String(
-      order.wallet_address
-    ).trim();
-
+  if (order.wallet_address) {
+    return String(order.wallet_address).trim();
   }
-
 
   const note =
-    String(
-      order?.customer_note || ""
-    );
-
+    String(order.customer_note || "");
 
   const buyMatch =
-    note.match(
-      /Adresse de r[ée]ception USDT\s*:\s*([^\n|]+)/i
-    );
-
+    note.match(/Adresse de r[ée]ception USDT\s*:\s*([^\n|]+)/i);
 
   if (buyMatch) {
-
     return buyMatch[1].trim();
-
   }
-
 
   const sellMatch =
-    note.match(
-      /Adresse de d[ée]p[oô]t NOA\s*:\s*([^\n|]+)/i
-    );
-
+    note.match(/Adresse de d[ée]p[oô]t NOA\s*:\s*([^\n|]+)/i);
 
   if (sellMatch) {
-
     return sellMatch[1].trim();
-
   }
 
-
   return "";
-
 }
 
-
-// ============================================================
-// NUMERO ORANGE MONEY CLIENT
-// ============================================================
 
 function extractPayoutPhone(order) {
 
-  if (order?.payout_phone) {
-
-    return String(
-      order.payout_phone
-    ).trim();
-
-  }
-
-
   const note =
-    String(
-      order?.customer_note || ""
-    );
-
+    String(order.customer_note || "");
 
   const match =
-    note.match(
-      /Num[ée]ro Orange Money\s*:\s*([^\n|]+)/i
-    );
+    note.match(/Num[ée]ro Orange Money\s*:\s*([^\n|]+)/i);
+
+  return match ? match[1].trim() : "";
+}
 
 
-  return match
-    ? match[1].trim()
-    : "";
+async function copyToClipboard(text, button) {
+
+  if (!text) return;
+
+  try {
+
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      const temp = document.createElement("textarea");
+      temp.value = text;
+      temp.style.position = "fixed";
+      temp.style.opacity = "0";
+      document.body.appendChild(temp);
+      temp.select();
+      document.execCommand("copy");
+      document.body.removeChild(temp);
+    }
+
+    if (button) {
+      const original = button.textContent;
+      button.textContent = "✓ Copié";
+      button.classList.add("copied");
+      setTimeout(() => {
+        button.textContent = original;
+        button.classList.remove("copied");
+      }, 1500);
+    }
+
+  } catch (error) {
+    console.error("Erreur copie presse-papier :", error);
+  }
+}
+
+
+async function getSignedProofUrl(path) {
+
+  const {
+    data,
+    error
+  } =
+    await supabaseClient
+      .storage
+      .from('payment-proofs')
+      .createSignedUrl(
+        path,
+        300
+      );
+
+
+  if (error) {
+    throw error;
+  }
+
+
+  return data.signedUrl;
 
 }
 
 
-// ============================================================
-// FORMAT RESEAU
-// ============================================================
+async function loadPaymentProofPreview(path) {
 
-function formatNetwork(network) {
-
-  const value =
-    String(
-      network || ""
-    )
-    .trim()
-    .toLowerCase();
+  const box =
+    $("proofImageBox");
 
 
-  if (value === "trc20") {
-
-    return "TRC20";
-
-  }
-
-
-  if (
-    value === "bp20" ||
-    value === "bep20"
-  ) {
-
-    return "BEP20";
-
-  }
-
-
-  return network
-    ? String(network).toUpperCase()
-    : "-";
-
-}
-
-
-// ============================================================
-// CLASSE RESEAU
-// ============================================================
-
-function getNetworkClass(network) {
-
-  const value =
-    String(
-      network || ""
-    )
-    .trim()
-    .toLowerCase();
-
-
-  if (value === "trc20") {
-
-    return "trc20";
-
-  }
-
-
-  if (
-    value === "bp20" ||
-    value === "bep20"
-  ) {
-
-    return "bep20";
-
-  }
-
-
-  return "";
-
-}
-
-
-// ============================================================
-// COPIER
-// ============================================================
-
-async function copyToClipboard(
-  text,
-  button
-) {
-
-  if (!text) {
-
+  if (!box) {
     return;
-
   }
 
 
   try {
 
-    if (
-      navigator.clipboard &&
-      typeof navigator.clipboard.writeText === "function"
-    ) {
-
-      await navigator.clipboard.writeText(
-        text
-      );
-
-    }
-
-    else {
-
-      const temp =
-        document.createElement(
-          "textarea"
-        );
+    const url =
+      await getSignedProofUrl(path);
 
 
-      temp.value =
-        text;
+    box.innerHTML = `
 
+      <div class="wallet-box-label">Preuve de paiement</div>
+      <a href="${escapeHtml(url)}" target="_blank" rel="noopener">
+        <img src="${escapeHtml(url)}" alt="Preuve de paiement" style="max-width:100%;border-radius:12px;display:block;margin-top:6px">
+      </a>
+      <div class="small" style="margin-top:6px">Touchez l'image pour l'agrandir.</div>
 
-      temp.style.position =
-        "fixed";
+    `;
 
-
-      temp.style.opacity =
-        "0";
-
-
-      document.body.appendChild(
-        temp
-      );
-
-
-      temp.select();
-
-
-      document.execCommand(
-        "copy"
-      );
-
-
-      document.body.removeChild(
-        temp
-      );
-
-    }
-
-
-    if (button) {
-
-      const original =
-        button.textContent;
-
-
-      button.textContent =
-        "✓ Copié";
-
-
-      button.classList.add(
-        "copied"
-      );
-
-
-      setTimeout(
-        () => {
-
-          button.textContent =
-            original;
-
-
-          button.classList.remove(
-            "copied"
-          );
-
-        },
-        1500
-      );
-
-    }
-
-  }
-
-  catch (error) {
+  } catch (error) {
 
     console.error(
-      "Erreur copie presse-papier :",
+      "Erreur chargement preuve :",
       error
     );
+
+
+    box.innerHTML = `
+
+      <div class="wallet-box-label">Preuve de paiement</div>
+      <div class="small" style="color:#c62828">Impossible de charger l'image.</div>
+
+    `;
 
   }
 
 }
 
 
-// ============================================================
-// DOM
-// ============================================================
-
 function $(id) {
 
-  return document.getElementById(
-    id
-  );
+  return document.getElementById(id);
 
 }
 
@@ -484,26 +265,11 @@ function $(id) {
 function escapeHtml(value) {
 
   return String(value ?? "")
-    .replace(
-      /&/g,
-      "&amp;"
-    )
-    .replace(
-      /</g,
-      "&lt;"
-    )
-    .replace(
-      />/g,
-      "&gt;"
-    )
-    .replace(
-      /"/g,
-      "&quot;"
-    )
-    .replace(
-      /'/g,
-      "&#039;"
-    );
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 
 }
 
@@ -519,7 +285,6 @@ function formatNumber(
 
   const number =
     Number(value);
-
 
   if (
     !Number.isFinite(number)
@@ -550,7 +315,6 @@ function formatDecimal(value) {
   const number =
     Number(value);
 
-
   if (
     !Number.isFinite(number)
   ) {
@@ -560,9 +324,7 @@ function formatDecimal(value) {
   }
 
 
-  return number.toFixed(
-    6
-  );
+  return number.toFixed(6);
 
 }
 
@@ -654,14 +416,11 @@ function showLoginMessage(
 
 
   box.textContent =
-    String(
-      message || ""
-    );
+    String(message || "");
 
 
   box.className =
-    "message show " +
-    type;
+    "message show " + type;
 
 }
 
@@ -679,9 +438,7 @@ function clearLoginMessage() {
   }
 
 
-  box.textContent =
-    "";
-
+  box.textContent = "";
 
   box.className =
     "message";
@@ -707,14 +464,11 @@ function showMessage(
 
 
   box.textContent =
-    String(
-      message || ""
-    );
+    String(message || "");
 
 
   box.className =
-    "message show " +
-    type;
+    "message show " + type;
 
 }
 
@@ -732,9 +486,7 @@ function clearMessage(id) {
   }
 
 
-  box.textContent =
-    "";
-
+  box.textContent = "";
 
   box.className =
     "message";
@@ -750,16 +502,12 @@ function showLoginPage() {
 
   $("adminLoginPage")
     ?.classList
-    .remove(
-      "hidden"
-    );
+    .remove("hidden");
 
 
   $("adminPage")
     ?.classList
-    .add(
-      "hidden"
-    );
+    .add("hidden");
 
 }
 
@@ -768,16 +516,12 @@ function showAdminPage() {
 
   $("adminLoginPage")
     ?.classList
-    .add(
-      "hidden"
-    );
+    .add("hidden");
 
 
   $("adminPage")
     ?.classList
-    .remove(
-      "hidden"
-    );
+    .remove("hidden");
 
 }
 
@@ -789,17 +533,6 @@ function showAdminPage() {
 async function verifyAdmin() {
 
   if (!currentUser) {
-
-    return false;
-
-  }
-
-
-  if (!supabaseClient) {
-
-    console.error(
-      "Supabase non initialisé."
-    );
 
     return false;
 
@@ -861,7 +594,6 @@ async function verifyAdmin() {
       error
     );
 
-
     return false;
 
   }
@@ -881,18 +613,6 @@ async function adminLogin(event) {
   clearLoginMessage();
 
 
-  if (!supabaseClient) {
-
-    showLoginMessage(
-      "Supabase n'est pas encore chargé. Veuillez patienter quelques secondes puis réessayer."
-    );
-
-
-    return;
-
-  }
-
-
   const email =
     $("adminEmail")
       ?.value
@@ -905,15 +625,11 @@ async function adminLogin(event) {
       ?.value || "";
 
 
-  if (
-    !email ||
-    !password
-  ) {
+  if (!email || !password) {
 
     showLoginMessage(
       "Veuillez remplir tous les champs."
     );
-
 
     return;
 
@@ -930,9 +646,7 @@ async function adminLogin(event) {
 
   if (button) {
 
-    button.disabled =
-      true;
-
+    button.disabled = true;
 
     button.textContent =
       "Connexion...";
@@ -987,12 +701,9 @@ async function adminLogin(event) {
         .signOut();
 
 
-      currentUser =
-        null;
+      currentUser = null;
 
-
-      currentProfile =
-        null;
+      currentProfile = null;
 
 
       throw new Error(
@@ -1027,9 +738,7 @@ async function adminLogin(event) {
 
     if (button) {
 
-      button.disabled =
-        false;
-
+      button.disabled = false;
 
       button.textContent =
         oldText ||
@@ -1047,19 +756,6 @@ async function adminLogin(event) {
 // ============================================================
 
 async function checkSession() {
-
-  if (!supabaseClient) {
-
-    showLoginPage();
-
-    showLoginMessage(
-      "Impossible de charger Supabase. Vérifiez que le script Supabase est présent dans admin.html avant admin.js."
-    );
-
-    return;
-
-  }
-
 
   try {
 
@@ -1084,16 +780,11 @@ async function checkSession() {
 
     if (!session?.user) {
 
-      currentUser =
-        null;
+      currentUser = null;
 
-
-      currentProfile =
-        null;
-
+      currentProfile = null;
 
       showLoginPage();
-
 
       return;
 
@@ -1115,13 +806,9 @@ async function checkSession() {
         .signOut();
 
 
-      currentUser =
-        null;
+      currentUser = null;
 
-
-      currentProfile =
-        null;
-
+      currentProfile = null;
 
       showLoginPage();
 
@@ -1151,20 +838,15 @@ async function checkSession() {
     );
 
 
-    currentUser =
-      null;
+    currentUser = null;
 
-
-    currentProfile =
-      null;
-
+    currentProfile = null;
 
     showLoginPage();
 
 
     showLoginMessage(
-      "Impossible de vérifier votre session : " +
-      getErrorMessage(error)
+      "Impossible de vérifier votre session."
     );
 
   }
@@ -1177,13 +859,6 @@ async function checkSession() {
 // ============================================================
 
 async function loadDashboard() {
-
-  if (!supabaseClient) {
-
-    return;
-
-  }
-
 
   updateAdminHeader();
 
@@ -1265,15 +940,17 @@ function getSettingsField(
 }
 
 
+// ============================================================
+// REMPLIR UN CHAMP
+// ============================================================
+
 function setFieldValue(
   names,
   value
 ) {
 
   const field =
-    getSettingsField(
-      names
-    );
+    getSettingsField(names);
 
 
   if (!field) {
@@ -1289,14 +966,16 @@ function setFieldValue(
 }
 
 
+// ============================================================
+// RECUPERER UNE VALEUR
+// ============================================================
+
 function getFieldValue(
   names
 ) {
 
   const field =
-    getSettingsField(
-      names
-    );
+    getSettingsField(names);
 
 
   if (!field) {
@@ -1328,10 +1007,7 @@ async function loadSettings() {
       await supabaseClient
         .from("app_settings")
         .select("*")
-        .eq(
-          "id",
-          1
-        )
+        .eq("id", 1)
         .maybeSingle();
 
 
@@ -1349,6 +1025,7 @@ async function loadSettings() {
 
 
     fillSettingsForm();
+
 
   }
 
@@ -1381,19 +1058,21 @@ async function loadSettings() {
 
 
 // ============================================================
-// REMPLIR PARAMETRES
+// REMPLIR FORMULAIRE PARAMETRES
 // ============================================================
 
 function fillSettingsForm() {
 
-  const settings = {
+  const settings =
+    {
+      ...DEFAULT_SETTINGS,
+      ...(currentSettings || {})
+    };
 
-    ...DEFAULT_SETTINGS,
 
-    ...(currentSettings || {})
-
-  };
-
+  // ----------------------------------------------------------
+  // TAUX ACHAT
+  // ----------------------------------------------------------
 
   setFieldValue(
     [
@@ -1405,6 +1084,10 @@ function fillSettingsForm() {
   );
 
 
+  // ----------------------------------------------------------
+  // TAUX VENTE
+  // ----------------------------------------------------------
+
   setFieldValue(
     [
       "sellRate",
@@ -1414,6 +1097,10 @@ function fillSettingsForm() {
     settings.sell_rate
   );
 
+
+  // ----------------------------------------------------------
+  // MINIMUM
+  // ----------------------------------------------------------
 
   setFieldValue(
     [
@@ -1426,6 +1113,10 @@ function fillSettingsForm() {
   );
 
 
+  // ----------------------------------------------------------
+  // MAXIMUM
+  // ----------------------------------------------------------
+
   setFieldValue(
     [
       "maxOrderCfa",
@@ -1437,6 +1128,10 @@ function fillSettingsForm() {
   );
 
 
+  // ----------------------------------------------------------
+  // FRAIS TRC20
+  // ----------------------------------------------------------
+
   setFieldValue(
     [
       "trc20Fee",
@@ -1447,6 +1142,10 @@ function fillSettingsForm() {
     settings.trc20_fee_usdt
   );
 
+
+  // ----------------------------------------------------------
+  // FRAIS BEP20 / BP20
+  // ----------------------------------------------------------
 
   setFieldValue(
     [
@@ -1462,6 +1161,10 @@ function fillSettingsForm() {
   );
 
 
+  // ----------------------------------------------------------
+  // ORANGE MONEY
+  // ----------------------------------------------------------
+
   setFieldValue(
     [
       "orangeMoneyNumber",
@@ -1474,6 +1177,10 @@ function fillSettingsForm() {
   );
 
 
+  // ----------------------------------------------------------
+  // PAIEMENT
+  // ----------------------------------------------------------
+
   setFieldValue(
     [
       "paymentMethod",
@@ -1484,6 +1191,10 @@ function fillSettingsForm() {
   );
 
 
+  // ----------------------------------------------------------
+  // PAYS
+  // ----------------------------------------------------------
+
   setFieldValue(
     [
       "country",
@@ -1492,6 +1203,10 @@ function fillSettingsForm() {
     settings.country
   );
 
+
+  // ----------------------------------------------------------
+  // DEVISE
+  // ----------------------------------------------------------
 
   setFieldValue(
     [
@@ -1513,13 +1228,11 @@ function fillSettingsForm() {
 
 function updateSettingsPreview() {
 
-  const settings = {
-
-    ...DEFAULT_SETTINGS,
-
-    ...(currentSettings || {})
-
-  };
+  const settings =
+    {
+      ...DEFAULT_SETTINGS,
+      ...(currentSettings || {})
+    };
 
 
   const buyRate =
@@ -1599,9 +1312,13 @@ function updateSettingsPreview() {
     ]);
 
 
-  if ($("previewBuyRate")) {
+  const previewBuy =
+    $("previewBuyRate");
 
-    $("previewBuyRate").textContent =
+
+  if (previewBuy) {
+
+    previewBuy.textContent =
       `${formatNumber(
         Number.isFinite(buyRate)
           ? buyRate
@@ -1611,9 +1328,13 @@ function updateSettingsPreview() {
   }
 
 
-  if ($("previewSellRate")) {
+  const previewSell =
+    $("previewSellRate");
 
-    $("previewSellRate").textContent =
+
+  if (previewSell) {
+
+    previewSell.textContent =
       `${formatNumber(
         Number.isFinite(sellRate)
           ? sellRate
@@ -1623,9 +1344,13 @@ function updateSettingsPreview() {
   }
 
 
-  if ($("previewMinOrder")) {
+  const previewMin =
+    $("previewMinOrder");
 
-    $("previewMinOrder").textContent =
+
+  if (previewMin) {
+
+    previewMin.textContent =
       `${formatNumber(
         Number.isFinite(minOrder)
           ? minOrder
@@ -1635,9 +1360,13 @@ function updateSettingsPreview() {
   }
 
 
-  if ($("previewMaxOrder")) {
+  const previewMax =
+    $("previewMaxOrder");
 
-    $("previewMaxOrder").textContent =
+
+  if (previewMax) {
+
+    previewMax.textContent =
       `${formatNumber(
         Number.isFinite(maxOrder)
           ? maxOrder
@@ -1647,9 +1376,13 @@ function updateSettingsPreview() {
   }
 
 
-  if ($("previewTrc20Fee")) {
+  const previewTrc =
+    $("previewTrc20Fee");
 
-    $("previewTrc20Fee").textContent =
+
+  if (previewTrc) {
+
+    previewTrc.textContent =
       `${Number.isFinite(trc20Fee)
         ? trc20Fee
         : settings.trc20_fee_usdt} USDT`;
@@ -1672,9 +1405,13 @@ function updateSettingsPreview() {
   }
 
 
-  if ($("previewOrangeMoney")) {
+  const previewOrange =
+    $("previewOrangeMoney");
 
-    $("previewOrangeMoney").textContent =
+
+  if (previewOrange) {
+
+    previewOrange.textContent =
       orange ||
       settings.orange_money_number;
 
@@ -1700,6 +1437,10 @@ async function saveSettings(event) {
     "settingsMessage"
   );
 
+
+  // ----------------------------------------------------------
+  // RECUPERATION
+  // ----------------------------------------------------------
 
   const buyRate =
     Number(
@@ -1800,6 +1541,10 @@ async function saveSettings(event) {
     ]);
 
 
+  // ----------------------------------------------------------
+  // VALEURS PAR DEFAUT
+  // ----------------------------------------------------------
+
   if (!paymentMethod) {
 
     paymentMethod =
@@ -1823,6 +1568,10 @@ async function saveSettings(event) {
 
   }
 
+
+  // ----------------------------------------------------------
+  // VALIDATION TAUX
+  // ----------------------------------------------------------
 
   if (
     !Number.isFinite(buyRate) ||
@@ -1853,6 +1602,10 @@ async function saveSettings(event) {
 
   }
 
+
+  // ----------------------------------------------------------
+  // VALIDATION LIMITES
+  // ----------------------------------------------------------
 
   if (
     !Number.isFinite(minOrder) ||
@@ -1898,6 +1651,10 @@ async function saveSettings(event) {
   }
 
 
+  // ----------------------------------------------------------
+  // VALIDATION FRAIS
+  // ----------------------------------------------------------
+
   if (
     !Number.isFinite(trc20Fee) ||
     trc20Fee < 0
@@ -1905,7 +1662,7 @@ async function saveSettings(event) {
 
     showMessage(
       "settingsMessage",
-      "Les frais TRC20 doivent être supérieurs ou égaux à 0."
+      "Le frais TRC20 doit être supérieur ou égal à 0."
     );
 
     return;
@@ -1920,13 +1677,17 @@ async function saveSettings(event) {
 
     showMessage(
       "settingsMessage",
-      "Les frais BEP20 doivent être supérieurs ou égaux à 0."
+      "Le frais BEP20 doit être supérieur ou égal à 0."
     );
 
     return;
 
   }
 
+
+  // ----------------------------------------------------------
+  // VALIDATION ORANGE MONEY
+  // ----------------------------------------------------------
 
   if (!orangeMoney) {
 
@@ -1940,6 +1701,10 @@ async function saveSettings(event) {
   }
 
 
+  // ----------------------------------------------------------
+  // BOUTON
+  // ----------------------------------------------------------
+
   const button =
     $("saveSettingsBtn") ||
     $("saveSettingsButton") ||
@@ -1952,14 +1717,17 @@ async function saveSettings(event) {
 
   if (button) {
 
-    button.disabled =
-      true;
+    button.disabled = true;
 
     button.textContent =
       "Enregistrement...";
 
   }
 
+
+  // ----------------------------------------------------------
+  // DONNEES
+  // ----------------------------------------------------------
 
   const payload = {
 
@@ -1994,6 +1762,10 @@ async function saveSettings(event) {
   };
 
 
+  // ----------------------------------------------------------
+  // ENREGISTREMENT
+  // ----------------------------------------------------------
+
   try {
 
     const {
@@ -2003,10 +1775,7 @@ async function saveSettings(event) {
       await supabaseClient
         .from("app_settings")
         .update(payload)
-        .eq(
-          "id",
-          1
-        )
+        .eq("id", 1)
         .select("*")
         .single();
 
@@ -2031,6 +1800,12 @@ async function saveSettings(event) {
       "success"
     );
 
+
+    console.log(
+      "Paramètres enregistrés:",
+      data
+    );
+
   }
 
   catch (error) {
@@ -2053,8 +1828,7 @@ async function saveSettings(event) {
 
     if (button) {
 
-      button.disabled =
-        false;
+      button.disabled = false;
 
       button.textContent =
         oldText ||
@@ -2130,13 +1904,7 @@ async function loadOrders() {
     if (container) {
 
       container.innerHTML =
-        `<div class="empty">
-          Impossible de charger les commandes.
-          <br>
-          ${escapeHtml(
-            getErrorMessage(error)
-          )}
-        </div>`;
+        '<div class="empty">Impossible de charger les commandes.</div>';
 
     }
 
@@ -2186,40 +1954,28 @@ function renderOrders() {
       order => {
 
         const wallet =
-          extractWalletAddress(
-            order
-          );
+          extractWalletAddress(order);
 
+        const text =
+          [
 
-        const payoutPhone =
-          extractPayoutPhone(
-            order
-          );
+            order.id,
 
+            order.user_id,
 
-        const text = [
+            order.side,
 
-          order.id,
+            order.network,
 
-          order.user_id,
+            order.status,
 
-          order.side,
+            wallet,
 
-          order.network,
+            order.payment_method
 
-          order.status,
-
-          wallet,
-
-          payoutPhone,
-
-          order.payment_method,
-
-          order.customer_note
-
-        ]
-        .join(" ")
-        .toLowerCase();
+          ]
+          .join(" ")
+          .toLowerCase();
 
 
         const matchesSearch =
@@ -2239,8 +1995,7 @@ function renderOrders() {
           !typeFilter ||
           String(
             order.side || ""
-          )
-          .toLowerCase() ===
+          ).toLowerCase() ===
           typeFilter;
 
 
@@ -2266,814 +2021,127 @@ function renderOrders() {
   }
 
 
-  const purchases =
-    filtered.filter(
-      order =>
-        String(
-          order.side || ""
-        ).toLowerCase() ===
-        "buy"
-    );
-
-
-  const sales =
-    filtered.filter(
-      order =>
-        String(
-          order.side || ""
-        ).toLowerCase() ===
-        "sell"
-    );
-
-
-  let html = "";
-
-
-  if (purchases.length > 0) {
-
-    html += `
-
-      <div class="orders-group">
-
-        <div
-          class="orders-group-title"
-          style="
-            padding:14px;
-            margin-bottom:12px;
-            border-radius:10px;
-            background:#e8f5e9;
-            color:#1b5e20;
-            font-weight:800;
-            font-size:18px;
-          "
-        >
-
-          🟢 ACHATS USDT
-
-          <span style="font-size:13px;font-weight:500;">
-            — ${purchases.length} commande(s)
-          </span>
-
-        </div>
-
-        <div class="orders-group-list">
-
-          ${
-            purchases
-              .map(
-                order =>
-                  renderOrderCard(
-                    order,
-                    true
-                  )
-              )
-              .join("")
-          }
-
-        </div>
-
-      </div>
-
-    `;
-
-  }
-
-
-  if (sales.length > 0) {
-
-    html += `
-
-      <div
-        class="orders-group"
-        style="margin-top:25px;"
-      >
-
-        <div
-          class="orders-group-title"
-          style="
-            padding:14px;
-            margin-bottom:12px;
-            border-radius:10px;
-            background:#e3f2fd;
-            color:#0d47a1;
-            font-weight:800;
-            font-size:18px;
-          "
-        >
-
-          🔵 VENTES USDT
-
-          <span style="font-size:13px;font-weight:500;">
-            — ${sales.length} commande(s)
-          </span>
-
-        </div>
-
-        <div class="orders-group-list">
-
-          ${
-            sales
-              .map(
-                order =>
-                  renderOrderCard(
-                    order,
-                    false
-                  )
-              )
-              .join("")
-          }
-
-        </div>
-
-      </div>
-
-    `;
-
-  }
-
-
   container.innerHTML =
-    html;
-
-}
-
-
-// ============================================================
-// CARTE COMMANDE
-// ============================================================
-
-function renderOrderCard(
-  order,
-  isBuy
-) {
-
-  const status =
-    order.status ||
-    "pending";
-
-
-  const statusLabel =
-    getOrderStatusLabel(
-      status
-    );
-
-
-  const wallet =
-    extractWalletAddress(
-      order
-    );
-
-
-  const payoutPhone =
-    extractPayoutPhone(
-      order
-    );
-
-
-  const network =
-    formatNetwork(
-      order.network
-    );
-
-
-  const shortId =
-    String(
-      order.id || ""
-    ).slice(
-      0,
-      8
-    );
-
-
-  if (isBuy) {
-
-    return `
-
-      <div
-        class="order-card purchase-order"
-        style="
-          border-left:4px solid #2e7d32;
-        "
-      >
-
-        <div class="order-card-top">
-
-          <div>
-
-            <span class="order-type-badge buy">
-
-              🟢 Achat USDT
-
-            </span>
-
-            <div class="order-card-id">
-
-              Commande #${escapeHtml(
-                shortId
-              )}
-
-            </div>
-
-          </div>
-
-          <span
-            class="status ${escapeHtml(
-              status
-            )}"
-          >
-
-            ${escapeHtml(
-              statusLabel
-            )}
-
-          </span>
-
-        </div>
-
-
-        <div class="order-card-row">
-
-          <span>Client ID</span>
-
-          <strong
-            style="
-              font-size:12px;
-              word-break:break-all;
-            "
-          >
-
-            ${escapeHtml(
-              String(
-                order.user_id || "-"
-              )
-            )}
-
-          </strong>
-
-        </div>
-
-
-        <div class="order-card-row">
-
-          <span>Montant payé</span>
-
-          <strong>
-
-            ${formatNumber(
-              order.amount_cfa
-            )}
-            FCFA
-
-          </strong>
-
-        </div>
-
-
-        <div class="order-card-row">
-
-          <span>USDT à envoyer</span>
-
-          <strong>
-
-            ${formatDecimal(
-              order.net_usdt
-            )}
-            USDT
-
-          </strong>
-
-        </div>
-
-
-        <div
-          style="
-            margin:12px 0;
-            padding:12px;
-            border-radius:8px;
-            background:#fff8e1;
-            border:2px solid #ffb300;
-          "
-        >
-
-          <div
-            style="
-              font-size:12px;
-              font-weight:700;
-              margin-bottom:4px;
-            "
-          >
-
-            ⚠️ RÉSEAU À UTILISER
-
-          </div>
-
-          <strong
-            style="
-              font-size:20px;
-              color:#e65100;
-            "
-          >
-
-            ${escapeHtml(
-              network
-            )}
-
-          </strong>
-
-        </div>
-
-
-        ${
-          wallet
-            ? `
-
-              <div
-                class="wallet-box"
-                style="
-                  border:2px solid #2e7d32;
-                  padding:12px;
-                  border-radius:10px;
-                  background:#f1f8e9;
-                "
-              >
-
-                <div
-                  style="
-                    font-weight:800;
-                    margin-bottom:8px;
-                    color:#1b5e20;
-                  "
-                >
-
-                  📥 WALLET DU CLIENT
-
-                  <br>
-
-                  <small>
-                    Envoyer les USDT à cette adresse
-                  </small>
-
-                </div>
-
-
-                <div
-                  style="
-                    display:flex;
-                    gap:8px;
-                    align-items:center;
-                  "
-                >
-
-                  <span
-                    style="
-                      word-break:break-all;
-                      flex:1;
-                      font-size:12px;
-                    "
-                  >
-
-                    ${escapeHtml(
-                      wallet
-                    )}
-
-                  </span>
-
-
-                  <button
-                    type="button"
-                    class="copy-btn"
-                    data-copy-wallet="${escapeHtml(
-                      wallet
-                    )}"
-                  >
-
-                    Copier
-
-                  </button>
-
-                </div>
-
-              </div>
-
-            `
-            : `
-
-              <div
-                style="
-                  padding:12px;
-                  border-radius:10px;
-                  background:#ffebee;
-                  border:2px solid #c62828;
-                "
-              >
-
-                <div
-                  style="
-                    color:#c62828;
-                    font-weight:800;
-                  "
-                >
-
-                  ❌ WALLET NON TROUVÉ
-
-                </div>
-
-                <div
-                  style="
-                    margin-top:5px;
-                    font-size:13px;
-                  "
-                >
-
-                  L'adresse du portefeuille client
-                  n'est pas enregistrée.
-
-                </div>
-
-              </div>
-
-            `
-        }
-
-
-        <div class="order-card-row">
-
-          <span>Frais</span>
-
-          <strong>
-
-            ${formatDecimal(
-              order.fee_usdt
-            )}
-            USDT
-
-          </strong>
-
-        </div>
-
-
-        <div class="order-card-row">
-
-          <span>Date</span>
-
-          <strong>
-
-            ${formatDate(
-              order.created_at
-            )}
-
-          </strong>
-
-        </div>
-
-
-        <div class="order-card-actions">
-
-          <button
-            type="button"
-            class="btn btn-secondary btn-small"
-            data-view-order="${escapeHtml(
-              order.id
-            )}"
-          >
-
-            Voir / Modifier le statut
-
-          </button>
-
-        </div>
-
-      </div>
-
-    `;
-
-  }
-
-
-  return `
-
-    <div
-      class="order-card sale-order"
-      style="
-        border-left:4px solid #1565c0;
-      "
-    >
-
-      <div class="order-card-top">
-
-        <div>
-
-          <span class="order-type-badge sell">
-
-            🔵 Vente USDT
-
-          </span>
-
-          <div class="order-card-id">
-
-            Commande #${escapeHtml(
-              shortId
-            )}
-
-          </div>
-
-        </div>
-
-        <span
-          class="status ${escapeHtml(
-            status
-          )}"
-        >
-
-          ${escapeHtml(
-            statusLabel
-          )}
-
-        </span>
-
-      </div>
-
-
-      <div class="order-card-row">
-
-        <span>Client ID</span>
-
-        <strong
-          style="
-            font-size:12px;
-            word-break:break-all;
-          "
-        >
-
-          ${escapeHtml(
+    filtered
+      .map(
+        order => {
+
+          const isBuy =
             String(
-              order.user_id || "-"
-            )
-          )}
-
-        </strong>
-
-      </div>
+              order.side || ""
+            ).toLowerCase() === "buy";
 
 
-      <div class="order-card-row">
-
-        <span>USDT reçu</span>
-
-        <strong>
-
-          ${formatDecimal(
-            order.usdt_amount
-          )}
-          USDT
-
-        </strong>
-
-      </div>
+          const type =
+            isBuy
+              ? "Achat"
+              : "Vente";
 
 
-      <div class="order-card-row">
-
-        <span>FCFA à payer au client</span>
-
-        <strong>
-
-          ${formatNumber(
-            order.receive_cfa
-          )}
-          FCFA
-
-        </strong>
-
-      </div>
+          const status =
+            order.status ||
+            "pending";
 
 
-      <div
-        style="
-          margin:12px 0;
-          padding:12px;
-          border-radius:8px;
-          background:#e3f2fd;
-          border:2px solid #1976d2;
-        "
-      >
-
-        <div
-          style="
-            font-size:12px;
-            font-weight:700;
-            margin-bottom:4px;
-          "
-        >
-
-          🌐 RÉSEAU DE LA TRANSACTION
-
-        </div>
-
-        <strong
-          style="
-            font-size:20px;
-            color:#1565c0;
-          "
-        >
-
-          ${escapeHtml(
-            network
-          )}
-
-        </strong>
-
-      </div>
+          const statusLabel =
+            getOrderStatusLabel(
+              status
+            );
 
 
-      ${
-        payoutPhone
-          ? `
-
-            <div
-              style="
-                border:2px solid #1565c0;
-                padding:12px;
-                border-radius:10px;
-                background:#e3f2fd;
-              "
-            >
-
-              <div
-                style="
-                  font-weight:800;
-                  margin-bottom:8px;
-                  color:#0d47a1;
-                "
-              >
-
-                📱 NUMÉRO ORANGE MONEY CLIENT
-
-              </div>
+          const wallet =
+            extractWalletAddress(order);
 
 
-              <div
-                style="
-                  display:flex;
-                  gap:8px;
-                  align-items:center;
-                "
-              >
+          const payoutPhone =
+            extractPayoutPhone(order);
 
-                <span
-                  style="
-                    font-size:18px;
-                    font-weight:800;
-                    flex:1;
-                  "
-                >
 
-                  ${escapeHtml(
+          const walletLabel =
+            isBuy
+              ? "Portefeuille client (envoyer les USDT ici)"
+              : "Adresse de dépôt NOA utilisée";
+
+
+          const walletBox =
+            wallet
+              ? `
+                <div class="wallet-box">
+                  <div class="wallet-box-label">${escapeHtml(walletLabel)}</div>
+                  <div class="wallet-box-row">
+                    <span class="wallet-box-value">${escapeHtml(wallet)}</span>
+                    <button type="button" class="copy-btn" data-copy-wallet="${escapeHtml(wallet)}">Copier</button>
+                  </div>
+                  ${
                     payoutPhone
-                  )}
+                      ? `<div class="order-card-row" style="margin-top:8px"><span>Orange Money client</span><strong>${escapeHtml(payoutPhone)}</strong></div>`
+                      : ""
+                  }
+                </div>
+              `
+              : `
+                <div class="wallet-box">
+                  <div class="wallet-box-label">${escapeHtml(walletLabel)}</div>
+                  <div class="wallet-box-value" style="color:#c62828">Adresse non trouvée dans la commande.</div>
+                </div>
+              `;
 
-                </span>
 
+          return `
 
-                <button
-                  type="button"
-                  class="copy-btn"
-                  data-copy-wallet="${escapeHtml(
-                    payoutPhone
-                  )}"
-                >
+            <div class="order-card">
 
-                  Copier
+              <div class="order-card-top">
+                <div>
+                  <span class="order-type-badge ${isBuy ? "buy" : "sell"}">${escapeHtml(type)} USDT</span>
+                  <div class="order-card-id">Commande #${escapeHtml(String(order.id || "").slice(0, 8))}</div>
+                  ${
+                    order.payment_proof_url
+                      ? '<div class="order-card-id" style="color:#168447;font-weight:800">📎 Preuve jointe</div>'
+                      : ''
+                  }
+                </div>
+                <span class="status ${escapeHtml(status)}">${escapeHtml(statusLabel)}</span>
+              </div>
 
-                </button>
+              <div class="order-card-row">
+                <span>Client (ID)</span>
+                <strong>${escapeHtml(String(order.user_id || "-"))}</strong>
+              </div>
 
+              <div class="order-card-row">
+                <span>Montant FCFA</span>
+                <strong>${formatNumber(order.amount_cfa)} FCFA</strong>
+              </div>
+
+              <div class="order-card-row">
+                <span>USDT</span>
+                <strong>${formatDecimal(order.usdt_amount)} USDT</strong>
+              </div>
+
+              <div class="order-card-row">
+                <span>Réseau</span>
+                <strong>${escapeHtml(order.network || "-")}</strong>
+              </div>
+
+              <div class="order-card-row">
+                <span>Date</span>
+                <strong>${formatDate(order.created_at)}</strong>
+              </div>
+
+              ${walletBox}
+
+              <div class="order-card-actions">
+                <button type="button" class="btn btn-secondary btn-small" data-view-order="${escapeHtml(order.id)}">Voir / Modifier le statut</button>
               </div>
 
             </div>
 
-          `
-          : `
+          `;
 
-            <div
-              style="
-                padding:12px;
-                border-radius:10px;
-                background:#ffebee;
-                border:2px solid #c62828;
-              "
-            >
-
-              <div
-                style="
-                  color:#c62828;
-                  font-weight:800;
-                "
-              >
-
-                ❌ NUMÉRO ORANGE MONEY NON TROUVÉ
-
-              </div>
-
-            </div>
-
-          `
-      }
-
-
-      ${
-        wallet
-          ? `
-
-            <div
-              style="
-                margin-top:10px;
-                padding:10px;
-                border-radius:8px;
-                background:#f5f5f5;
-              "
-            >
-
-              <div
-                style="
-                  font-weight:700;
-                  margin-bottom:5px;
-                "
-              >
-
-                Adresse de dépôt NOA
-
-              </div>
-
-              <div
-                style="
-                  word-break:break-all;
-                  font-size:12px;
-                "
-              >
-
-                ${escapeHtml(
-                  wallet
-                )}
-
-              </div>
-
-            </div>
-
-          `
-          : ""
-      }
-
-
-      <div class="order-card-row">
-
-        <span>Frais</span>
-
-        <strong>
-
-          ${formatDecimal(
-            order.fee_usdt
-          )}
-          USDT
-
-        </strong>
-
-      </div>
-
-
-      <div class="order-card-row">
-
-        <span>Date</span>
-
-        <strong>
-
-          ${formatDate(
-            order.created_at
-          )}
-
-        </strong>
-
-      </div>
-
-
-      <div class="order-card-actions">
-
-        <button
-          type="button"
-          class="btn btn-secondary btn-small"
-          data-view-order="${escapeHtml(
-            order.id
-          )}"
-        >
-
-          Voir / Modifier le statut
-
-        </button>
-
-      </div>
-
-    </div>
-
-  `;
+        }
+      )
+      .join("");
 
 }
 
@@ -3094,11 +2162,26 @@ function getOrderStatusLabel(
     processing:
       "En traitement",
 
+    payment_declared:
+      "Paiement déclaré",
+
+    paid:
+      "Paiement déclaré",
+
+    verified:
+      "Paiement vérifié",
+
     completed:
       "Terminée",
 
+    rejected:
+      "Rejetée",
+
     cancelled:
-      "Annulée"
+      "Annulée",
+
+    failed:
+      "Échec"
 
   };
 
@@ -3134,7 +2217,9 @@ function updateStatistics() {
     allOrders.filter(
       order =>
         order.status ===
-        "processing"
+          "payment_declared" ||
+        order.status ===
+          "paid"
     ).length;
 
 
@@ -3158,7 +2243,8 @@ function updateStatistics() {
 
   if ($("statTotalOrders")) {
 
-    $("statTotalOrders").textContent =
+    $("statTotalOrders")
+      .textContent =
       formatNumber(total);
 
   }
@@ -3166,7 +2252,8 @@ function updateStatistics() {
 
   if ($("statPending")) {
 
-    $("statPending").textContent =
+    $("statPending")
+      .textContent =
       formatNumber(pending);
 
   }
@@ -3174,7 +2261,8 @@ function updateStatistics() {
 
   if ($("statPayments")) {
 
-    $("statPayments").textContent =
+    $("statPayments")
+      .textContent =
       formatNumber(payments);
 
   }
@@ -3182,7 +2270,8 @@ function updateStatistics() {
 
   if ($("statCompleted")) {
 
-    $("statCompleted").textContent =
+    $("statCompleted")
+      .textContent =
       formatNumber(completed);
 
   }
@@ -3190,7 +2279,8 @@ function updateStatistics() {
 
   if ($("statDisputes")) {
 
-    $("statDisputes").textContent =
+    $("statDisputes")
+      .textContent =
       formatNumber(disputes);
 
   }
@@ -3198,7 +2288,8 @@ function updateStatistics() {
 
   if ($("statUsers")) {
 
-    $("statUsers").textContent =
+    $("statUsers")
+      .textContent =
       formatNumber(
         allUsers.length
       );
@@ -3237,29 +2328,22 @@ function openOrderModal(
 
 
   const network =
-    formatNetwork(
-      selectedOrder.network
-    );
+    selectedOrder.network ||
+    "-";
 
 
   const isBuy =
     String(
       selectedOrder.side || ""
-    )
-    .toLowerCase() ===
-    "buy";
+    ).toLowerCase() === "buy";
 
 
   const wallet =
-    extractWalletAddress(
-      selectedOrder
-    );
+    extractWalletAddress(selectedOrder);
 
 
   const payoutPhone =
-    extractPayoutPhone(
-      selectedOrder
-    );
+    extractPayoutPhone(selectedOrder);
 
 
   const details =
@@ -3277,7 +2361,7 @@ function openOrderModal(
 
     <div class="detail-row">
 
-      <span>ID commande</span>
+      <span>ID</span>
 
       <strong>
         ${escapeHtml(
@@ -3290,19 +2374,12 @@ function openOrderModal(
 
     <div class="detail-row">
 
-      <span>ID client</span>
+      <span>Utilisateur</span>
 
-      <strong
-        style="
-          word-break:break-all;
-          font-size:12px;
-        "
-      >
-
+      <strong>
         ${escapeHtml(
           selectedOrder.user_id || "-"
         )}
-
       </strong>
 
     </div>
@@ -3316,8 +2393,8 @@ function openOrderModal(
 
         ${
           isBuy
-            ? "🟢 Achat USDT"
-            : "🔵 Vente USDT"
+            ? "Achat USDT"
+            : "Vente USDT"
         }
 
       </strong>
@@ -3389,27 +2466,11 @@ function openOrderModal(
     </div>
 
 
-    <div
-      class="detail-row"
-      style="
-        padding:12px;
-        margin:10px 0;
-        border-radius:8px;
-        background:#fff8e1;
-        border:2px solid #ffb300;
-      "
-    >
+    <div class="detail-row">
 
-      <span style="font-weight:800;">
-        🌐 RÉSEAU
-      </span>
+      <span>Réseau</span>
 
-      <strong
-        style="
-          font-size:18px;
-          color:#e65100;
-        "
-      >
+      <strong>
 
         ${escapeHtml(
           network
@@ -3420,207 +2481,41 @@ function openOrderModal(
     </div>
 
 
+    <div class="detail-row">
+
+      <span>${isBuy ? "Portefeuille client" : "Adresse de dépôt NOA"}</span>
+
+      <strong>
+
+        ${escapeHtml(
+          wallet || "-"
+        )}
+
+      </strong>
+
+    </div>
+
     ${
-      isBuy
+      wallet
         ? `
-
-          <div
-            class="wallet-box"
-            style="
-              margin-top:12px;
-              padding:12px;
-              border-radius:10px;
-              background:#f1f8e9;
-              border:2px solid #2e7d32;
-            "
-          >
-
-            <div
-              style="
-                font-weight:800;
-                color:#1b5e20;
-                margin-bottom:8px;
-              "
-            >
-
-              📥 WALLET DU CLIENT
-
+          <div class="wallet-box">
+            <div class="wallet-box-label">${isBuy ? "Envoyer les USDT à cette adresse" : "Adresse de dépôt utilisée"}</div>
+            <div class="wallet-box-row">
+              <span class="wallet-box-value">${escapeHtml(wallet)}</span>
+              <button type="button" class="copy-btn" data-copy-wallet="${escapeHtml(wallet)}">Copier</button>
             </div>
-
-
-            ${
-              wallet
-                ? `
-
-                  <div
-                    style="
-                      display:flex;
-                      gap:8px;
-                      align-items:center;
-                    "
-                  >
-
-                    <span
-                      style="
-                        word-break:break-all;
-                        flex:1;
-                        font-size:12px;
-                      "
-                    >
-
-                      ${escapeHtml(
-                        wallet
-                      )}
-
-                    </span>
-
-
-                    <button
-                      type="button"
-                      class="copy-btn"
-                      data-copy-wallet="${escapeHtml(
-                        wallet
-                      )}"
-                    >
-
-                      Copier
-
-                    </button>
-
-                  </div>
-
-                `
-                : `
-
-                  <div
-                    style="
-                      color:#c62828;
-                      font-weight:800;
-                    "
-                  >
-
-                    ❌ Adresse wallet non trouvée.
-
-                  </div>
-
-                `
-            }
-
           </div>
-
         `
-        : `
-
-          <div
-            class="wallet-box"
-            style="
-              margin-top:12px;
-              padding:12px;
-              border-radius:10px;
-              background:#e3f2fd;
-              border:2px solid #1565c0;
-            "
-          >
-
-            <div
-              style="
-                font-weight:800;
-                color:#0d47a1;
-                margin-bottom:8px;
-              "
-            >
-
-              📱 ORANGE MONEY CLIENT
-
-            </div>
-
-
-            ${
-              payoutPhone
-                ? `
-
-                  <div
-                    style="
-                      display:flex;
-                      gap:8px;
-                      align-items:center;
-                    "
-                  >
-
-                    <strong
-                      style="
-                        font-size:18px;
-                        flex:1;
-                      "
-                    >
-
-                      ${escapeHtml(
-                        payoutPhone
-                      )}
-
-                    </strong>
-
-
-                    <button
-                      type="button"
-                      class="copy-btn"
-                      data-copy-wallet="${escapeHtml(
-                        payoutPhone
-                      )}"
-                    >
-
-                      Copier
-
-                    </button>
-
-                  </div>
-
-                `
-                : `
-
-                  <div
-                    style="
-                      color:#c62828;
-                      font-weight:800;
-                    "
-                  >
-
-                    ❌ Numéro Orange Money non trouvé.
-
-                  </div>
-
-                `
-            }
-
-          </div>
-
-        `
+        : ""
     }
 
-
     ${
-      !isBuy && wallet
+      payoutPhone
         ? `
-
           <div class="detail-row">
-
-            <span>Adresse de dépôt NOA</span>
-
-            <strong
-              style="
-                word-break:break-all;
-                font-size:12px;
-              "
-            >
-
-              ${escapeHtml(
-                wallet
-              )}
-
-            </strong>
-
+            <span>Orange Money client</span>
+            <strong>${escapeHtml(payoutPhone)}</strong>
           </div>
-
         `
         : ""
     }
@@ -3673,64 +2568,34 @@ function openOrderModal(
 
     </div>
 
-
     ${
-      selectedOrder.customer_note
+      selectedOrder.payment_proof_url
         ? `
-
-          <div class="detail-row">
-
-            <span>Note client</span>
-
-            <strong
-              style="
-                white-space:pre-wrap;
-                word-break:break-word;
-              "
-            >
-
-              ${escapeHtml(
-                selectedOrder.customer_note
-              )}
-
-            </strong>
-
+          <div class="wallet-box" id="proofImageBox">
+            <div class="wallet-box-label">Preuve de paiement</div>
+            <div class="small">Chargement de l'image...</div>
           </div>
-
-        `
-        : ""
-    }
-
-
-    ${
-      selectedOrder.admin_note
-        ? `
-
-          <div class="detail-row">
-
-            <span>Note admin</span>
-
-            <strong
-              style="
-                white-space:pre-wrap;
-                word-break:break-word;
-              "
-            >
-
-              ${escapeHtml(
-                selectedOrder.admin_note
-              )}
-
-            </strong>
-
-          </div>
-
         `
         : ""
     }
 
   `;
 
+
+  if (
+    selectedOrder.payment_proof_url
+  ) {
+
+    loadPaymentProofPreview(
+      selectedOrder.payment_proof_url
+    );
+
+  }
+
+
+  // ----------------------------------------------------------
+  // SELECT STATUT
+  // ----------------------------------------------------------
 
   const statusSelect =
     $("orderStatusSelect");
@@ -3751,9 +2616,7 @@ function openOrderModal(
 
   $("orderModal")
     ?.classList
-    .add(
-      "show"
-    );
+    .add("show");
 
 }
 
@@ -3777,9 +2640,17 @@ async function updateOrderStatus(
 
     "pending",
 
+    "payment_declared",
+
+    "paid",
+
+    "verified",
+
     "processing",
 
     "completed",
+
+    "rejected",
 
     "cancelled"
 
@@ -3812,10 +2683,7 @@ async function updateOrderStatus(
         .from("orders")
         .update({
 
-          status,
-
-          updated_at:
-            new Date().toISOString()
+          status
 
         })
         .eq(
@@ -3856,6 +2724,7 @@ async function updateOrderStatus(
     renderOrders();
 
     updateStatistics();
+
 
     openOrderModal(
       data.id
@@ -4051,10 +2920,7 @@ function renderDisputes() {
                 ${escapeHtml(
                   String(
                     dispute.id || ""
-                  ).slice(
-                    0,
-                    8
-                  )
+                  ).slice(0, 8)
                 )}
 
               </td>
@@ -4065,10 +2931,7 @@ function renderDisputes() {
                 ${escapeHtml(
                   String(
                     dispute.order_id || ""
-                  ).slice(
-                    0,
-                    8
-                  )
+                  ).slice(0, 8)
                 )}
 
               </td>
@@ -4079,10 +2942,7 @@ function renderDisputes() {
                 ${escapeHtml(
                   String(
                     dispute.user_id || ""
-                  ).slice(
-                    0,
-                    8
-                  )
+                  ).slice(0, 8)
                 )}
 
               </td>
@@ -4091,8 +2951,7 @@ function renderDisputes() {
               <td>
 
                 ${escapeHtml(
-                  dispute.subject ||
-                  "-"
+                  dispute.subject || "-"
                 )}
 
               </td>
@@ -4244,8 +3103,7 @@ function openDisputeModal(
       <strong>
 
         ${escapeHtml(
-          selectedDispute.order_id ||
-          "-"
+          selectedDispute.order_id || "-"
         )}
 
       </strong>
@@ -4260,8 +3118,7 @@ function openDisputeModal(
       <strong>
 
         ${escapeHtml(
-          selectedDispute.user_id ||
-          "-"
+          selectedDispute.user_id || "-"
         )}
 
       </strong>
@@ -4276,8 +3133,7 @@ function openDisputeModal(
       <strong>
 
         ${escapeHtml(
-          selectedDispute.subject ||
-          "-"
+          selectedDispute.subject || "-"
         )}
 
       </strong>
@@ -4292,8 +3148,7 @@ function openDisputeModal(
       <strong>
 
         ${escapeHtml(
-          selectedDispute.message ||
-          "-"
+          selectedDispute.message || "-"
         )}
 
       </strong>
@@ -4355,9 +3210,7 @@ function openDisputeModal(
 
   $("disputeModal")
     ?.classList
-    .add(
-      "show"
-    );
+    .add("show");
 
 }
 
@@ -4393,9 +3246,7 @@ async function updateDisputeStatus(
 
 
   if (
-    !allowed.includes(
-      status
-    )
+    !allowed.includes(status)
   ) {
 
     showMessage(
@@ -4459,6 +3310,7 @@ async function updateDisputeStatus(
     renderDisputes();
 
     updateStatistics();
+
 
     openDisputeModal(
       data.id
@@ -4624,21 +3476,22 @@ function renderUsers() {
     allUsers.filter(
       user => {
 
-        const text = [
+        const text =
+          [
 
-          user.id,
+            user.id,
 
-          user.full_name,
+            user.full_name,
 
-          user.phone,
+            user.phone,
 
-          user.country,
+            user.country,
 
-          user.role
+            user.role
 
-        ]
-        .join(" ")
-        .toLowerCase();
+          ]
+          .join(" ")
+          .toLowerCase();
 
 
         return (
@@ -4688,8 +3541,7 @@ function renderUsers() {
               <td>
 
                 ${escapeHtml(
-                  user.full_name ||
-                  "-"
+                  user.full_name || "-"
                 )}
 
               </td>
@@ -4698,8 +3550,7 @@ function renderUsers() {
               <td>
 
                 ${escapeHtml(
-                  user.phone ||
-                  "-"
+                  user.phone || "-"
                 )}
 
               </td>
@@ -4708,8 +3559,7 @@ function renderUsers() {
               <td>
 
                 ${escapeHtml(
-                  user.country ||
-                  "-"
+                  user.country || "-"
                 )}
 
               </td>
@@ -4718,8 +3568,7 @@ function renderUsers() {
               <td>
 
                 ${escapeHtml(
-                  user.role ||
-                  "user"
+                  user.role || "user"
                 )}
 
               </td>
@@ -4756,13 +3605,9 @@ async function adminLogout() {
 
   try {
 
-    if (supabaseClient) {
-
-      await supabaseClient
-        .auth
-        .signOut();
-
-    }
+    await supabaseClient
+      .auth
+      .signOut();
 
   }
 
@@ -4776,29 +3621,21 @@ async function adminLogout() {
   }
 
 
-  currentUser =
-    null;
+  currentUser = null;
 
-  currentProfile =
-    null;
+  currentProfile = null;
 
-  currentSettings =
-    null;
+  currentSettings = null;
 
-  allOrders =
-    [];
+  allOrders = [];
 
-  allDisputes =
-    [];
+  allDisputes = [];
 
-  allUsers =
-    [];
+  allUsers = [];
 
-  selectedOrder =
-    null;
+  selectedOrder = null;
 
-  selectedDispute =
-    null;
+  selectedDispute = null;
 
 
   showLoginPage();
@@ -4807,20 +3644,16 @@ async function adminLogout() {
 
 
 // ============================================================
-// FERMER MODALS
+// FERMER MODAL
 // ============================================================
 
 function closeOrderModal() {
 
   $("orderModal")
     ?.classList
-    .remove(
-      "show"
-    );
+    .remove("show");
 
-
-  selectedOrder =
-    null;
+  selectedOrder = null;
 
 }
 
@@ -4829,13 +3662,9 @@ function closeDisputeModal() {
 
   $("disputeModal")
     ?.classList
-    .remove(
-      "show"
-    );
+    .remove("show");
 
-
-  selectedDispute =
-    null;
+  selectedDispute = null;
 
 }
 
@@ -4846,6 +3675,10 @@ function closeDisputeModal() {
 
 function setupEvents() {
 
+  // ----------------------------------------------------------
+  // LOGIN
+  // ----------------------------------------------------------
+
   $("adminLoginForm")
     ?.addEventListener(
       "submit",
@@ -4853,12 +3686,20 @@ function setupEvents() {
     );
 
 
+  // ----------------------------------------------------------
+  // LOGOUT
+  // ----------------------------------------------------------
+
   $("adminLogoutBtn")
     ?.addEventListener(
       "click",
       adminLogout
     );
 
+
+  // ----------------------------------------------------------
+  // PARAMETRES
+  // ----------------------------------------------------------
 
   const settingsForm =
     $("settingsForm") ||
@@ -4893,43 +3734,70 @@ function setupEvents() {
     );
 
 
+  // ----------------------------------------------------------
+  // APERCU EN TEMPS REEL
+  // ----------------------------------------------------------
+
   [
 
     "buyRate",
+
     "adminBuyRate",
+
     "settingsBuyRate",
 
     "sellRate",
+
     "adminSellRate",
+
     "settingsSellRate",
 
     "minOrderCfa",
+
     "minOrder",
+
     "adminMinOrder",
+
     "settingsMinOrder",
 
     "maxOrderCfa",
+
     "maxOrder",
+
     "adminMaxOrder",
+
     "settingsMaxOrder",
 
     "trc20Fee",
+
     "trc20FeeUsdt",
+
     "adminTrc20Fee",
+
     "settingsTrc20Fee",
 
     "bp20Fee",
+
     "bep20Fee",
+
     "bp20FeeUsdt",
+
     "bep20FeeUsdt",
+
     "adminBp20Fee",
+
     "adminBep20Fee",
+
     "settingsBp20Fee",
 
     "orangeMoneyNumber",
+
     "orangeMoney",
+
     "orangeMoneyPhone",
+
     "adminOrangeMoneyNumber",
+
     "settingsOrangeMoneyNumber"
 
   ]
@@ -4946,10 +3814,12 @@ function setupEvents() {
   );
 
 
+  // ----------------------------------------------------------
+  // ONGLETS
+  // ----------------------------------------------------------
+
   document
-    .querySelectorAll(
-      ".tab"
-    )
+    .querySelectorAll(".tab")
     .forEach(
       tab => {
 
@@ -4958,9 +3828,7 @@ function setupEvents() {
           () => {
 
             document
-              .querySelectorAll(
-                ".tab"
-              )
+              .querySelectorAll(".tab")
               .forEach(
                 item =>
                   item.classList.remove(
@@ -4994,9 +3862,7 @@ function setupEvents() {
 
               $(sectionId)
                 ?.classList
-                .add(
-                  "active"
-                );
+                .add("active");
 
             }
 
@@ -5006,6 +3872,10 @@ function setupEvents() {
       }
     );
 
+
+  // ----------------------------------------------------------
+  // COMMANDES
+  // ----------------------------------------------------------
 
   $("orderSearch")
     ?.addEventListener(
@@ -5035,6 +3905,10 @@ function setupEvents() {
     );
 
 
+  // ----------------------------------------------------------
+  // SELECT STATUT COMMANDE
+  // ----------------------------------------------------------
+
   $("orderStatusSelect")
     ?.addEventListener(
       "change",
@@ -5048,6 +3922,10 @@ function setupEvents() {
     );
 
 
+  // ----------------------------------------------------------
+  // SELECT STATUT LITIGE
+  // ----------------------------------------------------------
+
   $("disputeStatusSelect")
     ?.addEventListener(
       "change",
@@ -5060,6 +3938,10 @@ function setupEvents() {
       }
     );
 
+
+  // ----------------------------------------------------------
+  // ACTIONS TABLEAUX
+  // ----------------------------------------------------------
 
   document.addEventListener(
     "click",
@@ -5109,7 +3991,9 @@ function setupEvents() {
       if (orderStatusButton) {
 
         updateOrderStatus(
-          orderStatusButton.dataset.orderStatus
+          orderStatusButton
+            .dataset
+            .orderStatus
         );
 
         return;
@@ -5143,7 +4027,9 @@ function setupEvents() {
       if (disputeStatusButton) {
 
         updateDisputeStatus(
-          disputeStatusButton.dataset.disputeStatus
+          disputeStatusButton
+            .dataset
+            .disputeStatus
         );
 
       }
@@ -5151,6 +4037,10 @@ function setupEvents() {
     }
   );
 
+
+  // ----------------------------------------------------------
+  // FERMETURE COMMANDE
+  // ----------------------------------------------------------
 
   $("closeOrderModalBtn")
     ?.addEventListener(
@@ -5166,6 +4056,10 @@ function setupEvents() {
     );
 
 
+  // ----------------------------------------------------------
+  // FERMETURE LITIGE
+  // ----------------------------------------------------------
+
   $("closeDisputeModalBtn")
     ?.addEventListener(
       "click",
@@ -5180,12 +4074,20 @@ function setupEvents() {
     );
 
 
+  // ----------------------------------------------------------
+  // ACTUALISATION LITIGES
+  // ----------------------------------------------------------
+
   $("refreshDisputesBtn")
     ?.addEventListener(
       "click",
       loadDisputes
     );
 
+
+  // ----------------------------------------------------------
+  // UTILISATEURS
+  // ----------------------------------------------------------
 
   $("userSearch")
     ?.addEventListener(
@@ -5200,6 +4102,10 @@ function setupEvents() {
       loadUsers
     );
 
+
+  // ----------------------------------------------------------
+  // FERMETURE MODALS EN DEHORS
+  // ----------------------------------------------------------
 
   $("orderModal")
     ?.addEventListener(
@@ -5237,13 +4143,16 @@ function setupEvents() {
     );
 
 
+  // ----------------------------------------------------------
+  // TOUCHE ECHAP
+  // ----------------------------------------------------------
+
   document.addEventListener(
     "keydown",
     event => {
 
       if (
-        event.key ===
-        "Escape"
+        event.key === "Escape"
       ) {
 
         closeOrderModal();
@@ -5271,15 +4180,7 @@ function setupAuthListener() {
   }
 
 
-  if (!supabaseClient) {
-
-    return;
-
-  }
-
-
-  authListenerReady =
-    true;
+  authListenerReady = true;
 
 
   supabaseClient.auth
@@ -5295,28 +4196,20 @@ function setupAuthListener() {
         );
 
 
+        // ----------------------------------------------------
+        // DECONNEXION
+        // ----------------------------------------------------
+
         if (
           event ===
           "SIGNED_OUT"
         ) {
 
-          currentUser =
-            null;
+          currentUser = null;
 
-          currentProfile =
-            null;
+          currentProfile = null;
 
-          currentSettings =
-            null;
-
-          allOrders =
-            [];
-
-          allDisputes =
-            [];
-
-          allUsers =
-            [];
+          currentSettings = null;
 
           showLoginPage();
 
@@ -5325,8 +4218,13 @@ function setupAuthListener() {
         }
 
 
+        // ----------------------------------------------------
+        // CONNEXION
+        // ----------------------------------------------------
+
         if (
-          event === "SIGNED_IN" &&
+          event ===
+            "SIGNED_IN" &&
           session?.user
         ) {
 
@@ -5334,6 +4232,7 @@ function setupAuthListener() {
             session.user;
 
 
+          // Ne pas bloquer le callback Supabase
           setTimeout(
             async () => {
 
@@ -5348,17 +4247,18 @@ function setupAuthListener() {
                   .signOut();
 
 
-                currentUser =
-                  null;
+                currentUser = null;
 
-                currentProfile =
-                  null;
+                currentProfile = null;
+
 
                 showLoginPage();
+
 
                 showLoginMessage(
                   "Accès refusé. Ce compte n'est pas administrateur."
                 );
+
 
                 return;
 
@@ -5405,33 +4305,6 @@ document.addEventListener(
       "================================================"
     );
 
-
-    // --------------------------------------------------------
-    // ATTENDRE SUPABASE
-    // --------------------------------------------------------
-
-    const supabaseReady =
-      await waitForSupabase();
-
-
-    if (!supabaseReady) {
-
-      showLoginPage();
-
-
-      showLoginMessage(
-        "Erreur : Supabase JS n'est pas chargé. Vérifiez admin.html : le script Supabase doit être placé avant admin.js."
-      );
-
-
-      return;
-
-    }
-
-
-    // --------------------------------------------------------
-    // INITIALISATION
-    // --------------------------------------------------------
 
     setupEvents();
 
