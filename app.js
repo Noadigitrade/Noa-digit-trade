@@ -1,6 +1,7 @@
 // ============================================================
 // NOA DIGIT TRADE - APP.JS FINAL
 // Supabase Auth + Profiles + Orders + Paiement + Litiges
+// Validation réseau/adresse ACHAT + VENTE
 // Correction : receive_cfa ne peut plus être NULL.
 // ============================================================
 
@@ -36,13 +37,6 @@ const CONFIG = {
     }
   },
 
-  // ==========================================================
-  // ADRESSES DE DÉPÔT NOA DIGIT TRADE
-  // IMPORTANT : ce sont uniquement des adresses PUBLIQUES.
-  // Ne jamais mettre une clé privée ici.
-  // Remplace les chaînes vides par les adresses de réception
-  // officielles de NOA DIGIT TRADE avant d'activer les ventes.
-  // ==========================================================
   depositAddresses: {
     trc20: 'THmJUvPgBNa7uyDpPKrmer34JtA5w743vA',
     bp20: '0x9a4248E584B1e27f4d37ce7Ae355Ca004e439D72'
@@ -213,6 +207,163 @@ function getSupabaseErrorMessage(
     error?.hint ||
     'Erreur inconnue.'
   );
+}
+
+
+// ============================================================
+// VALIDATION ADRESSES / RÉSEAUX
+// ============================================================
+
+function normalizeWalletAddress(value) {
+
+  return String(
+    value || ''
+  )
+    .trim()
+    .replace(/\s+/g, '');
+}
+
+
+/*
+ * Cette fonction vérifie uniquement le FORMAT attendu.
+ *
+ * TRC20 :
+ * Une adresse TRON commence normalement par T
+ * et possède 34 caractères.
+ *
+ * BEP20 :
+ * Une adresse EVM commence par 0x
+ * et possède 40 caractères hexadécimaux après 0x.
+ *
+ * IMPORTANT :
+ * Le format seul ne prouve pas que l'adresse appartient
+ * réellement au réseau choisi.
+ */
+function validateWalletForNetwork(
+  wallet,
+  network
+) {
+
+  const address =
+    normalizeWalletAddress(wallet);
+
+
+  if (!address) {
+
+    return {
+      valid: false,
+      level: 'error',
+      message:
+        'Veuillez saisir une adresse de portefeuille USDT.'
+    };
+  }
+
+
+  if (network === 'trc20') {
+
+    const trc20Regex =
+      /^T[1-9A-HJ-NP-Za-km-z]{33}$/;
+
+
+    if (!trc20Regex.test(address)) {
+
+      return {
+        valid: false,
+        level: 'error',
+        message:
+          'Cette adresse ne correspond pas au format TRC20. Vérifiez que vous avez choisi TRC20 et copié une adresse TRON commençant par T.'
+      };
+    }
+
+
+    return {
+      valid: true,
+      level: 'ok',
+      message:
+        'Adresse compatible avec le format TRC20.'
+    };
+  }
+
+
+  if (network === 'bp20') {
+
+    const bep20Regex =
+      /^0x[a-fA-F0-9]{40}$/;
+
+
+    if (!bep20Regex.test(address)) {
+
+      return {
+        valid: false,
+        level: 'error',
+        message:
+          'Cette adresse ne correspond pas au format BEP20. Vérifiez que vous avez choisi BEP20 et copié une adresse commençant par 0x.'
+      };
+    }
+
+
+    return {
+      valid: true,
+      level: 'warning',
+      message:
+        'Adresse compatible avec le format BEP20. Vérifiez qu’elle est bien destinée au réseau BNB Smart Chain.'
+    };
+  }
+
+
+  return {
+    valid: false,
+    level: 'error',
+    message:
+      'Réseau non reconnu.'
+  };
+}
+
+
+/*
+ * Vérifie l'adresse de dépôt NOA utilisée pour une VENTE.
+ * Cela évite qu'une mauvaise adresse soit associée au mauvais réseau.
+ */
+function validateNoaDepositAddress(
+  network
+) {
+
+  const address =
+    getDepositAddress();
+
+
+  if (!address) {
+
+    return {
+      valid: false,
+      message:
+        `L'adresse de dépôt NOA DIGIT TRADE n'est pas configurée pour ${CONFIG.networks[network]?.name || network}.`
+    };
+  }
+
+
+  const validation =
+    validateWalletForNetwork(
+      address,
+      network
+    );
+
+
+  if (!validation.valid) {
+
+    return {
+      valid: false,
+      message:
+        `ERREUR DE CONFIGURATION : l'adresse de dépôt NOA configurée ne correspond pas au format du réseau ${CONFIG.networks[network]?.name || network}. La vente est bloquée pour votre sécurité.`
+    };
+  }
+
+
+  return {
+    valid: true,
+    message:
+      validation.message
+  };
 }
 
 
@@ -611,8 +762,6 @@ async function initializeApplication() {
 
     await loadUserProfile();
 
-    // IMPORTANT :
-    // Charger les tarifs administrateur avant tout affichage/calcul.
     await loadAppSettings();
 
     showAppPage();
@@ -854,9 +1003,9 @@ async function registerUser(event) {
 }
 
 
-// ------------------------------------------------------------
+// ============================================================
 // CONNEXION
-// ------------------------------------------------------------
+// ============================================================
 
 async function loginUser(event) {
 
@@ -998,9 +1147,9 @@ async function loginUser(event) {
 }
 
 
-// ------------------------------------------------------------
+// ============================================================
 // DÉCONNEXION
-// ------------------------------------------------------------
+// ============================================================
 
 async function logoutUser() {
 
@@ -1037,26 +1186,13 @@ async function logoutUser() {
 
 
 // ============================================================
-// CHARGEMENT DES PARAMÈTRES PUBLICS
+// PARAMÈTRES PUBLICS
 // ============================================================
 
 async function loadAppSettings() {
-  /*
-   * Les tarifs sont gérés par l'administration dans public.app_settings.
-   * Le client peut seulement les LIRE grâce à la policy SELECT.
-   *
-   * Valeurs utilisées :
-   * - buy_rate
-   * - sell_rate
-   * - trc20_fee
-   * - bp20_fee
-   * - min_order / max_order
-   *
-   * min_order_cfa / max_order_cfa sont également acceptés
-   * comme solution de compatibilité si ces noms existent dans la table.
-   */
 
   try {
+
     const {
       data,
       error
@@ -1066,66 +1202,106 @@ async function loadAppSettings() {
       .eq('id', 1)
       .maybeSingle();
 
+
     if (error) {
+
       console.error(
         'Erreur lecture app_settings :',
         error
       );
+
       return false;
     }
 
+
     if (!data) {
+
       console.warn(
         'Aucune configuration app_settings trouvée.'
       );
+
       return false;
     }
 
-    const buyRate = Number(data.buy_rate);
-    const sellRate = Number(data.sell_rate);
 
-    const minOrder = Number(
-      data.min_order ??
-      data.min_order_cfa
-    );
+    const buyRate =
+      Number(data.buy_rate);
 
-    const maxOrder = Number(
-      data.max_order ??
-      data.max_order_cfa
-    );
+    const sellRate =
+      Number(data.sell_rate);
 
-    const trc20Fee = Number(data.trc20_fee);
-    const bp20Fee = Number(data.bp20_fee);
+    const minOrder =
+      Number(
+        data.min_order ??
+        data.min_order_cfa
+      );
 
-    if (Number.isFinite(buyRate) && buyRate > 0) {
-      CONFIG.buyRate = buyRate;
+    const maxOrder =
+      Number(
+        data.max_order ??
+        data.max_order_cfa
+      );
+
+    const trc20Fee =
+      Number(data.trc20_fee);
+
+    const bp20Fee =
+      Number(data.bp20_fee);
+
+
+    if (
+      Number.isFinite(buyRate) &&
+      buyRate > 0
+    ) {
+      CONFIG.buyRate =
+        buyRate;
     }
 
-    if (Number.isFinite(sellRate) && sellRate > 0) {
-      CONFIG.sellRate = sellRate;
+
+    if (
+      Number.isFinite(sellRate) &&
+      sellRate > 0
+    ) {
+      CONFIG.sellRate =
+        sellRate;
     }
 
-    if (Number.isFinite(minOrder) && minOrder >= 0) {
-      CONFIG.minOrder = minOrder;
+
+    if (
+      Number.isFinite(minOrder) &&
+      minOrder >= 0
+    ) {
+      CONFIG.minOrder =
+        minOrder;
     }
 
-    if (Number.isFinite(maxOrder) && maxOrder >= 0) {
-      CONFIG.maxOrder = maxOrder;
+
+    if (
+      Number.isFinite(maxOrder) &&
+      maxOrder >= 0
+    ) {
+      CONFIG.maxOrder =
+        maxOrder;
     }
+
 
     if (
       Number.isFinite(trc20Fee) &&
       trc20Fee >= 0
     ) {
-      CONFIG.networks.trc20.fee = trc20Fee;
+      CONFIG.networks.trc20.fee =
+        trc20Fee;
     }
+
 
     if (
       Number.isFinite(bp20Fee) &&
       bp20Fee >= 0
     ) {
-      CONFIG.networks.bp20.fee = bp20Fee;
+      CONFIG.networks.bp20.fee =
+        bp20Fee;
     }
+
 
     console.log(
       'Paramètres client chargés depuis app_settings :',
@@ -1134,14 +1310,18 @@ async function loadAppSettings() {
         sellRate: CONFIG.sellRate,
         minOrder: CONFIG.minOrder,
         maxOrder: CONFIG.maxOrder,
-        trc20Fee: CONFIG.networks.trc20.fee,
-        bp20Fee: CONFIG.networks.bp20.fee
+        trc20Fee:
+          CONFIG.networks.trc20.fee,
+        bp20Fee:
+          CONFIG.networks.bp20.fee
       }
     );
+
 
     return true;
 
   } catch (error) {
+
     console.error(
       'Erreur inattendue lecture app_settings :',
       error
@@ -1224,27 +1404,41 @@ function updateRatesUI() {
 
 
 // ============================================================
-// MODE ACHAT
+// MODE ACHAT / VENTE
 // ============================================================
 
 function ensureSellPayoutField() {
 
-  const walletInput = $('walletAddress');
+  const walletInput =
+    $('walletAddress');
+
 
   if (!walletInput) {
     return null;
   }
 
-  let field = $('sellPayoutField');
+
+  let field =
+    $('sellPayoutField');
+
 
   if (!field) {
 
-    field = document.createElement('div');
-    field.id = 'sellPayoutField';
-    field.className = 'field';
+    field =
+      document.createElement(
+        'div'
+      );
+
+    field.id =
+      'sellPayoutField';
+
+    field.className =
+      'field';
+
 
     field.innerHTML = `
       <label for="sellPayoutPhone">Numéro Orange Money pour recevoir vos FCFA</label>
+
       <input
         type="tel"
         id="sellPayoutPhone"
@@ -1253,22 +1447,29 @@ function ensureSellPayoutField() {
         maxlength="8"
         placeholder="Exemple : 70 00 00 00"
       >
+
       <div class="small wallet-help">
         📱 Ce numéro sera utilisé pour vous envoyer le montant en FCFA après réception et vérification de vos USDT.
       </div>
     `;
 
+
     const walletField =
       walletInput.closest('.field') ||
       walletInput.parentElement;
 
-    if (walletField?.parentNode) {
+
+    if (
+      walletField?.parentNode
+    ) {
+
       walletField.parentNode.insertBefore(
         field,
         walletField.nextSibling
       );
     }
   }
+
 
   return field;
 }
@@ -1277,22 +1478,29 @@ function ensureSellPayoutField() {
 function getDepositAddress() {
 
   return String(
-    CONFIG.depositAddresses?.[currentNetwork] || ''
+    CONFIG.depositAddresses?.[currentNetwork] ||
+    ''
   ).trim();
 }
 
 
 function updateSellDepositUI() {
 
-  if (currentExchangeType !== 'sell') {
+  if (
+    currentExchangeType !==
+    'sell'
+  ) {
     return;
   }
+
 
   const address =
     getDepositAddress();
 
+
   const walletInput =
     $('walletAddress');
+
 
   if ($('walletLabel')) {
 
@@ -1300,34 +1508,48 @@ function updateSellDepositUI() {
       'Adresse de dépôt NOA DIGIT TRADE';
   }
 
+
   if (walletInput) {
 
-    walletInput.readOnly = true;
-    walletInput.required = false;
-    walletInput.value = address;
+    walletInput.readOnly =
+      true;
+
+    walletInput.required =
+      false;
+
+    walletInput.value =
+      address;
+
     walletInput.placeholder =
       address
         ? 'Adresse de dépôt NOA DIGIT TRADE'
         : 'Adresse de dépôt non configurée';
   }
 
+
   const help =
     walletInput
       ?.closest('.field')
       ?.querySelector('.wallet-help');
 
+
   if (help) {
 
-    help.innerHTML = address
-      ? `⚠️ Envoyez vos USDT <strong>uniquement</strong> à cette adresse et utilisez exactement le réseau <strong>${escapeHtml(CONFIG.networks[currentNetwork]?.name || currentNetwork)}</strong>.`
-      : "⚠️ L'adresse de dépôt n'est pas encore configurée par l'administrateur.";
+    help.innerHTML =
+      address
+        ? `⚠️ Envoyez vos USDT <strong>uniquement</strong> à cette adresse et utilisez exactement le réseau <strong>${escapeHtml(CONFIG.networks[currentNetwork]?.name || currentNetwork)}</strong>.`
+        : "⚠️ L'adresse de dépôt n'est pas encore configurée par l'administrateur.";
   }
+
 
   const payoutField =
     ensureSellPayoutField();
 
+
   if (payoutField) {
-    payoutField.style.display = '';
+
+    payoutField.style.display =
+      '';
   }
 }
 
@@ -1337,6 +1559,7 @@ function setBuyMode() {
   currentExchangeType =
     'buy';
 
+
   $('buyTab')?.classList.add(
     'active'
   );
@@ -1345,74 +1568,108 @@ function setBuyMode() {
     'active'
   );
 
+
   if ($('amountLabel')) {
+
     $('amountLabel').textContent =
       'Montant à payer';
   }
 
+
   if ($('amountUnit')) {
+
     $('amountUnit').textContent =
       'FCFA';
   }
 
-  const input = $('amountInput');
+
+  const input =
+    $('amountInput');
+
 
   if (input) {
+
     input.placeholder =
       'Ex. 10 000';
-    input.min = String(CONFIG.minOrder);
-    input.max = String(CONFIG.maxOrder);
-    input.step = '1';
+
+    input.min =
+      String(CONFIG.minOrder);
+
+    input.max =
+      String(CONFIG.maxOrder);
+
+    input.step =
+      '1';
   }
+
 
   const walletInput =
     $('walletAddress');
 
+
   if ($('walletLabel')) {
+
     $('walletLabel').textContent =
       'Adresse de portefeuille USDT';
   }
 
-  if (walletInput) {
-    // En mode ACHAT, le champ doit TOUJOURS être vide au passage
-    // vers Achat. Le client doit saisir sa propre adresse de réception.
-    // On ne conserve jamais une adresse de dépôt NOA provenant du mode Vente.
-    walletInput.value = '';
 
-    walletInput.readOnly = false;
-    walletInput.required = true;
+  if (walletInput) {
+
+    walletInput.value =
+      '';
+
+    walletInput.readOnly =
+      false;
+
+    walletInput.required =
+      true;
+
     walletInput.placeholder =
       'Collez votre adresse USDT ici';
   }
+
 
   const walletHelp =
     walletInput
       ?.closest('.field')
       ?.querySelector('.wallet-help');
 
+
   if (walletHelp) {
+
     walletHelp.textContent =
       "⚠️ Pour un achat, indiquez l'adresse USDT sur laquelle vous souhaitez recevoir vos USDT.";
   }
 
+
   if ($('paymentMethodField')) {
-    $('paymentMethodField').style.display = '';
+
+    $('paymentMethodField').style.display =
+      '';
   }
+
 
   const payoutField =
     ensureSellPayoutField();
 
+
   if (payoutField) {
-    payoutField.style.display = 'none';
+
+    payoutField.style.display =
+      'none';
   }
 
+
   if ($('exchangeInfo')) {
+
     $('exchangeInfo').innerHTML = `
       💡 Minimum : <strong>${formatNumber(CONFIG.minOrder)} FCFA</strong><br>
       Maximum : <strong>${formatNumber(CONFIG.maxOrder)} FCFA</strong><br>
       Le montant exact et les frais sont affichés avant la confirmation.
     `;
   }
+
 
   updateCalculator();
 }
@@ -1423,6 +1680,7 @@ function setSellMode() {
   currentExchangeType =
     'sell';
 
+
   $('buyTab')?.classList.remove(
     'active'
   );
@@ -1431,31 +1689,50 @@ function setSellMode() {
     'active'
   );
 
+
   if ($('amountLabel')) {
+
     $('amountLabel').textContent =
       'Quantité à vendre';
   }
 
+
   if ($('amountUnit')) {
+
     $('amountUnit').textContent =
       'USDT';
   }
 
-  const input = $('amountInput');
+
+  const input =
+    $('amountInput');
+
 
   if (input) {
+
     input.placeholder =
       'Exemple : 10 USDT';
-    input.min = '0';
-    input.max = '';
-    input.step = 'any';
+
+    input.min =
+      '0';
+
+    input.max =
+      '';
+
+    input.step =
+      'any';
   }
+
 
   if ($('paymentMethodField')) {
-    $('paymentMethodField').style.display = 'none';
+
+    $('paymentMethodField').style.display =
+      'none';
   }
 
+
   if ($('exchangeInfo')) {
+
     $('exchangeInfo').innerHTML = `
       💡 Saisissez la <strong>quantité d'USDT</strong> que vous souhaitez vendre.<br>
       Nous vous indiquons l'adresse de dépôt NOA selon le réseau choisi.<br>
@@ -1463,8 +1740,11 @@ function setSellMode() {
     `;
   }
 
+
   ensureSellPayoutField();
+
   updateSellDepositUI();
+
   updateCalculator();
 }
 
@@ -1487,11 +1767,6 @@ function selectNetwork(
   currentNetwork =
     network;
 
-  // En mode vente, l'adresse de dépôt NOA doit changer
-  // immédiatement lorsque le client change de réseau.
-  if (currentExchangeType === 'sell') {
-    updateSellDepositUI();
-  }
 
   $('trc20Option')
     ?.classList.toggle(
@@ -1507,18 +1782,21 @@ function selectNetwork(
     );
 
 
-  // Mettre immédiatement à jour l'adresse de dépôt lorsque
-  // le client change de réseau en mode VENTE.
-  if (currentExchangeType === 'sell') {
+  if (
+    currentExchangeType ===
+    'sell'
+  ) {
+
     updateSellDepositUI();
   }
+
 
   updateCalculator();
 }
 
 
 // ============================================================
-// CALCUL DE LA TRANSACTION
+// CALCUL TRANSACTION
 // ============================================================
 
 function calculateOrder() {
@@ -1536,10 +1814,6 @@ function calculateOrder() {
         currentNetwork
       ]?.fee || 0;
 
-
-  // ==========================================================
-  // ACHAT
-  // ==========================================================
 
   if (
     currentExchangeType ===
@@ -1579,10 +1853,6 @@ function calculateOrder() {
       netUsdt:
         netUsdt,
 
-      // La colonne orders.receive_cfa
-      // est NOT NULL. Pour un achat,
-      // le client reçoit des USDT et
-      // non des FCFA : on enregistre 0.
       receiveCfa:
         0,
 
@@ -1591,10 +1861,6 @@ function calculateOrder() {
     };
   }
 
-
-  // ==========================================================
-  // VENTE
-  // ==========================================================
 
   const usdtAmount =
     amount;
@@ -1644,7 +1910,7 @@ function calculateOrder() {
 
 
 // ============================================================
-// AFFICHAGE DU CALCUL
+// AFFICHAGE CALCUL
 // ============================================================
 
 function updateCalculator() {
@@ -1784,6 +2050,7 @@ function reviewOrder() {
 
   hideMessage();
 
+
   if (!currentUser) {
 
     showMessage(
@@ -1792,14 +2059,21 @@ function reviewOrder() {
     );
 
     showAuthPage();
+
     showLoginForm();
+
     return;
   }
+
 
   const c =
     calculateOrder();
 
-  if (!c.usdtAmount || c.usdtAmount <= 0) {
+
+  if (
+    !c.usdtAmount ||
+    c.usdtAmount <= 0
+  ) {
 
     return showMessage(
       currentExchangeType === 'buy'
@@ -1809,23 +2083,40 @@ function reviewOrder() {
     );
   }
 
-  if (currentExchangeType === 'buy') {
 
-    if (c.amountCfa < CONFIG.minOrder) {
+  if (
+    currentExchangeType ===
+    'buy'
+  ) {
+
+    if (
+      c.amountCfa <
+      CONFIG.minOrder
+    ) {
+
       return showMessage(
         `Le montant minimum est de ${formatNumber(CONFIG.minOrder)} FCFA.`,
         'error'
       );
     }
 
-    if (c.amountCfa > CONFIG.maxOrder) {
+
+    if (
+      c.amountCfa >
+      CONFIG.maxOrder
+    ) {
+
       return showMessage(
         `Le montant maximum est de ${formatNumber(CONFIG.maxOrder)} FCFA.`,
         'error'
       );
     }
 
-    if (c.netUsdt <= 0) {
+
+    if (
+      c.netUsdt <= 0
+    ) {
+
       return showMessage(
         'Le montant USDT après frais est insuffisant.',
         'error'
@@ -1833,208 +2124,390 @@ function reviewOrder() {
     }
   }
 
-  let wallet = '';
-  let payoutPhone = '';
 
-  if (currentExchangeType === 'sell') {
+  let wallet =
+    '';
+
+  let payoutPhone =
+    '';
+
+
+  // ==========================================================
+  // VENTE
+  // ==========================================================
+
+  if (
+    currentExchangeType ===
+    'sell'
+  ) {
 
     const minimumUsdt =
-      CONFIG.minOrder / CONFIG.sellRate;
+      CONFIG.minOrder /
+      CONFIG.sellRate;
+
 
     const maximumUsdt =
-      CONFIG.maxOrder / CONFIG.sellRate;
+      CONFIG.maxOrder /
+      CONFIG.sellRate;
 
-    if (c.usdtAmount < minimumUsdt) {
+
+    if (
+      c.usdtAmount <
+      minimumUsdt
+    ) {
+
       return showMessage(
         `La quantité minimum est de ${minimumUsdt.toFixed(2)} USDT.`,
         'error'
       );
     }
 
-    if (c.usdtAmount > maximumUsdt) {
+
+    if (
+      c.usdtAmount >
+      maximumUsdt
+    ) {
+
       return showMessage(
         `La quantité maximum est de ${maximumUsdt.toFixed(2)} USDT.`,
         'error'
       );
     }
 
-    if (c.netUsdt <= 0) {
+
+    if (
+      c.netUsdt <= 0
+    ) {
+
       return showMessage(
         "La quantité d'USDT après frais est insuffisante.",
         'error'
       );
     }
 
-    wallet = getDepositAddress();
 
-    if (!wallet) {
+    // --------------------------------------------------------
+    // Vérification de l'adresse NOA pour le réseau sélectionné
+    // --------------------------------------------------------
+
+    wallet =
+      getDepositAddress();
+
+
+    const noaValidation =
+      validateNoaDepositAddress(
+        currentNetwork
+      );
+
+
+    if (
+      !noaValidation.valid
+    ) {
+
       return showMessage(
-        "L'adresse de dépôt de NOA DIGIT TRADE n'est pas encore configurée pour ce réseau. Contactez l'administrateur.",
+        noaValidation.message,
         'error'
       );
     }
 
+
     payoutPhone =
-      normalizePhone($('sellPayoutPhone')?.value);
+      normalizePhone(
+        $('sellPayoutPhone')
+          ?.value
+      );
+
 
     if (!payoutPhone) {
+
       return showMessage(
         'Veuillez saisir le numéro Orange Money sur lequel vous souhaitez recevoir vos FCFA.',
         'error'
       );
     }
 
-    if (!/^(0\d{7}|\d{8})$/.test(payoutPhone)) {
+
+    if (
+      !/^(0\d{7}|\d{8})$/.test(
+        payoutPhone
+      )
+    ) {
+
       return showMessage(
         'Veuillez saisir un numéro Orange Money valide de 8 chiffres.',
         'error'
       );
     }
-  } else {
+  }
 
-    wallet = getWalletAddress();
+
+  // ==========================================================
+  // ACHAT
+  // ==========================================================
+
+  else {
+
+    wallet =
+      getWalletAddress();
+
 
     if (!wallet) {
+
       return showMessage(
         'Veuillez saisir votre adresse de portefeuille USDT.',
         'error'
       );
     }
+
+
+    // --------------------------------------------------------
+    // VÉRIFICATION ADRESSE CLIENT + RÉSEAU
+    // --------------------------------------------------------
+
+    const walletValidation =
+      validateWalletForNetwork(
+        wallet,
+        currentNetwork
+      );
+
+
+    if (
+      !walletValidation.valid
+    ) {
+
+      return showMessage(
+        walletValidation.message,
+        'error'
+      );
+    }
+
+
+    // --------------------------------------------------------
+    // Avertissement BEP20
+    // --------------------------------------------------------
+
+    if (
+      currentNetwork ===
+      'bp20'
+    ) {
+
+      showMessage(
+        '⚠️ Adresse compatible BEP20. Vérifiez une dernière fois que cette adresse est bien destinée au réseau BNB Smart Chain avant de continuer.',
+        'info'
+      );
+    }
   }
+
 
   currentOrder = {
 
-    side: currentExchangeType,
-    network: currentNetwork,
-    amountCfa: c.amountCfa,
-    usdtAmount: c.usdtAmount,
-    feeUsdt: c.feeUsdt,
-    netUsdt: c.netUsdt,
-    receiveCfa: c.receiveCfa,
-    rate: c.rate,
-    walletAddress: wallet,
-    payoutPhone: payoutPhone,
-    paymentMethod: 'orange_money'
+    side:
+      currentExchangeType,
+
+    network:
+      currentNetwork,
+
+    amountCfa:
+      c.amountCfa,
+
+    usdtAmount:
+      c.usdtAmount,
+
+    feeUsdt:
+      c.feeUsdt,
+
+    netUsdt:
+      c.netUsdt,
+
+    receiveCfa:
+      c.receiveCfa,
+
+    rate:
+      c.rate,
+
+    walletAddress:
+      wallet,
+
+    payoutPhone:
+      payoutPhone,
+
+    paymentMethod:
+      'orange_money'
   };
 
+
   renderConfirmation();
-  showSubPage('confirmationPage');
+
+  showSubPage(
+    'confirmationPage'
+  );
 }
 
 
 // ============================================================
-// CONFIRMATION DE LA COMMANDE
+// CONFIRMATION
 // ============================================================
 
 function renderConfirmation() {
 
-  const box = $('confirmationSummary');
+  const box =
+    $('confirmationSummary');
 
-  if (!box || !currentOrder) {
+
+  if (
+    !box ||
+    !currentOrder
+  ) {
+
     return;
   }
 
-  const networkName =
-    CONFIG.networks[currentOrder.network]?.name ||
-    currentOrder.network || '-';
 
-  if (currentOrder.side === 'buy') {
+  const networkName =
+    CONFIG.networks[
+      currentOrder.network
+    ]?.name ||
+    currentOrder.network ||
+    '-';
+
+
+  if (
+    currentOrder.side ===
+    'buy'
+  ) {
 
     box.innerHTML = `
+
       <div class="summary-row">
         <span>Type</span>
         <strong>Achat USDT</strong>
       </div>
+
       <div class="summary-row">
         <span>Montant à payer</span>
         <strong>${formatNumber(currentOrder.amountCfa)} FCFA</strong>
       </div>
+
       <div class="summary-row">
         <span>Taux</span>
         <strong>${formatNumber(currentOrder.rate)} FCFA / USDT</strong>
       </div>
+
       <div class="summary-row">
         <span>USDT acheté</span>
         <strong>${Number(currentOrder.usdtAmount).toFixed(6)} USDT</strong>
       </div>
+
       <div class="summary-row">
         <span>Frais réseau</span>
         <strong>${Number(currentOrder.feeUsdt)} USDT</strong>
       </div>
+
       <div class="summary-row">
         <span>USDT net reçu</span>
         <strong>${Number(currentOrder.netUsdt).toFixed(6)} USDT</strong>
       </div>
+
       <div class="summary-row">
         <span>Réseau</span>
         <strong>${escapeHtml(networkName)}</strong>
       </div>
+
       <div class="summary-row">
         <span>Portefeuille de réception</span>
         <strong class="break-word">${escapeHtml(currentOrder.walletAddress)}</strong>
       </div>
+
       <div class="summary-row">
         <span>Paiement</span>
         <strong>Orange Money</strong>
       </div>
+
       <div class="summary-row summary-total">
         <span>Vous recevez</span>
         <strong>${Number(currentOrder.netUsdt).toFixed(6)} USDT</strong>
       </div>
+
+      <div class="warning-box">
+        ⚠️ Vérifiez attentivement le réseau
+        <strong>${escapeHtml(networkName)}</strong>
+        et votre adresse avant de confirmer.
+      </div>
+
     `;
 
     return;
   }
 
+
   box.innerHTML = `
+
     <div class="summary-row">
       <span>Type</span>
       <strong>Vente USDT</strong>
     </div>
+
     <div class="summary-row">
       <span>Quantité vendue</span>
       <strong>${Number(currentOrder.usdtAmount).toFixed(6)} USDT</strong>
     </div>
+
     <div class="summary-row">
       <span>Taux de vente</span>
       <strong>${formatNumber(currentOrder.rate)} FCFA / USDT</strong>
     </div>
+
     <div class="summary-row">
       <span>Frais réseau</span>
       <strong>${Number(currentOrder.feeUsdt)} USDT</strong>
     </div>
+
     <div class="summary-row">
       <span>USDT après frais</span>
       <strong>${Number(currentOrder.netUsdt).toFixed(6)} USDT</strong>
     </div>
+
     <div class="summary-row">
       <span>Réseau</span>
       <strong>${escapeHtml(networkName)}</strong>
     </div>
+
     <div class="summary-row">
       <span>Adresse de dépôt NOA</span>
       <strong class="break-word">${escapeHtml(currentOrder.walletAddress)}</strong>
     </div>
+
     <div class="summary-row">
       <span>Orange Money</span>
       <strong>${escapeHtml(currentOrder.payoutPhone || '-')}</strong>
     </div>
+
     <div class="summary-row summary-total">
       <span>Vous recevrez</span>
       <strong>${formatNumber(currentOrder.receiveCfa)} FCFA</strong>
     </div>
+
+    <div class="warning-box">
+      ⚠️ <strong>Vérifiez le réseau avant d'envoyer.</strong><br>
+      Vous devez envoyer vos USDT uniquement sur
+      <strong>${escapeHtml(networkName)}</strong>
+      à l'adresse NOA indiquée ci-dessus.
+      Une erreur de réseau peut entraîner une perte des fonds.
+    </div>
+
   `;
 }
 
 
 // ============================================================
-// ANNULER LA CONFIRMATION
+// ANNULER CONFIRMATION
 // ============================================================
 
 function cancelReview() {
 
   currentOrder =
     null;
+
 
   showSubPage(
     'exchangePage'
@@ -2043,114 +2516,279 @@ function cancelReview() {
 
 
 // ============================================================
-// ENREGISTREMENT DE LA COMMANDE
+// ENREGISTREMENT COMMANDE
 // ============================================================
 
 async function placeOrder() {
 
   hideMessage();
 
+
   if (!currentUser) {
+
     showMessage(
       'Votre session a expiré. Veuillez vous reconnecter.',
       'error'
     );
+
     showAuthPage();
+
     showLoginForm();
+
     return;
   }
 
+
   if (!currentOrder) {
+
     return showMessage(
       'Aucune commande à enregistrer.',
       'error'
     );
   }
 
-  const button = $('placeOrderBtn');
-  const originalText = button?.textContent;
+
+  // ----------------------------------------------------------
+  // Nouvelle vérification juste avant insertion Supabase.
+  // Cela évite qu'une commande soit enregistrée avec une
+  // adresse incompatible si currentOrder a été modifié.
+  // ----------------------------------------------------------
+
+  if (
+    currentOrder.side ===
+    'buy'
+  ) {
+
+    const validation =
+      validateWalletForNetwork(
+        currentOrder.walletAddress,
+        currentOrder.network
+      );
+
+
+    if (!validation.valid) {
+
+      return showMessage(
+        'Commande bloquée : ' +
+        validation.message,
+        'error'
+      );
+    }
+
+  } else {
+
+    const validation =
+      validateNoaDepositAddress(
+        currentOrder.network
+      );
+
+
+    if (!validation.valid) {
+
+      return showMessage(
+        validation.message,
+        'error'
+      );
+    }
+  }
+
+
+  const button =
+    $('placeOrderBtn');
+
+
+  const originalText =
+    button?.textContent;
+
 
   if (button) {
-    button.disabled = true;
-    button.textContent = 'Enregistrement...';
+
+    button.disabled =
+      true;
+
+    button.textContent =
+      'Enregistrement...';
   }
+
 
   try {
 
-    const { data: sessionData, error: sessionError } =
-      await supabaseClient.auth.getSession();
+    const {
+      data: sessionData,
+      error: sessionError
+    } =
+      await supabaseClient.auth
+        .getSession();
+
 
     if (sessionError) {
       throw sessionError;
     }
 
-    if (!sessionData?.session?.user) {
-      throw new Error('Votre session n\'est plus active.');
+
+    if (
+      !sessionData?.session?.user
+    ) {
+
+      throw new Error(
+        'Votre session n\'est plus active.'
+      );
     }
 
-    currentUser = sessionData.session.user;
 
-    let customerNote = null;
+    currentUser =
+      sessionData.session.user;
 
-    if (currentOrder.side === 'buy') {
+
+    let customerNote =
+      null;
+
+
+    if (
+      currentOrder.side ===
+      'buy'
+    ) {
+
       customerNote =
         currentOrder.walletAddress
           ? `Adresse de réception USDT : ${currentOrder.walletAddress}`
           : null;
+
     } else {
+
       customerNote =
         `Adresse de dépôt NOA : ${currentOrder.walletAddress} | Numéro Orange Money : ${currentOrder.payoutPhone}`;
     }
 
+
     const receiveCfa =
-      currentOrder.side === 'sell'
-        ? Number(currentOrder.receiveCfa || 0)
+      currentOrder.side ===
+      'sell'
+        ? Number(
+            currentOrder.receiveCfa ||
+            0
+          )
         : 0;
 
+
     const payload = {
-      user_id: currentUser.id,
-      side: currentOrder.side,
-      network: currentOrder.network,
-      payment_method: currentOrder.paymentMethod || 'orange_money',
-      amount_cfa: Number(currentOrder.amountCfa),
-      usdt_amount: Number(currentOrder.usdtAmount),
-      fee_usdt: Number(currentOrder.feeUsdt),
-      net_usdt: Number(currentOrder.netUsdt),
-      receive_cfa: receiveCfa,
-      status: 'pending',
-      customer_note: customerNote
+
+      user_id:
+        currentUser.id,
+
+      side:
+        currentOrder.side,
+
+      network:
+        currentOrder.network,
+
+      payment_method:
+        currentOrder.paymentMethod ||
+        'orange_money',
+
+      amount_cfa:
+        Number(
+          currentOrder.amountCfa
+        ),
+
+      usdt_amount:
+        Number(
+          currentOrder.usdtAmount
+        ),
+
+      fee_usdt:
+        Number(
+          currentOrder.feeUsdt
+        ),
+
+      net_usdt:
+        Number(
+          currentOrder.netUsdt
+        ),
+
+      receive_cfa:
+        receiveCfa,
+
+      status:
+        'pending',
+
+      customer_note:
+        customerNote,
+
+      // ------------------------------------------------------
+      // Colonnes dédiées déjà présentes dans ta table orders.
+      // Elles permettent à l'administration de récupérer
+      // directement l'adresse et le numéro Orange Money.
+      // ------------------------------------------------------
+
+      wallet_address:
+        currentOrder.side === 'buy'
+          ? currentOrder.walletAddress
+          : null,
+
+      payout_phone:
+        currentOrder.side === 'sell'
+          ? currentOrder.payoutPhone
+          : null
     };
+
 
     console.log(
       'Commande envoyée à Supabase :',
       payload
     );
 
-    const { data, error } =
+
+    const {
+      data,
+      error
+    } =
       await supabaseClient
         .from('orders')
-        .insert(payload)
+        .insert(
+          payload
+        )
         .select('*')
         .single();
+
 
     if (error) {
       throw error;
     }
 
+
     if (!data) {
+
       throw new Error(
         'Supabase n\'a retourné aucune commande.'
       );
     }
 
-    currentOrder.id = data.id;
-    currentOrder.createdAt = data.created_at;
-    currentOrder.status = data.status || 'pending';
 
-    if (currentOrder.side === 'buy') {
+    currentOrder.id =
+      data.id;
+
+
+    currentOrder.createdAt =
+      data.created_at;
+
+
+    currentOrder.status =
+      data.status ||
+      'pending';
+
+
+    if (
+      currentOrder.side ===
+      'buy'
+    ) {
 
       renderPaymentPage();
-      showSubPage('paymentPage');
+
+      showSubPage(
+        'paymentPage'
+      );
+
 
       showMessage(
         'Commande enregistrée. Effectuez maintenant le paiement Orange Money.',
@@ -2160,7 +2798,11 @@ async function placeOrder() {
     } else {
 
       renderSellPaymentPage();
-      showSubPage('paymentPage');
+
+      showSubPage(
+        'paymentPage'
+      );
+
 
       showMessage(
         'Commande de vente enregistrée. Envoyez maintenant les USDT à l\'adresse indiquée.',
@@ -2168,7 +2810,9 @@ async function placeOrder() {
       );
     }
 
+
     await loadOrderHistory();
+
 
   } catch (error) {
 
@@ -2177,188 +2821,305 @@ async function placeOrder() {
       error
     );
 
+
     showMessage(
       'Impossible d\'enregistrer la commande : ' +
       getSupabaseErrorMessage(error),
       'error'
     );
 
+
   } finally {
 
     if (button) {
-      button.disabled = false;
+
+      button.disabled =
+        false;
+
       button.textContent =
-        originalText || 'Placer la commande';
+        originalText ||
+        'Placer la commande';
     }
   }
 }
 
 
+// ============================================================
+// PAGE PAIEMENT ACHAT
+// ============================================================
+
 function renderPaymentPage() {
 
-  if (!currentOrder || currentOrder.side !== 'buy') {
+  if (
+    !currentOrder ||
+    currentOrder.side !== 'buy'
+  ) {
+
     return;
   }
 
+
   const amount =
-    Number(currentOrder.amountCfa) || 0;
+    Number(
+      currentOrder.amountCfa
+    ) || 0;
+
 
   if ($('paymentDescription')) {
+
     $('paymentDescription').textContent =
       'Votre commande a été enregistrée. Effectuez maintenant le paiement Orange Money.';
   }
 
+
   if ($('paymentMethodInfo')) {
+
     $('paymentMethodInfo').innerHTML =
       'Moyen de paiement : <strong>Orange Money</strong>';
   }
 
+
   const numberLabel =
-    $('paymentNumber')?.previousElementSibling;
+    $('paymentNumber')
+      ?.previousElementSibling;
+
 
   if (numberLabel) {
+
     numberLabel.textContent =
       'Numéro de paiement';
   }
 
+
   if ($('paymentNumber')) {
+
     $('paymentNumber').textContent =
       CONFIG.payment.displayNumber;
-    $('paymentNumber').style.fontSize = '';
-    $('paymentNumber').style.wordBreak = '';
+
+    $('paymentNumber').style.fontSize =
+      '';
+
+    $('paymentNumber').style.wordBreak =
+      '';
   }
 
+
   const codeLabel =
-    $('paymentCode')?.previousElementSibling;
+    $('paymentCode')
+      ?.previousElementSibling;
+
 
   if (codeLabel) {
+
     codeLabel.textContent =
       'Code de paiement';
   }
 
+
   if ($('paymentCode')) {
+
     $('paymentCode').textContent =
       `*144*10*${CONFIG.payment.number}*${amount}#`;
   }
 
+
   if ($('paymentAmount')) {
+
     $('paymentAmount').textContent =
       `Montant : ${formatNumber(amount)} FCFA`;
   }
 
+
   const paymentCard =
-    $('paymentPage')?.querySelector('.card');
+    $('paymentPage')
+      ?.querySelector('.card');
+
 
   const warning =
-    paymentCard?.querySelector('.warning-box');
+    paymentCard
+      ?.querySelector('.warning-box');
+
 
   if (warning) {
+
     warning.innerHTML = `
       ⚠️ IMPORTANT : utilisez obligatoirement votre propre compte Orange Money.
       Ne partagez jamais votre mot de passe, votre code secret ou votre code de validation.
     `;
   }
 
+
   if ($('paymentDoneBtn')) {
-    $('paymentDoneBtn').style.display = '';
+
+    $('paymentDoneBtn').style.display =
+      '';
+
     $('paymentDoneBtn').textContent =
       "J'ai effectué le paiement";
   }
 
+
   if ($('viewOrderBtn')) {
+
     $('viewOrderBtn').textContent =
       'Voir ma commande';
   }
 }
 
 
+// ============================================================
+// PAGE PAIEMENT VENTE
+// ============================================================
+
 function renderSellPaymentPage() {
 
-  if (!currentOrder || currentOrder.side !== 'sell') {
+  if (
+    !currentOrder ||
+    currentOrder.side !== 'sell'
+  ) {
+
     return;
   }
 
-  const networkName =
-    CONFIG.networks[currentOrder.network]?.name ||
-    currentOrder.network || '-';
 
-  const paymentPage = $('paymentPage');
+  const networkName =
+    CONFIG.networks[
+      currentOrder.network
+    ]?.name ||
+    currentOrder.network ||
+    '-';
+
+
+  const paymentPage =
+    $('paymentPage');
+
 
   if ($('paymentDescription')) {
+
     $('paymentDescription').textContent =
       "Votre demande de vente est enregistrée. Envoyez vos USDT à l'adresse de dépôt ci-dessous.";
   }
 
+
   if ($('paymentMethodInfo')) {
+
     $('paymentMethodInfo').innerHTML =
       `Réseau sélectionné : <strong>${escapeHtml(networkName)}</strong>`;
   }
 
+
   const card =
-    paymentPage?.querySelector('.card');
+    paymentPage
+      ?.querySelector('.card');
+
 
   if (!card) {
     return;
   }
 
+
   const numberLabel =
-    $('paymentNumber')?.previousElementSibling;
+    $('paymentNumber')
+      ?.previousElementSibling;
+
 
   if (numberLabel) {
+
     numberLabel.textContent =
       'Adresse de dépôt NOA DIGIT TRADE';
   }
 
+
   if ($('paymentNumber')) {
+
     $('paymentNumber').textContent =
       currentOrder.walletAddress;
-    $('paymentNumber').style.fontSize = '14px';
-    $('paymentNumber').style.wordBreak = 'break-all';
+
+    $('paymentNumber').style.fontSize =
+      '14px';
+
+    $('paymentNumber').style.wordBreak =
+      'break-all';
   }
 
+
   const codeLabel =
-    $('paymentCode')?.previousElementSibling;
+    $('paymentCode')
+      ?.previousElementSibling;
+
 
   if (codeLabel) {
+
     codeLabel.textContent =
       'Montant exact à envoyer';
   }
 
+
   if ($('paymentCode')) {
+
     $('paymentCode').textContent =
       `${Number(currentOrder.netUsdt).toFixed(6)} USDT`;
   }
 
+
   if ($('paymentAmount')) {
+
     $('paymentAmount').innerHTML =
       `Vous recevrez : <strong>${formatNumber(currentOrder.receiveCfa)} FCFA</strong><br>Orange Money : <strong>${escapeHtml(currentOrder.payoutPhone || '-')}</strong>`;
   }
 
-  // Remplace le message d'avertissement de paiement par les consignes de vente.
+
   const warning =
-    card.querySelector('.warning-box');
+    card.querySelector(
+      '.warning-box'
+    );
+
 
   if (warning) {
+
     warning.innerHTML = `
-      ⚠️ <strong>IMPORTANT :</strong> envoyez exactement le montant indiqué,
+      ⚠️ <strong>IMPORTANT :</strong><br>
+      Envoyez exactement le montant indiqué,
       sur le réseau <strong>${escapeHtml(networkName)}</strong>.
-      Une erreur de réseau ou d'adresse peut entraîner une perte des fonds.
+
       <br><br>
-      Après réception et vérification de vos USDT, votre paiement de
-      <strong>${formatNumber(currentOrder.receiveCfa)} FCFA</strong> sera effectué sur le numéro Orange Money indiqué.
+
+      Adresse de dépôt NOA :
+      <strong class="break-word">${escapeHtml(currentOrder.walletAddress)}</strong>
+
+      <br><br>
+
+      Une erreur de réseau ou d'adresse peut entraîner
+      une perte des fonds.
+
+      <br><br>
+
+      Après réception et vérification de vos USDT,
+      votre paiement de
+      <strong>${formatNumber(currentOrder.receiveCfa)} FCFA</strong>
+      sera effectué sur le numéro Orange Money indiqué.
     `;
   }
 
+
   if ($('paymentDoneBtn')) {
-    $('paymentDoneBtn').style.display = 'none';
+
+    $('paymentDoneBtn').style.display =
+      'none';
   }
 
+
   if ($('viewOrderBtn')) {
+
     $('viewOrderBtn').textContent =
       'Voir ma commande';
   }
 }
 
+
+// ============================================================
+// DÉCLARER PAIEMENT ACHAT
+// ============================================================
 
 async function declarePayment() {
 
@@ -2809,12 +3570,14 @@ async function loadOrdersForDispute() {
   const select =
     $('disputeOrder');
 
+
   if (
     !select ||
     !currentUser
   ) {
     return;
   }
+
 
   try {
 
@@ -2888,7 +3651,7 @@ async function loadOrdersForDispute() {
 
 
 // ============================================================
-// ENVOYER UN LITIGE
+// ENVOYER LITIGE
 // ============================================================
 
 async function submitDispute(
@@ -3055,7 +3818,7 @@ async function submitDispute(
 
 
 // ============================================================
-// CHARGER LES LITIGES
+// CHARGER LITIGES
 // ============================================================
 
 async function loadDisputes() {
@@ -3198,7 +3961,7 @@ function renderDisputeCard(
 
 
 // ============================================================
-// SAUVEGARDE DU PROFIL
+// SAUVEGARDE PROFIL
 // ============================================================
 
 async function saveProfile(
@@ -3357,7 +4120,7 @@ async function saveProfile(
 
 
 // ============================================================
-// MODIFIER LE MOT DE PASSE
+// MODIFIER MOT DE PASSE
 // ============================================================
 
 async function changePassword(
@@ -3532,11 +4295,22 @@ function setupEvents() {
   document.addEventListener(
     'input',
     event => {
-      if (event.target?.id === 'sellPayoutPhone') {
+
+      if (
+        event.target?.id ===
+        'sellPayoutPhone'
+      ) {
+
         event.target.value =
           event.target.value
-            .replace(/\D/g, '')
-            .slice(0, 8);
+            .replace(
+              /\D/g,
+              ''
+            )
+            .slice(
+              0,
+              8
+            );
       }
     }
   );
@@ -3699,23 +4473,14 @@ function setupAuthListener() {
     .onAuthStateChange(
       (event, session) => {
 
-        /*
-         * IMPORTANT :
-         * signInWithPassword() déclenche SIGNED_IN.
-         * loginUser() initialise déjà l'application.
-         *
-         * On ne relance donc plus initializeApplication()
-         * depuis le listener. Cela évite les doubles initialisations
-         * et le clignotement de l'écran de connexion sur mobile.
-         */
-
         currentUser =
           session?.user ||
           null;
 
 
         if (
-          event === 'SIGNED_OUT' ||
+          event ===
+            'SIGNED_OUT' ||
           !currentUser
         ) {
 
@@ -3726,15 +4491,11 @@ function setupAuthListener() {
             null;
 
           showAuthPage();
+
           showLoginForm();
 
           return;
         }
-
-        /*
-         * SIGNED_IN / TOKEN_REFRESHED / INITIAL_SESSION :
-         * l'état est simplement synchronisé.
-         */
       }
     );
 }
