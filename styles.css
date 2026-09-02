@@ -8,648 +8,503 @@ html {
 
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
-  background: #f6f8fb;
-  color: #101828;
+  font-family: Arial, Helvetica, sans-serif;
+  background: #f4f7fb;
+  color: #172033;
+  min-height: 100vh;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.app {
+  width: 100%;
+  max-width: 520px;
+  margin: auto;
+  min-height: 100vh;
+  background: #f4f7fb;
 }
 
 /* ===============================
    HEADER
 ================================ */
 
-header {
-  height: 72px;
-  background: #fff;
-  border-bottom: 1px solid #e5e7eb;
-
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-
-  padding: 0 6%;
-
-  position: sticky;
-  top: 0;
-  z-index: 100;
+.header {
+  background: linear-gradient(135deg, #064dcc, #0878e8);
+  color: #fff;
+  padding: 28px 20px 32px;
+  border-radius: 0 0 28px 28px;
 }
 
 .brand {
-  font-weight: 900;
-  letter-spacing: 1px;
+  font-size: 25px;
+  font-weight: 800;
+  letter-spacing: .3px;
 }
 
-.brand span {
-  font-weight: 500;
+.subtitle {
+  margin-top: 7px;
+  opacity: .9;
+  font-size: 14px;
 }
 
-header button {
-  background: #fff;
-  color: #101828;
-
-  border: 1px solid #111827;
-  border-radius: 10px;
-
-  padding: 11px 18px;
-
-  font-size: 15px;
-  cursor: pointer;
+.country-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 18px;
+  padding: 8px 13px;
+  border-radius: 30px;
+  background: rgba(255, 255, 255, .16);
+  font-size: 13px;
+  font-weight: 600;
 }
-
-header button:hover {
-  background: #111827;
-  color: #fff;
-}
-
 
 /* ===============================
-   HERO
+   CONTENT
 ================================ */
 
-.hero {
-  max-width: 1100px;
-  margin: 70px auto 35px;
-
-  padding: 0 24px;
-
-  display: grid;
-  grid-template-columns: 1.4fr 0.6fr;
-
-  gap: 40px;
-  align-items: center;
+.content {
+  padding: 20px 16px 100px;
 }
-
-.hero small {
-  font-weight: 800;
-  letter-spacing: 2px;
-}
-
-.hero h1 {
-  font-size: clamp(38px, 6vw, 68px);
-  line-height: 1.02;
-
-  margin: 10px 0 18px;
-}
-
-.hero p {
-  font-size: 18px;
-  line-height: 1.6;
-
-  color: #667085;
-}
-
-.primary {
-  background: #111827;
-  color: #fff;
-
-  border: 0;
-  border-radius: 12px;
-
-  padding: 14px 22px;
-
-  font-weight: 700;
-  font-size: 15px;
-
-  cursor: pointer;
-
-  transition: 0.2s;
-}
-
-.primary:hover {
-  opacity: 0.9;
-}
-
-.primary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
 
 /* ===============================
    CARD
 ================================ */
 
 .card {
-  background: #111827;
-  color: #fff;
-
-  border-radius: 24px;
-
-  padding: 45px 30px;
-
-  min-height: 210px;
-
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-
-  gap: 8px;
-}
-
-.card span {
-  color: #98a2b3;
-}
-
-.card i {
-  width: 12px;
-  height: 12px;
-
-  border-radius: 50%;
-
-  background: #22c55e;
-}
-
-
-/* ===============================
-   PANNEAU COMMANDE
-================================ */
-
-.panel {
-  max-width: 700px;
-
-  margin: 40px auto;
-
-  padding: 28px;
-
   background: #fff;
-
-  border: 1px solid #e5e7eb;
-
   border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 7px 25px rgba(18, 46, 84, .07);
 }
 
-.panel h2 {
-  margin-top: 0;
+.card-title {
+  font-size: 19px;
+  font-weight: 800;
+  margin-bottom: 5px;
 }
 
+.card-description {
+  color: #7a8495;
+  font-size: 13px;
+  line-height: 1.5;
+  margin-bottom: 18px;
+}
 
 /* ===============================
-   ONGLETS ACHAT / VENTE
+   AUTHENTIFICATION
 ================================ */
 
-.tabs {
+.auth-tabs,
+.exchange-tabs {
   display: flex;
-
-  gap: 8px;
-
-  margin-bottom: 24px;
+  background: #edf2f8;
+  border-radius: 14px;
+  padding: 4px;
+  margin-bottom: 20px;
 }
 
-.tab {
+.auth-tab,
+.exchange-tab {
   flex: 1;
+  border: none;
+  background: transparent;
+  padding: 11px;
+  border-radius: 11px;
+  font-weight: 700;
+  color: #7b8493;
+}
 
-  padding: 12px;
-
-  border: 1px solid #d0d5dd;
-
+.auth-tab.active,
+.exchange-tab.active {
   background: #fff;
-
-  color: #101828;
-
-  border-radius: 10px;
-
-  font-size: 15px;
-
-  cursor: pointer;
+  color: #0757d9;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
 }
 
-.tab:hover {
-  border-color: #111827;
+.auth-form {
+  display: none;
 }
 
-.tab.active {
-  background: #111827;
-  color: #fff;
-
-  border-color: #111827;
+.auth-form.active {
+  display: block;
 }
-
 
 /* ===============================
    FORMULAIRE
 ================================ */
 
-.panel label,
-.modal-content label {
+.field {
+  margin-bottom: 15px;
+}
+
+.field label {
   display: block;
-
-  font-size: 14px;
-
+  font-size: 13px;
   font-weight: 700;
-
-  margin: 15px 0 7px;
+  margin-bottom: 7px;
+  color: #3c4658;
 }
 
-.panel input,
-.panel select,
-.modal-content input {
+.field input,
+.field select,
+.field textarea {
   width: 100%;
-
-  padding: 13px;
-
-  border: 1px solid #d0d5dd;
-
-  border-radius: 10px;
-
-  font-size: 16px;
-
-  background: #fff;
-
+  border: 1px solid #dce3ed;
+  background: #fafcff;
+  border-radius: 13px;
+  padding: 13px 14px;
   outline: none;
+  color: #172033;
 }
 
-.panel input:focus,
-.panel select:focus,
-.modal-content input:focus {
-  border-color: #111827;
-  box-shadow: 0 0 0 2px rgba(17, 24, 39, 0.08);
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  border-color: #0878e8;
+  box-shadow: 0 0 0 3px rgba(8, 120, 232, .09);
 }
 
-.full {
+.field textarea {
+  resize: vertical;
+  min-height: 90px;
+}
+
+/* ===============================
+   MOT DE PASSE
+================================ */
+
+.password-wrapper {
+  position: relative;
   width: 100%;
-
-  margin-top: 22px;
 }
 
-#msg {
-  min-height: 24px;
-
-  margin: 16px 0 0;
-
-  font-size: 14px;
-  line-height: 1.5;
+.password-wrapper input {
+  padding-right: 52px;
 }
 
-
-/* ===============================
-   FONCTIONNEMENT
-================================ */
-
-.features {
-  max-width: 1100px;
-
-  margin: 70px auto;
-
-  padding: 0 24px;
-
-  display: grid;
-
-  grid-template-columns: repeat(3, 1fr);
-
-  gap: 18px;
-}
-
-.features div {
-  background: #fff;
-
-  padding: 24px;
-
-  border-radius: 16px;
-
-  border: 1px solid #e5e7eb;
-}
-
-.features p {
-  color: #667085;
-
-  line-height: 1.5;
-}
-
-
-/* ===============================
-   FOOTER
-================================ */
-
-footer {
-  text-align: center;
-
-  padding: 40px;
-
-  color: #667085;
-}
-
-
-/* ===============================
-   FENÊTRE AUTHENTIFICATION
-================================ */
-
-.modal {
-  position: fixed;
-
-  inset: 0;
-
-  z-index: 1000;
-
-  background: rgba(15, 23, 42, 0.55);
-
-  display: none;
-
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: transparent;
+  border-radius: 10px;
+  display: flex;
   align-items: center;
   justify-content: center;
-
-  padding: 20px;
-
-  overflow-y: auto;
+  font-size: 19px;
+  color: #667085;
 }
 
-.modal.show {
-  display: flex;
-}
+/* ===============================
+   BOUTONS
+================================ */
 
-.modal-content {
-  position: relative;
-
+.btn {
   width: 100%;
-  max-width: 430px;
-
-  background: #fff;
-
-  border-radius: 20px;
-
-  padding: 30px;
-
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
-
-  animation: modalIn 0.2s ease;
+  border: none;
+  border-radius: 14px;
+  padding: 14px 16px;
+  font-weight: 800;
+  transition: .2s;
 }
 
-@keyframes modalIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.btn-primary {
+  background: #0757d9;
+  color: #fff;
 }
 
-.modal-content h2 {
-  margin: 0 0 8px;
-
-  font-size: 28px;
+.btn-primary:hover {
+  background: #0649b6;
 }
 
-.auth-subtitle {
-  margin: 0 0 20px;
-
-  color: #667085;
-
-  line-height: 1.5;
+.btn-primary:disabled {
+  opacity: .6;
+  cursor: not-allowed;
 }
 
+.btn-secondary {
+  background: #eaf1fb;
+  color: #0757d9;
+}
+
+.btn-danger {
+  background: #fee9e9;
+  color: #c62828;
+}
+
+.btn-success {
+  background: #e8f8ef;
+  color: #168447;
+}
+
+.btn + .btn {
+  margin-top: 10px;
+}
 
 /* ===============================
-   BOUTON FERMER
+   MONTANT
 ================================ */
 
-.close {
-  position: absolute;
-
-  top: 14px;
-  right: 16px;
-
-  width: 38px;
-  height: 38px;
-
-  border: 0;
-
-  border-radius: 50%;
-
-  background: #f2f4f7;
-
-  color: #344054;
-
-  font-size: 26px;
-
-  line-height: 1;
-
-  cursor: pointer;
+.amount-box {
+  border: 1px solid #e0e6ef;
+  border-radius: 17px;
+  padding: 16px;
+  margin-bottom: 12px;
+  background: #fbfcfe;
 }
 
-.close:hover {
-  background: #e4e7ec;
-}
-
-
-/* ===============================
-   MESSAGES AUTH
-================================ */
-
-.auth-message {
-  min-height: 22px;
-
-  margin: 14px 0 0;
-
-  font-size: 14px;
-
-  line-height: 1.5;
-}
-
-
-/* ===============================
-   CHANGEMENT CONNEXION / INSCRIPTION
-================================ */
-
-.switch-auth {
-  margin: 22px 0 0;
-
-  text-align: center;
-
-  color: #667085;
-
-  font-size: 14px;
-
-  line-height: 1.6;
-}
-
-.switch-auth button {
-  border: 0;
-
-  background: none;
-
-  color: #111827;
-
+.amount-label {
+  color: #778194;
+  font-size: 13px;
   font-weight: 700;
+  margin-bottom: 8px;
+}
 
-  cursor: pointer;
+.amount-input {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 29px;
+  font-weight: 800;
+  color: #172033;
+}
 
-  padding: 0;
+.amount-unit {
+  color: #0757d9;
+  font-size: 14px;
+  font-weight: 800;
+}
 
+/* ===============================
+   RÉSEAUX
+================================ */
+
+.network-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.network-option {
+  border: 2px solid #e0e6ef;
+  background: #fff;
+  border-radius: 14px;
+  padding: 14px 10px;
+  text-align: center;
+}
+
+.network-option:hover {
+  border-color: #8fb5ed;
+}
+
+.network-option.active {
+  border-color: #0757d9;
+  background: #f0f6ff;
+}
+
+.network-name {
+  font-weight: 800;
   font-size: 14px;
 }
 
-.switch-auth button:hover {
-  text-decoration: underline;
+.network-fee {
+  margin-top: 5px;
+  color: #7d8796;
+  font-size: 12px;
 }
-
 
 /* ===============================
-   ÉLÉMENT CACHÉ
+   SUMMARY
 ================================ */
 
-[hidden] {
-  display: none !important;
+.summary {
+  background: #f5f8fd;
+  border-radius: 16px;
+  padding: 16px;
+  margin-top: 15px;
 }
 
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 8px 0;
+  font-size: 14px;
+}
+
+.summary-row span:first-child {
+  color: #737d8e;
+}
+
+.summary-row strong {
+  text-align: right;
+}
+
+.summary-total {
+  border-top: 1px solid #dce3ed;
+  margin-top: 7px;
+  padding-top: 13px;
+  font-size: 17px;
+}
+
+.summary-total strong {
+  color: #0757d9;
+}
 
 /* ===============================
-   MOBILE
+   INFORMATIONS
 ================================ */
 
-@media (max-width: 700px) {
-
-  header {
-    height: 68px;
-
-    padding: 0 18px;
-  }
-
-  .brand {
-    font-size: 14px;
-  }
-
-  header button {
-    padding: 10px 14px;
-
-    font-size: 14px;
-  }
-
-
-  .hero {
-    grid-template-columns: 1fr;
-
-    margin-top: 40px;
-
-    gap: 25px;
-  }
-
-  .hero h1 {
-    font-size: 42px;
-  }
-
-  .hero p {
-    font-size: 16px;
-  }
-
-
-  .card {
-    min-height: 170px;
-
-    padding: 30px;
-  }
-
-
-  .panel {
-    margin: 30px 12px;
-
-    padding: 22px;
-
-    border-radius: 18px;
-  }
-
-
-  .tabs {
-    gap: 6px;
-  }
-
-  .tab {
-    padding: 12px 8px;
-
-    font-size: 14px;
-  }
-
-
-  .features {
-    grid-template-columns: 1fr;
-
-    margin: 50px auto;
-
-    padding: 0 18px;
-  }
-
-
-  .modal {
-    padding: 12px;
-  }
-
-  .modal-content {
-    padding: 26px 20px;
-
-    border-radius: 18px;
-  }
-
-  .modal-content h2 {
-    font-size: 25px;
-  }
-
-}
-/* ===== PAIEMENT ACHAT ===== */
-.payment-amount-box{
-  text-align:center;
-  background:#f5f8fd;
-  border-radius:16px;
-  padding:18px;
-  margin:15px 0;
+.info-box {
+  background: #eef6ff;
+  border-left: 4px solid #0878e8;
+  padding: 13px;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #42536a;
+  margin-bottom: 15px;
 }
 
-.payment-amount-label{
-  font-size:13px;
-  color:#737d8e;
-  margin-bottom:6px;
+.warning-box {
+  background: #fff8e7;
+  border-left: 4px solid #f2a900;
+  padding: 13px;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #69531f;
+  margin-bottom: 15px;
 }
 
-.payment-amount-value{
-  font-size:28px;
-  font-weight:900;
-  color:#0757d9;
+.error-box {
+  background: #feecec;
+  border-left: 4px solid #c62828;
+  padding: 13px;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #a51f1f;
+  margin-bottom: 15px;
 }
 
-.payment-qr-box{
-  text-align:center;
-  margin:20px 0;
+/* ===============================
+   UTILISATEUR
+================================ */
+
+.user-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: #fff;
+  padding: 14px 16px;
+  border-radius: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 5px 18px rgba(18, 46, 84, .06);
 }
 
-.payment-qr-box img{
-  display:block;
-  width:260px;
-  height:260px;
-  max-width:100%;
-  margin:15px auto;
-  border-radius:16px;
-  border:1px solid #e0e6ef;
-  padding:8px;
-  background:#fff;
+.user-name {
+  font-weight: 800;
 }
 
-.payment-qr-text{
-  font-size:13px;
-  color:#667085;
-  line-height:1.5;
+.user-country {
+  color: #7c8695;
+  font-size: 12px;
+  margin-top: 3px;
 }
 
-.payment-or{
-  text-align:center;
-  margin:15px 0;
-  font-weight:800;
-  color:#98a2b3;
+.logout-btn {
+  border: none;
+  background: #f0f3f7;
+  color: #596577;
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: 12px;
+  font-weight: 700;
 }
 
-.payment-main-button{
-  margin-top:10px;
-  font-size:14px;
+/* ===============================
+   COMMANDES
+================================ */
+
+.order-card {
+  border: 1px solid #e2e7ef;
+  border-radius: 15px;
+  padding: 15px;
+  margin-top: 12px;
 }
 
-.payment-security-box{
-  text-align:center;
-  background:#e8f8ef;
-  color:#168447;
-  padding:12px;
-  border-radius:12px;
-  font-size:13px;
-  font-weight:700;
-  margin-top:15px;
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
 }
+
+.order-type {
+  font-weight: 800;
+}
+
+.status {
+  padding: 5px 9px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.status.pending {
+  background: #fff4d7;
+  color: #a16c00;
+}
+
+.status.processing {
+  background: #e8f1ff;
+  color: #0757d9;
+}
+
+.status.completed {
+  background: #e7f8ee;
+  color: #168447;
+}
+
+.status.cancelled {
+  background: #fdeaea;
+  color: #c62828;
+}
+
+.order-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 0;
+  font-size: 13px;
+}
+
+.order-row span:first-child {
+  color: #7d8795;
+}
+
+/* ===============================
+   PAIEMENT
+================================ */
+
 .payment-amount-box {
   background: #f1f5f9;
   border-radius: 16px;
@@ -670,6 +525,8 @@ footer {
   color: #0757d9;
 }
 
+/* QR */
+
 .payment-qr-box {
   background: #fff;
   border: 1px solid #e4e7ec;
@@ -683,6 +540,7 @@ footer {
   font-size: 14px;
   color: #475467;
   margin-bottom: 15px;
+  line-height: 1.5;
 }
 
 #orangeMoneyQr {
@@ -690,12 +548,16 @@ footer {
   justify-content: center;
   align-items: center;
   min-height: 220px;
+  width: 100%;
 }
 
 #orangeMoneyQr img {
+  display: block;
   width: 220px;
   height: 220px;
   max-width: 100%;
+  margin: auto;
+  border-radius: 8px;
 }
 
 .payment-or {
@@ -720,4 +582,205 @@ footer {
   text-align: center;
   font-size: 13px;
   font-weight: 600;
+  line-height: 1.5;
+}
+
+/* ===============================
+   PAGES
+================================ */
+
+.page,
+.sub-page {
+  display: none;
+}
+
+.page.active,
+.sub-page.active {
+  display: block;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ===============================
+   MESSAGE
+================================ */
+
+#appMessage {
+  display: none;
+  padding: 13px 15px;
+  border-radius: 12px;
+  margin-bottom: 15px;
+  font-size: 13px;
+  line-height: 1.4;
+  font-weight: 600;
+}
+
+#appMessage.success {
+  display: block;
+  background: #e8f8ef;
+  color: #168447;
+}
+
+#appMessage.error {
+  display: block;
+  background: #feecec;
+  color: #c62828;
+}
+
+#appMessage.info {
+  display: block;
+  background: #eaf3ff;
+  color: #0757d9;
+}
+
+/* ===============================
+   UTILITAIRES
+================================ */
+
+.center {
+  text-align: center;
+}
+
+.small {
+  font-size: 12px;
+  color: #7d8795;
+  line-height: 1.5;
+}
+
+.mt {
+  margin-top: 15px;
+}
+
+.wallet-help {
+  margin-top: 7px;
+}
+
+.wallet-input {
+  font-family: monospace;
+  font-size: 14px;
+}
+
+.break-word {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+/* ===============================
+   NAVIGATION BASSE
+================================ */
+
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 520px;
+  background: rgba(255, 255, 255, .96);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid #e1e6ed;
+  display: flex;
+  justify-content: space-around;
+  padding: 10px 8px;
+  z-index: 50;
+}
+
+.nav-btn {
+  border: none;
+  background: transparent;
+  color: #7d8795;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 7px 13px;
+  border-radius: 10px;
+}
+
+.nav-btn.active {
+  color: #0757d9;
+  background: #edf5ff;
+}
+
+/* ===============================
+   MOBILE
+================================ */
+
+@media (max-width: 520px) {
+
+  .header {
+    padding: 25px 18px 30px;
+  }
+
+  .brand {
+    font-size: 23px;
+  }
+
+  .content {
+    padding: 18px 12px 100px;
+  }
+
+  .card {
+    border-radius: 18px;
+    padding: 18px;
+  }
+
+  .amount-input {
+    font-size: 27px;
+  }
+
+  .payment-amount-value {
+    font-size: 25px;
+  }
+
+  #orangeMoneyQr {
+    min-height: 200px;
+  }
+
+  #orangeMoneyQr img {
+    width: 200px;
+    height: 200px;
+  }
+
+  .payment-main-button {
+    font-size: 14px;
+  }
+
+  .network-grid {
+    gap: 8px;
+  }
+
+  .network-option {
+    padding: 13px 8px;
+  }
+
+  .nav-btn {
+    font-size: 11px;
+    padding: 7px 9px;
+  }
+}
+
+/* ===============================
+   GRAND ÉCRAN
+================================ */
+
+@media (min-width: 521px) {
+
+  body {
+    padding: 20px 0;
+  }
+
+  .app {
+    border-radius: 25px;
+    overflow: hidden;
+    box-shadow: 0 15px 50px rgba(0, 0, 0, .08);
+  }
+
+  .bottom-nav {
+    border-radius: 20px 20px 0 0;
+  }
 }
