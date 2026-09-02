@@ -405,6 +405,129 @@
     }
 
     /* =====================================================
+       CARTES DE COMMANDES (ADMIN)
+    ====================================================== */
+
+    .order-card {
+      border: 1px solid #e2e7ef;
+      border-radius: 16px;
+      padding: 15px;
+      margin-bottom: 12px;
+      background: #fff;
+    }
+
+    .order-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .order-type-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .order-type-badge.buy {
+      background: #e7f8ee;
+      color: #168447;
+    }
+
+    .order-type-badge.sell {
+      background: #fff0e2;
+      color: #b8560a;
+    }
+
+    .order-card-id {
+      color: #98a2b3;
+      font-size: 11px;
+      margin-top: 4px;
+    }
+
+    .order-card-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 6px 0;
+      font-size: 13px;
+      border-bottom: 1px solid #f3f5f8;
+    }
+
+    .order-card-row:last-of-type {
+      border-bottom: none;
+    }
+
+    .order-card-row span:first-child {
+      color: #7d8795;
+      flex-shrink: 0;
+    }
+
+    .order-card-row strong {
+      text-align: right;
+      word-break: break-all;
+    }
+
+    .wallet-box {
+      background: #f5f8fd;
+      border: 1px dashed #c7d5ea;
+      border-radius: 12px;
+      padding: 10px 12px;
+      margin-top: 10px;
+    }
+
+    .wallet-box-label {
+      color: #667085;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+
+    .wallet-box-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .wallet-box-value {
+      flex: 1;
+      font-family: monospace;
+      font-size: 12px;
+      word-break: break-all;
+      color: #172033;
+    }
+
+    .copy-btn {
+      flex-shrink: 0;
+      border: none;
+      background: #0757d9;
+      color: #fff;
+      border-radius: 9px;
+      padding: 8px 11px;
+      font-size: 11px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .copy-btn.copied {
+      background: #168447;
+    }
+
+    .order-card-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .order-card-actions .btn {
+      flex: 1;
+    }
+
+    /* =====================================================
        STATUTS
     ====================================================== */
 
@@ -882,37 +1005,8 @@
         </div>
 
 
-        <div class="table-wrapper">
-
-          <table>
-
-            <thead>
-              <tr>
-                <th>Commande</th>
-                <th>Client</th>
-                <th>Type</th>
-                <th>Montant</th>
-                <th>Réseau</th>
-                <th>Statut</th>
-                <th>Date</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-
-            <tbody id="ordersTableBody">
-
-              <tr>
-                <td colspan="8">
-                  <div class="empty">
-                    Chargement...
-                  </div>
-                </td>
-              </tr>
-
-            </tbody>
-
-          </table>
-
+        <div id="ordersList" class="orders-list">
+          <div class="empty">Chargement...</div>
         </div>
 
       </div>
