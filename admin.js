@@ -105,6 +105,80 @@ const DEFAULT_SETTINGS = {
 // UTILITAIRE DOM
 // ============================================================
 
+function extractWalletAddress(order) {
+
+  if (order.wallet_address) {
+    return String(order.wallet_address).trim();
+  }
+
+  const note =
+    String(order.customer_note || "");
+
+  const buyMatch =
+    note.match(/Adresse de r[ée]ception USDT\s*:\s*([^\n|]+)/i);
+
+  if (buyMatch) {
+    return buyMatch[1].trim();
+  }
+
+  const sellMatch =
+    note.match(/Adresse de d[ée]p[oô]t NOA\s*:\s*([^\n|]+)/i);
+
+  if (sellMatch) {
+    return sellMatch[1].trim();
+  }
+
+  return "";
+}
+
+
+function extractPayoutPhone(order) {
+
+  const note =
+    String(order.customer_note || "");
+
+  const match =
+    note.match(/Num[ée]ro Orange Money\s*:\s*([^\n|]+)/i);
+
+  return match ? match[1].trim() : "";
+}
+
+
+async function copyToClipboard(text, button) {
+
+  if (!text) return;
+
+  try {
+
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      const temp = document.createElement("textarea");
+      temp.value = text;
+      temp.style.position = "fixed";
+      temp.style.opacity = "0";
+      document.body.appendChild(temp);
+      temp.select();
+      document.execCommand("copy");
+      document.body.removeChild(temp);
+    }
+
+    if (button) {
+      const original = button.textContent;
+      button.textContent = "✓ Copié";
+      button.classList.add("copied");
+      setTimeout(() => {
+        button.textContent = original;
+        button.classList.remove("copied");
+      }, 1500);
+    }
+
+  } catch (error) {
+    console.error("Erreur copie presse-papier :", error);
+  }
+}
+
+
 function $(id) {
 
   return document.getElementById(id);
@@ -1701,27 +1775,14 @@ async function saveSettings(event) {
 
 async function loadOrders() {
 
-  const body =
-    $("ordersTableBody");
+  const container =
+    $("ordersList");
 
 
-  if (body) {
+  if (container) {
 
-    body.innerHTML = `
-
-      <tr>
-
-        <td
-          colspan="8"
-          style="text-align:center"
-        >
-          Chargement des commandes...
-
-        </td>
-
-      </tr>
-
-    `;
+    container.innerHTML =
+      '<div class="empty">Chargement des commandes...</div>';
 
   }
 
@@ -1768,23 +1829,10 @@ async function loadOrders() {
     );
 
 
-    if (body) {
+    if (container) {
 
-      body.innerHTML = `
-
-        <tr>
-
-          <td
-            colspan="8"
-            style="text-align:center"
-          >
-            Impossible de charger les commandes.
-
-          </td>
-
-        </tr>
-
-      `;
+      container.innerHTML =
+        '<div class="empty">Impossible de charger les commandes.</div>';
 
     }
 
@@ -1799,11 +1847,11 @@ async function loadOrders() {
 
 function renderOrders() {
 
-  const body =
-    $("ordersTableBody");
+  const container =
+    $("ordersList");
 
 
-  if (!body) {
+  if (!container) {
 
     return;
 
@@ -1824,9 +1872,17 @@ function renderOrders() {
       ?.value || "";
 
 
+  const typeFilter =
+    $("orderTypeFilter")
+      ?.value || "";
+
+
   const filtered =
     allOrders.filter(
       order => {
+
+        const wallet =
+          extractWalletAddress(order);
 
         const text =
           [
@@ -1835,13 +1891,13 @@ function renderOrders() {
 
             order.user_id,
 
-            order.type,
+            order.side,
 
             order.network,
 
             order.status,
 
-            order.wallet_address,
+            wallet,
 
             order.payment_method
 
@@ -1863,9 +1919,18 @@ function renderOrders() {
           statusFilter;
 
 
+        const matchesType =
+          !typeFilter ||
+          String(
+            order.side || ""
+          ).toLowerCase() ===
+          typeFilter;
+
+
         return (
           matchesSearch &&
-          matchesStatus
+          matchesStatus &&
+          matchesType
         );
 
       }
@@ -1876,36 +1941,27 @@ function renderOrders() {
     filtered.length === 0
   ) {
 
-    body.innerHTML = `
-
-      <tr>
-
-        <td
-          colspan="8"
-          style="text-align:center"
-        >
-          Aucune commande trouvée.
-
-        </td>
-
-      </tr>
-
-    `;
+    container.innerHTML =
+      '<div class="empty">Aucune commande trouvée.</div>';
 
     return;
 
   }
 
 
-  body.innerHTML =
+  container.innerHTML =
     filtered
       .map(
         order => {
 
-          const type =
+          const isBuy =
             String(
-              order.type || ""
-            ).toLowerCase() === "buy"
+              order.side || ""
+            ).toLowerCase() === "buy";
+
+
+          const type =
+            isBuy
               ? "Achat"
               : "Vente";
 
@@ -1921,111 +1977,88 @@ function renderOrders() {
             );
 
 
+          const wallet =
+            extractWalletAddress(order);
+
+
+          const payoutPhone =
+            extractPayoutPhone(order);
+
+
+          const walletLabel =
+            isBuy
+              ? "Portefeuille client (envoyer les USDT ici)"
+              : "Adresse de dépôt NOA utilisée";
+
+
+          const walletBox =
+            wallet
+              ? `
+                <div class="wallet-box">
+                  <div class="wallet-box-label">${escapeHtml(walletLabel)}</div>
+                  <div class="wallet-box-row">
+                    <span class="wallet-box-value">${escapeHtml(wallet)}</span>
+                    <button type="button" class="copy-btn" data-copy-wallet="${escapeHtml(wallet)}">Copier</button>
+                  </div>
+                  ${
+                    payoutPhone
+                      ? `<div class="order-card-row" style="margin-top:8px"><span>Orange Money client</span><strong>${escapeHtml(payoutPhone)}</strong></div>`
+                      : ""
+                  }
+                </div>
+              `
+              : `
+                <div class="wallet-box">
+                  <div class="wallet-box-label">${escapeHtml(walletLabel)}</div>
+                  <div class="wallet-box-value" style="color:#c62828">Adresse non trouvée dans la commande.</div>
+                </div>
+              `;
+
+
           return `
 
-            <tr>
+            <div class="order-card">
 
-              <td>
+              <div class="order-card-top">
+                <div>
+                  <span class="order-type-badge ${isBuy ? "buy" : "sell"}">${escapeHtml(type)} USDT</span>
+                  <div class="order-card-id">Commande #${escapeHtml(String(order.id || "").slice(0, 8))}</div>
+                </div>
+                <span class="status ${escapeHtml(status)}">${escapeHtml(statusLabel)}</span>
+              </div>
 
-                <strong>
+              <div class="order-card-row">
+                <span>Client (ID)</span>
+                <strong>${escapeHtml(String(order.user_id || "-"))}</strong>
+              </div>
 
-                  ${escapeHtml(
-                    String(
-                      order.id || ""
-                    ).slice(0, 8)
-                  )}
+              <div class="order-card-row">
+                <span>Montant FCFA</span>
+                <strong>${formatNumber(order.amount_cfa)} FCFA</strong>
+              </div>
 
-                </strong>
+              <div class="order-card-row">
+                <span>USDT</span>
+                <strong>${formatDecimal(order.usdt_amount)} USDT</strong>
+              </div>
 
-              </td>
+              <div class="order-card-row">
+                <span>Réseau</span>
+                <strong>${escapeHtml(order.network || "-")}</strong>
+              </div>
 
+              <div class="order-card-row">
+                <span>Date</span>
+                <strong>${formatDate(order.created_at)}</strong>
+              </div>
 
-              <td>
+              ${walletBox}
 
-                ${escapeHtml(
-                  type
-                )}
+              <div class="order-card-actions">
+                <button type="button" class="btn btn-secondary btn-small" data-view-order="${escapeHtml(order.id)}">Voir / Modifier le statut</button>
+              </div>
 
-              </td>
-
-
-              <td>
-
-                ${escapeHtml(
-                  String(
-                    order.user_id || ""
-                  ).slice(0, 8)
-                )}
-
-              </td>
-
-
-              <td>
-
-                <strong>
-
-                  ${formatNumber(
-                    order.fiat_amount
-                  )}
-                  FCFA
-
-                </strong>
-
-              </td>
-
-
-              <td>
-
-                ${escapeHtml(
-                  order.network || "-"
-                )}
-
-              </td>
-
-
-              <td>
-
-                <span
-                  class="status ${escapeHtml(
-                    status
-                  )}"
-                >
-
-                  ${escapeHtml(
-                    statusLabel
-                  )}
-
-                </span>
-
-              </td>
-
-
-              <td>
-
-                ${formatDate(
-                  order.created_at
-                )}
-
-              </td>
-
-
-              <td>
-
-                <button
-                  class="action-btn"
-                  type="button"
-                  data-view-order="${escapeHtml(
-                    order.id
-                  )}"
-                >
-
-                  Voir
-
-                </button>
-
-              </td>
-
-            </tr>
+            </div>
 
           `;
 
@@ -2222,6 +2255,20 @@ function openOrderModal(
     "-";
 
 
+  const isBuy =
+    String(
+      selectedOrder.side || ""
+    ).toLowerCase() === "buy";
+
+
+  const wallet =
+    extractWalletAddress(selectedOrder);
+
+
+  const payoutPhone =
+    extractPayoutPhone(selectedOrder);
+
+
   const details =
     $("orderDetails");
 
@@ -2268,9 +2315,7 @@ function openOrderModal(
       <strong>
 
         ${
-          String(
-            selectedOrder.type || ""
-          ).toLowerCase() === "buy"
+          isBuy
             ? "Achat USDT"
             : "Vente USDT"
         }
@@ -2287,7 +2332,7 @@ function openOrderModal(
       <strong>
 
         ${formatNumber(
-          selectedOrder.fiat_amount
+          selectedOrder.amount_cfa
         )}
         FCFA
 
@@ -2303,7 +2348,7 @@ function openOrderModal(
       <strong>
 
         ${formatDecimal(
-          selectedOrder.crypto_amount
+          selectedOrder.usdt_amount
         )}
         USDT
 
@@ -2314,14 +2359,14 @@ function openOrderModal(
 
     <div class="detail-row">
 
-      <span>Taux</span>
+      <span>USDT net</span>
 
       <strong>
 
-        ${formatNumber(
-          selectedOrder.rate
+        ${formatDecimal(
+          selectedOrder.net_usdt
         )}
-        FCFA / USDT
+        USDT
 
       </strong>
 
@@ -2335,7 +2380,7 @@ function openOrderModal(
       <strong>
 
         ${formatDecimal(
-          selectedOrder.fee
+          selectedOrder.fee_usdt
         )}
         USDT
 
@@ -2361,18 +2406,42 @@ function openOrderModal(
 
     <div class="detail-row">
 
-      <span>Wallet</span>
+      <span>${isBuy ? "Portefeuille client" : "Adresse de dépôt NOA"}</span>
 
       <strong>
 
         ${escapeHtml(
-          selectedOrder.wallet_address ||
-          "-"
+          wallet || "-"
         )}
 
       </strong>
 
     </div>
+
+    ${
+      wallet
+        ? `
+          <div class="wallet-box">
+            <div class="wallet-box-label">${isBuy ? "Envoyer les USDT à cette adresse" : "Adresse de dépôt utilisée"}</div>
+            <div class="wallet-box-row">
+              <span class="wallet-box-value">${escapeHtml(wallet)}</span>
+              <button type="button" class="copy-btn" data-copy-wallet="${escapeHtml(wallet)}">Copier</button>
+            </div>
+          </div>
+        `
+        : ""
+    }
+
+    ${
+      payoutPhone
+        ? `
+          <div class="detail-row">
+            <span>Orange Money client</span>
+            <strong>${escapeHtml(payoutPhone)}</strong>
+          </div>
+        `
+        : ""
+    }
 
 
     <div class="detail-row">
@@ -3723,6 +3792,13 @@ function setupEvents() {
     );
 
 
+  $("orderTypeFilter")
+    ?.addEventListener(
+      "change",
+      renderOrders
+    );
+
+
   $("refreshOrdersBtn")
     ?.addEventListener(
       "click",
@@ -3782,6 +3858,24 @@ function setupEvents() {
 
         openOrderModal(
           orderButton.dataset.viewOrder
+        );
+
+        return;
+
+      }
+
+
+      const copyButton =
+        event.target.closest(
+          "[data-copy-wallet]"
+        );
+
+
+      if (copyButton) {
+
+        copyToClipboard(
+          copyButton.dataset.copyWallet,
+          copyButton
         );
 
         return;
