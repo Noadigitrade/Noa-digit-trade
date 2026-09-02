@@ -584,3 +584,69 @@ footer {
   }
 
 }
+/* ===== PAIEMENT ACHAT ===== */
+.payment-amount-box{
+  text-align:center;
+  background:#f5f8fd;
+  border-radius:16px;
+  padding:18px;
+  margin:15px 0;
+}
+
+.payment-amount-label{
+  font-size:13px;
+  color:#737d8e;
+  margin-bottom:6px;
+}
+
+.payment-amount-value{
+  font-size:28px;
+  font-weight:900;
+  color:#0757d9;
+}
+
+.payment-qr-box{
+  text-align:center;
+  margin:20px 0;
+}
+
+.payment-qr-box img{
+  display:block;
+  width:260px;
+  height:260px;
+  max-width:100%;
+  margin:15px auto;
+  border-radius:16px;
+  border:1px solid #e0e6ef;
+  padding:8px;
+  background:#fff;
+}
+
+.payment-qr-text{
+  font-size:13px;
+  color:#667085;
+  line-height:1.5;
+}
+
+.payment-or{
+  text-align:center;
+  margin:15px 0;
+  font-weight:800;
+  color:#98a2b3;
+}
+
+.payment-main-button{
+  margin-top:10px;
+  font-size:14px;
+}
+
+.payment-security-box{
+  text-align:center;
+  background:#e8f8ef;
+  color:#168447;
+  padding:12px;
+  border-radius:12px;
+  font-size:13px;
+  font-weight:700;
+  margin-top:15px;
+}
