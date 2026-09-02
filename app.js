@@ -1,16 +1,23 @@
 // ============================================================
 // NOA DIGIT TRADE - APP.JS FINAL
 // Supabase Auth + Profiles + Orders + Paiement + Litiges
-// Validation réseau/adresse ACHAT + VENTE
-// Correction : receive_cfa ne peut plus être NULL.
+// BUY / SELL + Validation réseaux + Paiement Orange Money
+// Déclaration paiement via RPC sécurisé Supabase
 // ============================================================
 
-const SUPABASE_URL = 'https://vowafwsvrjpkhkocptih.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_umIa4749av8722xus6aQHw_1nf8b-PC';
+const SUPABASE_URL =
+  'https://vowafwsvrjpkhkocptih.supabase.co';
+
+const SUPABASE_KEY =
+  'sb_publishable_umIa4749av8722xus6aQHw_1nf8b-PC';
+
 
 if (!window.supabase) {
-  console.error('Supabase JS n\'a pas été chargé.');
+  console.error(
+    "Supabase JS n'a pas été chargé."
+  );
 }
+
 
 const supabaseClient =
   window.supabase.createClient(
@@ -18,14 +25,23 @@ const supabaseClient =
     SUPABASE_KEY
   );
 
+
+// ============================================================
+// CONFIGURATION
+// ============================================================
+
 const CONFIG = {
+
   buyRate: 600,
+
   sellRate: 570,
 
   minOrder: 2000,
+
   maxOrder: 50000,
 
   networks: {
+
     trc20: {
       name: 'USDT TRC20',
       fee: 2
@@ -35,29 +51,51 @@ const CONFIG = {
       name: 'USDT BEP20',
       fee: 0
     }
+
   },
 
   depositAddresses: {
-    trc20: 'THmJUvPgBNa7uyDpPKrmer34JtA5w743vA',
-    bp20: '0x9a4248E584B1e27f4d37ce7Ae355Ca004e439D72'
+
+    trc20:
+      'THmJUvPgBNa7uyDpPKrmer34JtA5w743vA',
+
+    bp20:
+      '0x9a4248E584B1e27f4d37ce7Ae355Ca004e439D72'
+
   },
 
   payment: {
-    method: 'orange_money',
-    number: '74602553',
-    displayNumber: '74 60 25 53'
+
+    method:
+      'orange_money',
+
+    number:
+      '74602553',
+
+    displayNumber:
+      '74 60 25 53'
+
   }
+
 };
 
 
+// ============================================================
+// ÉTAT APPLICATION
+// ============================================================
+
 let currentUser = null;
+
 let currentProfile = null;
+
 let currentOrder = null;
 
 let currentExchangeType = 'buy';
+
 let currentNetwork = 'trc20';
 
 let applicationInitializing = false;
+
 let authListenerReady = false;
 
 
@@ -77,7 +115,9 @@ function showMessage(
   const box =
     $('appMessage');
 
-  if (!box) return;
+  if (!box) {
+    return;
+  }
 
   box.textContent =
     String(message || '');
@@ -95,7 +135,9 @@ function hideMessage() {
   const box =
     $('appMessage');
 
-  if (!box) return;
+  if (!box) {
+    return;
+  }
 
   box.textContent =
     '';
@@ -129,7 +171,9 @@ function formatNumber(
 
 function formatDate(value) {
 
-  if (!value) return '-';
+  if (!value) {
+    return '-';
+  }
 
   const d =
     new Date(value);
@@ -214,38 +258,30 @@ function getSupabaseErrorMessage(
 // VALIDATION ADRESSES / RÉSEAUX
 // ============================================================
 
-function normalizeWalletAddress(value) {
+function normalizeWalletAddress(
+  value
+) {
 
   return String(
     value || ''
   )
     .trim()
-    .replace(/\s+/g, '');
+    .replace(
+      /\s+/g,
+      ''
+    );
 }
 
 
-/*
- * Cette fonction vérifie uniquement le FORMAT attendu.
- *
- * TRC20 :
- * Une adresse TRON commence normalement par T
- * et possède 34 caractères.
- *
- * BEP20 :
- * Une adresse EVM commence par 0x
- * et possède 40 caractères hexadécimaux après 0x.
- *
- * IMPORTANT :
- * Le format seul ne prouve pas que l'adresse appartient
- * réellement au réseau choisi.
- */
 function validateWalletForNetwork(
   wallet,
   network
 ) {
 
   const address =
-    normalizeWalletAddress(wallet);
+    normalizeWalletAddress(
+      wallet
+    );
 
 
   if (!address) {
@@ -259,13 +295,20 @@ function validateWalletForNetwork(
   }
 
 
-  if (network === 'trc20') {
+  if (
+    network ===
+    'trc20'
+  ) {
 
     const trc20Regex =
       /^T[1-9A-HJ-NP-Za-km-z]{33}$/;
 
 
-    if (!trc20Regex.test(address)) {
+    if (
+      !trc20Regex.test(
+        address
+      )
+    ) {
 
       return {
         valid: false,
@@ -285,13 +328,20 @@ function validateWalletForNetwork(
   }
 
 
-  if (network === 'bp20') {
+  if (
+    network ===
+    'bp20'
+  ) {
 
     const bep20Regex =
       /^0x[a-fA-F0-9]{40}$/;
 
 
-    if (!bep20Regex.test(address)) {
+    if (
+      !bep20Regex.test(
+        address
+      )
+    ) {
 
       return {
         valid: false,
@@ -320,16 +370,15 @@ function validateWalletForNetwork(
 }
 
 
-/*
- * Vérifie l'adresse de dépôt NOA utilisée pour une VENTE.
- * Cela évite qu'une mauvaise adresse soit associée au mauvais réseau.
- */
 function validateNoaDepositAddress(
   network
 ) {
 
   const address =
-    getDepositAddress();
+    String(
+      CONFIG.depositAddresses?.[network] ||
+      ''
+    ).trim();
 
 
   if (!address) {
@@ -349,7 +398,9 @@ function validateNoaDepositAddress(
     );
 
 
-  if (!validation.valid) {
+  if (
+    !validation.valid
+  ) {
 
     return {
       valid: false,
@@ -368,7 +419,7 @@ function validateNoaDepositAddress(
 
 
 // ============================================================
-// NAVIGATION PRINCIPALE
+// NAVIGATION
 // ============================================================
 
 function showAuthPage() {
@@ -420,11 +471,13 @@ function showSubPage(
       page.classList.remove(
         'active'
       );
+
     });
 
 
   const target =
     $(pageId);
+
 
   if (target) {
 
@@ -449,6 +502,7 @@ function showSubPage(
         button.dataset.page ===
           pageId
       );
+
     });
 
 
@@ -473,6 +527,7 @@ function showSubPage(
   ) {
 
     loadDisputes();
+
     loadOrdersForDispute();
   }
 }
@@ -562,6 +617,7 @@ async function loadUserProfile() {
 
     role:
       'user'
+
   };
 
 
@@ -606,25 +662,27 @@ async function loadUserProfile() {
         data: inserted,
         error: insertError
       } =
-      await supabaseClient
-        .from('profiles')
-        .insert({
-          id:
-            currentUser.id,
+        await supabaseClient
+          .from('profiles')
+          .insert({
 
-          full_name:
-            fallback.full_name,
+            id:
+              currentUser.id,
 
-          phone:
-            fallback.phone,
+            full_name:
+              fallback.full_name,
 
-          country:
-            fallback.country
-        })
-        .select(
-          'id,full_name,phone,country'
-        )
-        .maybeSingle();
+            phone:
+              fallback.phone,
+
+            country:
+              fallback.country
+
+          })
+          .select(
+            'id,full_name,phone,country'
+          )
+          .maybeSingle();
 
 
       if (
@@ -644,7 +702,7 @@ async function loadUserProfile() {
       if (insertError) {
 
         console.warn(
-          'Profil non créé (RLS/trigger possible) :',
+          'Profil non créé :',
           insertError
         );
       }
@@ -652,7 +710,7 @@ async function loadUserProfile() {
     } else if (error) {
 
       console.warn(
-        'Profil non lisible, utilisation de Auth :',
+        'Profil non lisible :',
         error
       );
     }
@@ -660,7 +718,7 @@ async function loadUserProfile() {
   } catch (error) {
 
     console.warn(
-      'Profil non disponible, utilisation de Auth :',
+      'Profil non disponible :',
       error
     );
   }
@@ -684,6 +742,7 @@ function updateUserInterface() {
 
   const p =
     currentProfile || {};
+
 
   const m =
     currentUser.user_metadata ||
@@ -790,41 +849,59 @@ async function initializeApplication() {
 
 
 // ============================================================
-// AUTHENTIFICATION
+// INSCRIPTION
 // ============================================================
 
-async function registerUser(event) {
+async function registerUser(
+  event
+) {
 
   event.preventDefault();
 
   hideMessage();
 
+
   const name =
-    $('registerName')?.value.trim() || '';
+    $('registerName')
+      ?.value
+      .trim() || '';
+
 
   const phone =
     normalizePhone(
-      $('registerPhone')?.value
+      $('registerPhone')
+        ?.value
     );
 
+
   const country =
-    $('registerCountry')?.value.trim() ||
+    $('registerCountry')
+      ?.value
+      .trim() ||
     'Burkina Faso';
+
 
   const email =
     (
-      $('registerEmail')?.value.trim() ||
+      $('registerEmail')
+        ?.value
+        .trim() ||
       ''
     ).toLowerCase();
 
+
   const password =
-    $('registerPassword')?.value || '';
+    $('registerPassword')
+      ?.value || '';
+
 
   const confirmPassword =
-    $('registerPasswordConfirm')?.value || '';
+    $('registerPasswordConfirm')
+      ?.value || '';
 
 
   if (!name) {
+
     return showMessage(
       'Veuillez saisir votre nom et prénom.',
       'error'
@@ -833,6 +910,7 @@ async function registerUser(event) {
 
 
   if (!phone) {
+
     return showMessage(
       'Veuillez saisir votre numéro de téléphone.',
       'error'
@@ -841,6 +919,7 @@ async function registerUser(event) {
 
 
   if (!email) {
+
     return showMessage(
       'Veuillez saisir votre adresse email.',
       'error'
@@ -848,7 +927,11 @@ async function registerUser(event) {
   }
 
 
-  if (password.length < 6) {
+  if (
+    password.length <
+    6
+  ) {
+
     return showMessage(
       'Le mot de passe doit contenir au moins 6 caractères.',
       'error'
@@ -856,7 +939,11 @@ async function registerUser(event) {
   }
 
 
-  if (password !== confirmPassword) {
+  if (
+    password !==
+    confirmPassword
+  ) {
+
     return showMessage(
       'Les deux mots de passe ne correspondent pas.',
       'error'
@@ -892,26 +979,31 @@ async function registerUser(event) {
       data,
       error
     } =
-      await supabaseClient.auth.signUp({
+      await supabaseClient.auth
+        .signUp({
 
-        email,
+          email,
 
-        password,
+          password,
 
-        options: {
-          data: {
-            full_name:
-              name,
+          options: {
 
-            phone:
-              phone,
+            data: {
 
-            country:
-              country
+              full_name:
+                name,
+
+              phone:
+                phone,
+
+              country:
+                country
+
+            }
+
           }
-        }
 
-      });
+        });
 
 
     if (error) {
@@ -922,7 +1014,7 @@ async function registerUser(event) {
     if (!data?.user) {
 
       throw new Error(
-        'Le compte n\'a pas pu être créé.'
+        "Le compte n'a pas pu être créé."
       );
     }
 
@@ -957,7 +1049,6 @@ async function registerUser(event) {
       }
     }
 
-
   } catch (error) {
 
     console.error(
@@ -987,7 +1078,6 @@ async function registerUser(event) {
       'error'
     );
 
-
   } finally {
 
     if (button) {
@@ -1007,7 +1097,9 @@ async function registerUser(event) {
 // CONNEXION
 // ============================================================
 
-async function loginUser(event) {
+async function loginUser(
+  event
+) {
 
   event.preventDefault();
 
@@ -1017,7 +1109,8 @@ async function loginUser(event) {
   const email =
     (
       $('loginEmail')
-        ?.value.trim() ||
+        ?.value
+        .trim() ||
       ''
     ).toLowerCase();
 
@@ -1027,7 +1120,10 @@ async function loginUser(event) {
       ?.value || '';
 
 
-  if (!email || !password) {
+  if (
+    !email ||
+    !password
+  ) {
 
     return showMessage(
       'Veuillez remplir tous les champs.',
@@ -1091,7 +1187,6 @@ async function loginUser(event) {
       'success'
     );
 
-
   } catch (error) {
 
     console.error(
@@ -1122,7 +1217,7 @@ async function loginUser(event) {
     ) {
 
       message =
-        'Votre adresse email n\'est pas encore confirmée.';
+        "Votre adresse email n'est pas encore confirmée.";
     }
 
 
@@ -1130,7 +1225,6 @@ async function loginUser(event) {
       message,
       'error'
     );
-
 
   } finally {
 
@@ -1186,7 +1280,7 @@ async function logoutUser() {
 
 
 // ============================================================
-// PARAMÈTRES PUBLICS
+// PARAMÈTRES APPLICATION
 // ============================================================
 
 async function loadAppSettings() {
@@ -1196,17 +1290,21 @@ async function loadAppSettings() {
     const {
       data,
       error
-    } = await supabaseClient
-      .from('app_settings')
-      .select('*')
-      .eq('id', 1)
-      .maybeSingle();
+    } =
+      await supabaseClient
+        .from('app_settings')
+        .select('*')
+        .eq(
+          'id',
+          1
+        )
+        .maybeSingle();
 
 
     if (error) {
 
       console.error(
-        'Erreur lecture app_settings :',
+        'Erreur app_settings :',
         error
       );
 
@@ -1225,10 +1323,16 @@ async function loadAppSettings() {
 
 
     const buyRate =
-      Number(data.buy_rate);
+      Number(
+        data.buy_rate
+      );
+
 
     const sellRate =
-      Number(data.sell_rate);
+      Number(
+        data.sell_rate
+      );
+
 
     const minOrder =
       Number(
@@ -1236,86 +1340,100 @@ async function loadAppSettings() {
         data.min_order_cfa
       );
 
+
     const maxOrder =
       Number(
         data.max_order ??
         data.max_order_cfa
       );
 
+
     const trc20Fee =
-      Number(data.trc20_fee);
+      Number(
+        data.trc20_fee
+      );
+
 
     const bp20Fee =
-      Number(data.bp20_fee);
+      Number(
+        data.bp20_fee
+      );
 
 
     if (
-      Number.isFinite(buyRate) &&
+      Number.isFinite(
+        buyRate
+      ) &&
       buyRate > 0
     ) {
+
       CONFIG.buyRate =
         buyRate;
     }
 
 
     if (
-      Number.isFinite(sellRate) &&
+      Number.isFinite(
+        sellRate
+      ) &&
       sellRate > 0
     ) {
+
       CONFIG.sellRate =
         sellRate;
     }
 
 
     if (
-      Number.isFinite(minOrder) &&
+      Number.isFinite(
+        minOrder
+      ) &&
       minOrder >= 0
     ) {
+
       CONFIG.minOrder =
         minOrder;
     }
 
 
     if (
-      Number.isFinite(maxOrder) &&
+      Number.isFinite(
+        maxOrder
+      ) &&
       maxOrder >= 0
     ) {
+
       CONFIG.maxOrder =
         maxOrder;
     }
 
 
     if (
-      Number.isFinite(trc20Fee) &&
+      Number.isFinite(
+        trc20Fee
+      ) &&
       trc20Fee >= 0
     ) {
-      CONFIG.networks.trc20.fee =
+
+      CONFIG.networks
+        .trc20
+        .fee =
         trc20Fee;
     }
 
 
     if (
-      Number.isFinite(bp20Fee) &&
+      Number.isFinite(
+        bp20Fee
+      ) &&
       bp20Fee >= 0
     ) {
-      CONFIG.networks.bp20.fee =
+
+      CONFIG.networks
+        .bp20
+        .fee =
         bp20Fee;
     }
-
-
-    console.log(
-      'Paramètres client chargés depuis app_settings :',
-      {
-        buyRate: CONFIG.buyRate,
-        sellRate: CONFIG.sellRate,
-        minOrder: CONFIG.minOrder,
-        maxOrder: CONFIG.maxOrder,
-        trc20Fee:
-          CONFIG.networks.trc20.fee,
-        bp20Fee:
-          CONFIG.networks.bp20.fee
-      }
-    );
 
 
     return true;
@@ -1323,7 +1441,7 @@ async function loadAppSettings() {
   } catch (error) {
 
     console.error(
-      'Erreur inattendue lecture app_settings :',
+      'Erreur lecture paramètres :',
       error
     );
 
@@ -1404,7 +1522,7 @@ function updateRatesUI() {
 
 
 // ============================================================
-// MODE ACHAT / VENTE
+// CHAMP NUMÉRO ORANGE MONEY POUR VENTE
 // ============================================================
 
 function ensureSellPayoutField() {
@@ -1429,15 +1547,20 @@ function ensureSellPayoutField() {
         'div'
       );
 
+
     field.id =
       'sellPayoutField';
+
 
     field.className =
       'field';
 
 
     field.innerHTML = `
-      <label for="sellPayoutPhone">Numéro Orange Money pour recevoir vos FCFA</label>
+
+      <label for="sellPayoutPhone">
+        Numéro Orange Money pour recevoir vos FCFA
+      </label>
 
       <input
         type="tel"
@@ -1451,6 +1574,7 @@ function ensureSellPayoutField() {
       <div class="small wallet-help">
         📱 Ce numéro sera utilisé pour vous envoyer le montant en FCFA après réception et vérification de vos USDT.
       </div>
+
     `;
 
 
@@ -1475,14 +1599,23 @@ function ensureSellPayoutField() {
 }
 
 
+// ============================================================
+// ADRESSE DÉPÔT NOA
+// ============================================================
+
 function getDepositAddress() {
 
   return String(
-    CONFIG.depositAddresses?.[currentNetwork] ||
-    ''
+    CONFIG.depositAddresses?.[
+      currentNetwork
+    ] || ''
   ).trim();
 }
 
+
+// ============================================================
+// INTERFACE VENTE
+// ============================================================
 
 function updateSellDepositUI() {
 
@@ -1530,7 +1663,9 @@ function updateSellDepositUI() {
   const help =
     walletInput
       ?.closest('.field')
-      ?.querySelector('.wallet-help');
+      ?.querySelector(
+        '.wallet-help'
+      );
 
 
   if (help) {
@@ -1553,6 +1688,10 @@ function updateSellDepositUI() {
   }
 }
 
+
+// ============================================================
+// MODE ACHAT
+// ============================================================
 
 function setBuyMode() {
 
@@ -1593,10 +1732,14 @@ function setBuyMode() {
       'Ex. 10 000';
 
     input.min =
-      String(CONFIG.minOrder);
+      String(
+        CONFIG.minOrder
+      );
 
     input.max =
-      String(CONFIG.maxOrder);
+      String(
+        CONFIG.maxOrder
+      );
 
     input.step =
       '1';
@@ -1633,7 +1776,9 @@ function setBuyMode() {
   const walletHelp =
     walletInput
       ?.closest('.field')
-      ?.querySelector('.wallet-help');
+      ?.querySelector(
+        '.wallet-help'
+      );
 
 
   if (walletHelp) {
@@ -1664,9 +1809,23 @@ function setBuyMode() {
   if ($('exchangeInfo')) {
 
     $('exchangeInfo').innerHTML = `
-      💡 Minimum : <strong>${formatNumber(CONFIG.minOrder)} FCFA</strong><br>
-      Maximum : <strong>${formatNumber(CONFIG.maxOrder)} FCFA</strong><br>
+
+      💡 Minimum :
+      <strong>
+        ${formatNumber(CONFIG.minOrder)} FCFA
+      </strong>
+
+      <br>
+
+      Maximum :
+      <strong>
+        ${formatNumber(CONFIG.maxOrder)} FCFA
+      </strong>
+
+      <br>
+
       Le montant exact et les frais sont affichés avant la confirmation.
+
     `;
   }
 
@@ -1674,6 +1833,10 @@ function setBuyMode() {
   updateCalculator();
 }
 
+
+// ============================================================
+// MODE VENTE
+// ============================================================
 
 function setSellMode() {
 
@@ -1734,9 +1897,22 @@ function setSellMode() {
   if ($('exchangeInfo')) {
 
     $('exchangeInfo').innerHTML = `
-      💡 Saisissez la <strong>quantité d'USDT</strong> que vous souhaitez vendre.<br>
-      Nous vous indiquons l'adresse de dépôt NOA selon le réseau choisi.<br>
-      Après réception et vérification des USDT, nous vous envoyons les FCFA sur votre Orange Money.
+
+      💡 Saisissez la
+      <strong>
+        quantité d'USDT
+      </strong>
+      que vous souhaitez vendre.
+
+      <br>
+
+      Nous vous indiquons l'adresse de dépôt NOA selon le réseau choisi.
+
+      <br>
+
+      Après réception et vérification des USDT,
+      nous vous envoyons les FCFA sur votre Orange Money.
+
     `;
   }
 
@@ -1796,7 +1972,7 @@ function selectNetwork(
 
 
 // ============================================================
-// CALCUL TRANSACTION
+// CALCUL
 // ============================================================
 
 function calculateOrder() {
@@ -1809,10 +1985,12 @@ function calculateOrder() {
 
 
   const fee =
-    CONFIG
-      .networks[
-        currentNetwork
-      ]?.fee || 0;
+    Number(
+      CONFIG
+        .networks[
+          currentNetwork
+        ]?.fee || 0
+    );
 
 
   if (
@@ -1858,6 +2036,7 @@ function calculateOrder() {
 
       rate:
         CONFIG.buyRate
+
     };
   }
 
@@ -1873,11 +2052,6 @@ function calculateOrder() {
     );
 
 
-  const grossCfa =
-    usdtAmount *
-    CONFIG.sellRate;
-
-
   const receiveCfa =
     netUsdt *
     CONFIG.sellRate;
@@ -1889,7 +2063,8 @@ function calculateOrder() {
       'sell',
 
     amountCfa:
-      grossCfa,
+      usdtAmount *
+      CONFIG.sellRate,
 
     usdtAmount:
       usdtAmount,
@@ -1905,12 +2080,13 @@ function calculateOrder() {
 
     rate:
       CONFIG.sellRate
+
   };
 }
 
 
 // ============================================================
-// AFFICHAGE CALCUL
+// AFFICHAGE CALCULATEUR
 // ============================================================
 
 function updateCalculator() {
@@ -2007,17 +2183,23 @@ function updateCalculator() {
 
 
 // ============================================================
-// ADRESSE PORTEFEUILLE
+// RÉCUPÉRER WALLET CLIENT
 // ============================================================
 
 function getWalletAddress() {
 
   const ids = [
+
     'walletAddress',
+
     'wallet',
+
     'walletInput',
+
     'userWallet',
+
     'wallet_address'
+
   ];
 
 
@@ -2033,7 +2215,9 @@ function getWalletAddress() {
       el?.value?.trim()
     ) {
 
-      return el.value.trim();
+      return normalizeWalletAddress(
+        el.value
+      );
     }
   }
 
@@ -2043,7 +2227,7 @@ function getWalletAddress() {
 
 
 // ============================================================
-// VÉRIFICATION DE LA COMMANDE
+// VÉRIFICATION COMMANDE
 // ============================================================
 
 function reviewOrder() {
@@ -2076,9 +2260,14 @@ function reviewOrder() {
   ) {
 
     return showMessage(
-      currentExchangeType === 'buy'
+
+      currentExchangeType ===
+      'buy'
+
         ? 'Veuillez saisir un montant en FCFA.'
+
         : "Veuillez saisir la quantité d'USDT à vendre.",
+
       'error'
     );
   }
@@ -2125,11 +2314,9 @@ function reviewOrder() {
   }
 
 
-  let wallet =
-    '';
+  let wallet = '';
 
-  let payoutPhone =
-    '';
+  let payoutPhone = '';
 
 
   // ==========================================================
@@ -2186,10 +2373,6 @@ function reviewOrder() {
     }
 
 
-    // --------------------------------------------------------
-    // Vérification de l'adresse NOA pour le réseau sélectionné
-    // --------------------------------------------------------
-
     wallet =
       getDepositAddress();
 
@@ -2238,8 +2421,8 @@ function reviewOrder() {
         'error'
       );
     }
-  }
 
+  }
 
   // ==========================================================
   // ACHAT
@@ -2260,10 +2443,6 @@ function reviewOrder() {
     }
 
 
-    // --------------------------------------------------------
-    // VÉRIFICATION ADRESSE CLIENT + RÉSEAU
-    // --------------------------------------------------------
-
     const walletValidation =
       validateWalletForNetwork(
         wallet,
@@ -2281,10 +2460,6 @@ function reviewOrder() {
       );
     }
 
-
-    // --------------------------------------------------------
-    // Avertissement BEP20
-    // --------------------------------------------------------
 
     if (
       currentNetwork ===
@@ -2333,10 +2508,12 @@ function reviewOrder() {
 
     paymentMethod:
       'orange_money'
+
   };
 
 
   renderConfirmation();
+
 
   showSubPage(
     'confirmationPage'
@@ -2358,7 +2535,6 @@ function renderConfirmation() {
     !box ||
     !currentOrder
   ) {
-
     return;
   }
 
@@ -2385,47 +2561,65 @@ function renderConfirmation() {
 
       <div class="summary-row">
         <span>Montant à payer</span>
-        <strong>${formatNumber(currentOrder.amountCfa)} FCFA</strong>
+        <strong>
+          ${formatNumber(currentOrder.amountCfa)} FCFA
+        </strong>
       </div>
 
       <div class="summary-row">
         <span>Taux</span>
-        <strong>${formatNumber(currentOrder.rate)} FCFA / USDT</strong>
+        <strong>
+          ${formatNumber(currentOrder.rate)} FCFA / USDT
+        </strong>
       </div>
 
       <div class="summary-row">
         <span>USDT acheté</span>
-        <strong>${Number(currentOrder.usdtAmount).toFixed(6)} USDT</strong>
+        <strong>
+          ${Number(currentOrder.usdtAmount).toFixed(6)} USDT
+        </strong>
       </div>
 
       <div class="summary-row">
         <span>Frais réseau</span>
-        <strong>${Number(currentOrder.feeUsdt)} USDT</strong>
+        <strong>
+          ${Number(currentOrder.feeUsdt)} USDT
+        </strong>
       </div>
 
       <div class="summary-row">
         <span>USDT net reçu</span>
-        <strong>${Number(currentOrder.netUsdt).toFixed(6)} USDT</strong>
+        <strong>
+          ${Number(currentOrder.netUsdt).toFixed(6)} USDT
+        </strong>
       </div>
 
       <div class="summary-row">
         <span>Réseau</span>
-        <strong>${escapeHtml(networkName)}</strong>
+        <strong>
+          ${escapeHtml(networkName)}
+        </strong>
       </div>
 
       <div class="summary-row">
         <span>Portefeuille de réception</span>
-        <strong class="break-word">${escapeHtml(currentOrder.walletAddress)}</strong>
+        <strong class="break-word">
+          ${escapeHtml(currentOrder.walletAddress)}
+        </strong>
       </div>
 
       <div class="summary-row">
         <span>Paiement</span>
-        <strong>Orange Money</strong>
+        <strong>
+          Orange Money
+        </strong>
       </div>
 
       <div class="summary-row summary-total">
         <span>Vous recevez</span>
-        <strong>${Number(currentOrder.netUsdt).toFixed(6)} USDT</strong>
+        <strong>
+          ${Number(currentOrder.netUsdt).toFixed(6)} USDT
+        </strong>
       </div>
 
       <div class="warning-box">
@@ -2449,46 +2643,63 @@ function renderConfirmation() {
 
     <div class="summary-row">
       <span>Quantité vendue</span>
-      <strong>${Number(currentOrder.usdtAmount).toFixed(6)} USDT</strong>
+      <strong>
+        ${Number(currentOrder.usdtAmount).toFixed(6)} USDT
+      </strong>
     </div>
 
     <div class="summary-row">
       <span>Taux de vente</span>
-      <strong>${formatNumber(currentOrder.rate)} FCFA / USDT</strong>
+      <strong>
+        ${formatNumber(currentOrder.rate)} FCFA / USDT
+      </strong>
     </div>
 
     <div class="summary-row">
       <span>Frais réseau</span>
-      <strong>${Number(currentOrder.feeUsdt)} USDT</strong>
+      <strong>
+        ${Number(currentOrder.feeUsdt)} USDT
+      </strong>
     </div>
 
     <div class="summary-row">
       <span>USDT après frais</span>
-      <strong>${Number(currentOrder.netUsdt).toFixed(6)} USDT</strong>
+      <strong>
+        ${Number(currentOrder.netUsdt).toFixed(6)} USDT
+      </strong>
     </div>
 
     <div class="summary-row">
       <span>Réseau</span>
-      <strong>${escapeHtml(networkName)}</strong>
+      <strong>
+        ${escapeHtml(networkName)}
+      </strong>
     </div>
 
     <div class="summary-row">
       <span>Adresse de dépôt NOA</span>
-      <strong class="break-word">${escapeHtml(currentOrder.walletAddress)}</strong>
+      <strong class="break-word">
+        ${escapeHtml(currentOrder.walletAddress)}
+      </strong>
     </div>
 
     <div class="summary-row">
       <span>Orange Money</span>
-      <strong>${escapeHtml(currentOrder.payoutPhone || '-')}</strong>
+      <strong>
+        ${escapeHtml(currentOrder.payoutPhone || '-')}
+      </strong>
     </div>
 
     <div class="summary-row summary-total">
       <span>Vous recevrez</span>
-      <strong>${formatNumber(currentOrder.receiveCfa)} FCFA</strong>
+      <strong>
+        ${formatNumber(currentOrder.receiveCfa)} FCFA
+      </strong>
     </div>
 
     <div class="warning-box">
-      ⚠️ <strong>Vérifiez le réseau avant d'envoyer.</strong><br>
+      ⚠️ <strong>Vérifiez le réseau avant d'envoyer.</strong>
+      <br><br>
       Vous devez envoyer vos USDT uniquement sur
       <strong>${escapeHtml(networkName)}</strong>
       à l'adresse NOA indiquée ci-dessus.
@@ -2516,7 +2727,7 @@ function cancelReview() {
 
 
 // ============================================================
-// ENREGISTREMENT COMMANDE
+// CRÉER COMMANDE
 // ============================================================
 
 async function placeOrder() {
@@ -2527,7 +2738,7 @@ async function placeOrder() {
   if (!currentUser) {
 
     showMessage(
-      'Votre session a expiré. Veuillez vous reconnecter.',
+      "Votre session a expiré. Veuillez vous reconnecter.",
       'error'
     );
 
@@ -2548,12 +2759,6 @@ async function placeOrder() {
   }
 
 
-  // ----------------------------------------------------------
-  // Nouvelle vérification juste avant insertion Supabase.
-  // Cela évite qu'une commande soit enregistrée avec une
-  // adresse incompatible si currentOrder a été modifié.
-  // ----------------------------------------------------------
-
   if (
     currentOrder.side ===
     'buy'
@@ -2566,7 +2771,9 @@ async function placeOrder() {
       );
 
 
-    if (!validation.valid) {
+    if (
+      !validation.valid
+    ) {
 
       return showMessage(
         'Commande bloquée : ' +
@@ -2583,7 +2790,9 @@ async function placeOrder() {
       );
 
 
-    if (!validation.valid) {
+    if (
+      !validation.valid
+    ) {
 
       return showMessage(
         validation.message,
@@ -2631,7 +2840,7 @@ async function placeOrder() {
     ) {
 
       throw new Error(
-        'Votre session n\'est plus active.'
+        "Votre session n'est plus active."
       );
     }
 
@@ -2664,10 +2873,12 @@ async function placeOrder() {
     const receiveCfa =
       currentOrder.side ===
       'sell'
+
         ? Number(
             currentOrder.receiveCfa ||
             0
           )
+
         : 0;
 
 
@@ -2715,28 +2926,23 @@ async function placeOrder() {
       customer_note:
         customerNote,
 
-      // ------------------------------------------------------
-      // Colonnes dédiées déjà présentes dans ta table orders.
-      // Elles permettent à l'administration de récupérer
-      // directement l'adresse et le numéro Orange Money.
-      // ------------------------------------------------------
-
       wallet_address:
-        currentOrder.side === 'buy'
+        currentOrder.side ===
+        'buy'
+
           ? currentOrder.walletAddress
+
           : null,
 
       payout_phone:
-        currentOrder.side === 'sell'
+        currentOrder.side ===
+        'sell'
+
           ? currentOrder.payoutPhone
+
           : null
+
     };
-
-
-    console.log(
-      'Commande envoyée à Supabase :',
-      payload
-    );
 
 
     const {
@@ -2760,7 +2966,7 @@ async function placeOrder() {
     if (!data) {
 
       throw new Error(
-        'Supabase n\'a retourné aucune commande.'
+        "Supabase n'a retourné aucune commande."
       );
     }
 
@@ -2805,14 +3011,13 @@ async function placeOrder() {
 
 
       showMessage(
-        'Commande de vente enregistrée. Envoyez maintenant les USDT à l\'adresse indiquée.',
+        "Commande de vente enregistrée. Envoyez maintenant les USDT à l'adresse indiquée.",
         'success'
       );
     }
 
 
     await loadOrderHistory();
-
 
   } catch (error) {
 
@@ -2823,11 +3028,10 @@ async function placeOrder() {
 
 
     showMessage(
-      'Impossible d\'enregistrer la commande : ' +
+      'Impossible d’enregistrer la commande : ' +
       getSupabaseErrorMessage(error),
       'error'
     );
-
 
   } finally {
 
@@ -2846,6 +3050,7 @@ async function placeOrder() {
 
 // ============================================================
 // PAGE PAIEMENT ACHAT
+// NOUVELLE VERSION COMPATIBLE AVEC INDEX.HTML
 // ============================================================
 
 function renderPaymentPage() {
@@ -2854,16 +3059,35 @@ function renderPaymentPage() {
     !currentOrder ||
     currentOrder.side !== 'buy'
   ) {
-
     return;
   }
 
 
   const amount =
-    Number(
-      currentOrder.amountCfa
-    ) || 0;
+    Math.round(
+      Number(
+        currentOrder.amountCfa
+      ) || 0
+    );
 
+
+  if (
+    !amount ||
+    amount <= 0
+  ) {
+
+    showMessage(
+      'Montant de paiement invalide.',
+      'error'
+    );
+
+    return;
+  }
+
+
+  // ----------------------------------------------------------
+  // DESCRIPTION
+  // ----------------------------------------------------------
 
   if ($('paymentDescription')) {
 
@@ -2872,94 +3096,214 @@ function renderPaymentPage() {
   }
 
 
-  if ($('paymentMethodInfo')) {
+  // ----------------------------------------------------------
+  // MONTANT
+  // ----------------------------------------------------------
 
-    $('paymentMethodInfo').innerHTML =
-      'Moyen de paiement : <strong>Orange Money</strong>';
+  if ($('paymentAmountValue')) {
+
+    $('paymentAmountValue').textContent =
+      `${formatNumber(amount)} FCFA`;
   }
 
 
-  const numberLabel =
-    $('paymentNumber')
-      ?.previousElementSibling;
+  // ----------------------------------------------------------
+  // NUMÉRO ORANGE MONEY
+  // IMPORTANT :
+  // Le numéro n'est PAS affiché en clair dans l'interface.
+  // ----------------------------------------------------------
+
+  const paymentNumber =
+    String(
+      CONFIG.payment.number ||
+      ''
+    ).replace(
+      /\D/g,
+      ''
+    );
 
 
-  if (numberLabel) {
+  if (!paymentNumber) {
 
-    numberLabel.textContent =
-      'Numéro de paiement';
+    showMessage(
+      'Le moyen de paiement n’est pas correctement configuré.',
+      'error'
+    );
+
+    return;
   }
 
 
-  if ($('paymentNumber')) {
+  // ----------------------------------------------------------
+  // CODE USSD
+  // ----------------------------------------------------------
 
-    $('paymentNumber').textContent =
-      CONFIG.payment.displayNumber;
+  const ussdCode =
+    `*144*10*${paymentNumber}*${amount}#`;
 
-    $('paymentNumber').style.fontSize =
+
+  // ----------------------------------------------------------
+  // QR CODE
+  // ----------------------------------------------------------
+
+  const qrContainer =
+    $('orangeMoneyQr');
+
+
+  if (qrContainer) {
+
+    qrContainer.innerHTML =
       '';
 
-    $('paymentNumber').style.wordBreak =
+
+    if (
+      typeof QRCode ===
+      'undefined'
+    ) {
+
+      qrContainer.innerHTML = `
+
+        <div class="small center">
+          QR code indisponible.
+          <br>
+          Utilisez le bouton de paiement ci-dessous.
+        </div>
+
+      `;
+
+    } else {
+
+      try {
+
+        new QRCode(
+          qrContainer,
+          {
+
+            text:
+              `tel:${ussdCode}`,
+
+            width:
+              220,
+
+            height:
+              220,
+
+            correctLevel:
+              QRCode.CorrectLevel.M
+
+          }
+        );
+
+      } catch (error) {
+
+        console.error(
+          'Erreur génération QR :',
+          error
+        );
+
+
+        qrContainer.innerHTML = `
+
+          <div class="small center">
+            QR code indisponible.
+            <br>
+            Utilisez le bouton de paiement ci-dessous.
+          </div>
+
+        `;
+      }
+    }
+  }
+
+
+  // ----------------------------------------------------------
+  // BOUTON PAIEMENT
+  // ----------------------------------------------------------
+
+  const payButton =
+    $('orangeMoneyPayBtn');
+
+
+  if (payButton) {
+
+    payButton.style.display =
       '';
+
+
+    payButton.textContent =
+      'CLIQUEZ ICI POUR EFFECTUER LE PAIEMENT';
+
+
+    // Éviter plusieurs listeners
+    payButton.onclick =
+      null;
+
+
+    payButton.onclick =
+      () => {
+
+        try {
+
+          /*
+           * Encodage du # pour éviter qu'il soit interprété
+           * comme un fragment de l'URL.
+           */
+          const encodedCode =
+            ussdCode.replace(
+              '#',
+              '%23'
+            );
+
+
+          window.location.href =
+            `tel:${encodedCode}`;
+
+        } catch (error) {
+
+          console.error(
+            'Erreur lancement paiement :',
+            error
+          );
+
+
+          showMessage(
+            'Impossible de lancer automatiquement le paiement. Utilisez le QR code.',
+            'error'
+          );
+        }
+      };
   }
 
 
-  const codeLabel =
-    $('paymentCode')
-      ?.previousElementSibling;
+  // ----------------------------------------------------------
+  // BOUTON "J'AI EFFECTUÉ LE PAIEMENT"
+  // ----------------------------------------------------------
+
+  const paymentDoneButton =
+    $('paymentDoneBtn');
 
 
-  if (codeLabel) {
+  if (paymentDoneButton) {
 
-    codeLabel.textContent =
-      'Code de paiement';
-  }
-
-
-  if ($('paymentCode')) {
-
-    $('paymentCode').textContent =
-      `*144*10*${CONFIG.payment.number}*${amount}#`;
-  }
-
-
-  if ($('paymentAmount')) {
-
-    $('paymentAmount').textContent =
-      `Montant : ${formatNumber(amount)} FCFA`;
-  }
-
-
-  const paymentCard =
-    $('paymentPage')
-      ?.querySelector('.card');
-
-
-  const warning =
-    paymentCard
-      ?.querySelector('.warning-box');
-
-
-  if (warning) {
-
-    warning.innerHTML = `
-      ⚠️ IMPORTANT : utilisez obligatoirement votre propre compte Orange Money.
-      Ne partagez jamais votre mot de passe, votre code secret ou votre code de validation.
-    `;
-  }
-
-
-  if ($('paymentDoneBtn')) {
-
-    $('paymentDoneBtn').style.display =
+    paymentDoneButton.style.display =
       '';
 
-    $('paymentDoneBtn').textContent =
-      "J'ai effectué le paiement";
+    paymentDoneButton.disabled =
+      false;
+
+    paymentDoneButton.textContent =
+      "J'AI EFFECTUÉ LE PAIEMENT";
   }
 
+
+  // ----------------------------------------------------------
+  // BOUTON HISTORIQUE
+  // ----------------------------------------------------------
 
   if ($('viewOrderBtn')) {
+
+    $('viewOrderBtn').style.display =
+      '';
 
     $('viewOrderBtn').textContent =
       'Voir ma commande';
@@ -2969,6 +3313,7 @@ function renderPaymentPage() {
 
 // ============================================================
 // PAGE PAIEMENT VENTE
+// NOUVELLE VERSION COMPATIBLE AVEC INDEX.HTML
 // ============================================================
 
 function renderSellPaymentPage() {
@@ -2977,7 +3322,6 @@ function renderSellPaymentPage() {
     !currentOrder ||
     currentOrder.side !== 'sell'
   ) {
-
     return;
   }
 
@@ -2990,104 +3334,203 @@ function renderSellPaymentPage() {
     '-';
 
 
-  const paymentPage =
-    $('paymentPage');
-
+  // ----------------------------------------------------------
+  // DESCRIPTION
+  // ----------------------------------------------------------
 
   if ($('paymentDescription')) {
 
     $('paymentDescription').textContent =
-      "Votre demande de vente est enregistrée. Envoyez vos USDT à l'adresse de dépôt ci-dessous.";
+      "Votre demande de vente est enregistrée. Envoyez vos USDT à l'adresse de dépôt indiquée.";
   }
 
 
-  if ($('paymentMethodInfo')) {
+  // ----------------------------------------------------------
+  // MONTANT
+  // ----------------------------------------------------------
 
-    $('paymentMethodInfo').innerHTML =
-      `Réseau sélectionné : <strong>${escapeHtml(networkName)}</strong>`;
+  if ($('paymentAmountValue')) {
+
+    $('paymentAmountValue').innerHTML =
+      `Vous recevrez : <strong>${formatNumber(currentOrder.receiveCfa)} FCFA</strong>`;
   }
 
 
-  const card =
-    paymentPage
-      ?.querySelector('.card');
+  // ----------------------------------------------------------
+  // QR BOX
+  // Pour SELL, on n'utilise pas le QR Orange Money.
+  // On affiche l'adresse NOA directement.
+  // ----------------------------------------------------------
+
+  const qrContainer =
+    $('orangeMoneyQr');
 
 
-  if (!card) {
-    return;
+  if (qrContainer) {
+
+    qrContainer.innerHTML = `
+
+      <div class="payment-qr-text">
+
+        Envoyez exactement
+
+        <strong>
+          ${Number(currentOrder.netUsdt).toFixed(6)} USDT
+        </strong>
+
+        sur le réseau
+
+        <strong>
+          ${escapeHtml(networkName)}
+        </strong>.
+
+      </div>
+
+      <div
+        class="small break-word"
+        style="margin-top:12px;"
+      >
+
+        <strong>
+          Adresse de dépôt NOA :
+        </strong>
+
+        <br>
+
+        ${escapeHtml(
+          currentOrder.walletAddress
+        )}
+
+      </div>
+
+    `;
   }
 
 
-  const numberLabel =
-    $('paymentNumber')
-      ?.previousElementSibling;
+  // ----------------------------------------------------------
+  // BOUTON ORANGE MONEY
+  // ----------------------------------------------------------
+
+  const payButton =
+    $('orangeMoneyPayBtn');
 
 
-  if (numberLabel) {
+  if (payButton) {
 
-    numberLabel.textContent =
-      'Adresse de dépôt NOA DIGIT TRADE';
+    payButton.style.display =
+      'none';
+
+    payButton.onclick =
+      null;
   }
 
 
-  if ($('paymentNumber')) {
+  // ----------------------------------------------------------
+  // "OU"
+  // ----------------------------------------------------------
 
-    $('paymentNumber').textContent =
-      currentOrder.walletAddress;
+  const paymentOr =
+    $('paymentPage')
+      ?.querySelector(
+        '.payment-or'
+      );
 
-    $('paymentNumber').style.fontSize =
-      '14px';
 
-    $('paymentNumber').style.wordBreak =
-      'break-all';
+  if (paymentOr) {
+
+    paymentOr.style.display =
+      'none';
   }
 
 
-  const codeLabel =
-    $('paymentCode')
-      ?.previousElementSibling;
+  // ----------------------------------------------------------
+  // BOUTON PAIEMENT DÉCLARÉ
+  // ----------------------------------------------------------
 
+  if ($('paymentDoneBtn')) {
 
-  if (codeLabel) {
+    $('paymentDoneBtn').style.display =
+      'none';
 
-    codeLabel.textContent =
-      'Montant exact à envoyer';
+    $('paymentDoneBtn').onclick =
+      null;
   }
 
 
-  if ($('paymentCode')) {
+  // ----------------------------------------------------------
+  // SÉCURITÉ
+  // ----------------------------------------------------------
 
-    $('paymentCode').textContent =
-      `${Number(currentOrder.netUsdt).toFixed(6)} USDT`;
+  const securityBox =
+    $('paymentPage')
+      ?.querySelector(
+        '.payment-security-box'
+      );
+
+
+  if (securityBox) {
+
+    securityBox.innerHTML = `
+
+      🔒 Vérifiez attentivement le réseau
+      <strong>
+        ${escapeHtml(networkName)}
+      </strong>
+      avant d'envoyer vos USDT.
+
+    `;
   }
 
 
-  if ($('paymentAmount')) {
-
-    $('paymentAmount').innerHTML =
-      `Vous recevrez : <strong>${formatNumber(currentOrder.receiveCfa)} FCFA</strong><br>Orange Money : <strong>${escapeHtml(currentOrder.payoutPhone || '-')}</strong>`;
-  }
-
+  // ----------------------------------------------------------
+  // AVERTISSEMENT
+  // ----------------------------------------------------------
 
   const warning =
-    card.querySelector(
-      '.warning-box'
-    );
+    $('paymentPage')
+      ?.querySelector(
+        '.warning-box'
+      );
 
 
   if (warning) {
 
     warning.innerHTML = `
-      ⚠️ <strong>IMPORTANT :</strong><br>
-      Envoyez exactement le montant indiqué,
-      sur le réseau <strong>${escapeHtml(networkName)}</strong>.
+
+      ⚠️ <strong>IMPORTANT :</strong>
+
+      <br><br>
+
+      Envoyez exactement
+
+      <strong>
+        ${Number(currentOrder.netUsdt).toFixed(6)} USDT
+      </strong>
+
+      sur le réseau
+
+      <strong>
+        ${escapeHtml(networkName)}
+      </strong>.
 
       <br><br>
 
       Adresse de dépôt NOA :
-      <strong class="break-word">${escapeHtml(currentOrder.walletAddress)}</strong>
 
-      <br><br>
+      <div
+        class="break-word"
+        style="margin-top:8px;"
+      >
+
+        <strong>
+          ${escapeHtml(
+            currentOrder.walletAddress
+          )}
+        </strong>
+
+      </div>
+
+      <br>
 
       Une erreur de réseau ou d'adresse peut entraîner
       une perte des fonds.
@@ -3095,21 +3538,26 @@ function renderSellPaymentPage() {
       <br><br>
 
       Après réception et vérification de vos USDT,
-      votre paiement de
-      <strong>${formatNumber(currentOrder.receiveCfa)} FCFA</strong>
-      sera effectué sur le numéro Orange Money indiqué.
+      nous vous enverrons
+
+      <strong>
+        ${formatNumber(currentOrder.receiveCfa)} FCFA
+      </strong>
+
+      sur votre Orange Money.
+
     `;
   }
 
 
-  if ($('paymentDoneBtn')) {
-
-    $('paymentDoneBtn').style.display =
-      'none';
-  }
-
+  // ----------------------------------------------------------
+  // BOUTON HISTORIQUE
+  // ----------------------------------------------------------
 
   if ($('viewOrderBtn')) {
+
+    $('viewOrderBtn').style.display =
+      '';
 
     $('viewOrderBtn').textContent =
       'Voir ma commande';
@@ -3118,12 +3566,24 @@ function renderSellPaymentPage() {
 
 
 // ============================================================
-// DÉCLARER PAIEMENT ACHAT
+// DÉCLARER PAIEMENT
+// RPC SUPABASE SÉCURISÉ
 // ============================================================
 
 async function declarePayment() {
 
   hideMessage();
+
+
+  if (
+    !currentUser
+  ) {
+
+    return showMessage(
+      'Votre session a expiré. Veuillez vous reconnecter.',
+      'error'
+    );
+  }
 
 
   if (
@@ -3169,26 +3629,53 @@ async function declarePayment() {
 
   try {
 
+    // --------------------------------------------------------
+    // Vérifier que la session est toujours active
+    // --------------------------------------------------------
+
+    const {
+      data: sessionData,
+      error: sessionError
+    } =
+      await supabaseClient.auth
+        .getSession();
+
+
+    if (sessionError) {
+      throw sessionError;
+    }
+
+
+    if (
+      !sessionData?.session?.user
+    ) {
+
+      throw new Error(
+        "Votre session n'est plus active."
+      );
+    }
+
+
+    currentUser =
+      sessionData.session.user;
+
+
+    // --------------------------------------------------------
+    // APPEL DE LA FONCTION SQL SÉCURISÉE
+    // Aucun UPDATE direct depuis le navigateur.
+    // --------------------------------------------------------
+
     const {
       data,
       error
     } =
-      await supabaseClient
-        .from('orders')
-        .update({
-          status:
-            'payment_declared'
-        })
-        .eq(
-          'id',
-          currentOrder.id
-        )
-        .eq(
-          'user_id',
-          currentUser.id
-        )
-        .select('*')
-        .single();
+      await supabaseClient.rpc(
+        'declare_order_payment',
+        {
+          p_order_id:
+            currentOrder.id
+        }
+      );
 
 
     if (error) {
@@ -3199,19 +3686,55 @@ async function declarePayment() {
     if (!data) {
 
       throw new Error(
-        'La commande n\'a pas pu être mise à jour.'
+        "La commande n'a pas pu être mise à jour."
+      );
+    }
+
+
+    // --------------------------------------------------------
+    // Supabase peut retourner un objet ou un tableau selon
+    // le contexte de la fonction RPC.
+    // --------------------------------------------------------
+
+    const updatedOrder =
+      Array.isArray(data)
+        ? data[0]
+        : data;
+
+
+    if (!updatedOrder) {
+
+      throw new Error(
+        "La commande mise à jour n'a pas été retournée."
       );
     }
 
 
     currentOrder.status =
-      data.status;
+      updatedOrder.status ||
+      'payment_declared';
+
+
+    currentOrder.paymentStatus =
+      updatedOrder.payment_status ||
+      'declared';
 
 
     showMessage(
       'Paiement déclaré. Votre commande est maintenant en attente de vérification.',
       'success'
     );
+
+
+    // Le bouton ne doit plus être recliqué inutilement.
+    if (button) {
+
+      button.disabled =
+        true;
+
+      button.textContent =
+        'PAIEMENT DÉCLARÉ ✓';
+    }
 
 
     await loadOrderHistory();
@@ -3232,8 +3755,6 @@ async function declarePayment() {
     );
 
 
-  } finally {
-
     if (button) {
 
       button.disabled =
@@ -3241,7 +3762,7 @@ async function declarePayment() {
 
       button.textContent =
         originalText ||
-        'J\'ai effectué le paiement';
+        "J'AI EFFECTUÉ LE PAIEMENT";
     }
   }
 }
@@ -3329,20 +3850,27 @@ async function loadOrderHistory() {
     );
 
 
-    list.innerHTML =
-      `<div class="small center">
+    list.innerHTML = `
+
+      <div class="small center">
+
         Impossible de charger vos commandes.
+
         <br>
+
         ${escapeHtml(
           getSupabaseErrorMessage(error)
         )}
-      </div>`;
+
+      </div>
+
+    `;
   }
 }
 
 
 // ============================================================
-// CARTE HISTORIQUE
+// CARTE COMMANDE
 // ============================================================
 
 function renderOrderCard(
@@ -3398,14 +3926,12 @@ function renderOrderCard(
 
         </div>
 
-
         <div class="order-row">
           <span>Montant payé</span>
           <strong>
             ${formatNumber(order.amount_cfa)} FCFA
           </strong>
         </div>
-
 
         <div class="order-row">
           <span>USDT acheté</span>
@@ -3414,14 +3940,12 @@ function renderOrderCard(
           </strong>
         </div>
 
-
         <div class="order-row">
           <span>Frais</span>
           <strong>
             ${Number(order.fee_usdt || 0)} USDT
           </strong>
         </div>
-
 
         <div class="order-row">
           <span>USDT net reçu</span>
@@ -3430,14 +3954,12 @@ function renderOrderCard(
           </strong>
         </div>
 
-
         <div class="order-row">
           <span>Réseau</span>
           <strong>
             ${escapeHtml(networkName)}
           </strong>
         </div>
-
 
         <div class="order-row">
           <span>Date</span>
@@ -3468,14 +3990,12 @@ function renderOrderCard(
 
       </div>
 
-
       <div class="order-row">
         <span>USDT vendu</span>
         <strong>
           ${Number(order.usdt_amount || 0).toFixed(6)} USDT
         </strong>
       </div>
-
 
       <div class="order-row">
         <span>Frais réseau</span>
@@ -3484,14 +4004,12 @@ function renderOrderCard(
         </strong>
       </div>
 
-
       <div class="order-row">
         <span>USDT net</span>
         <strong>
           ${Number(order.net_usdt || 0).toFixed(6)} USDT
         </strong>
       </div>
-
 
       <div class="order-row">
         <span>Montant reçu</span>
@@ -3500,14 +4018,12 @@ function renderOrderCard(
         </strong>
       </div>
 
-
       <div class="order-row">
         <span>Réseau</span>
         <strong>
           ${escapeHtml(networkName)}
         </strong>
       </div>
-
 
       <div class="order-row">
         <span>Date</span>
@@ -3562,7 +4078,7 @@ function getStatusLabel(
 
 
 // ============================================================
-// SUPPORT / LITIGES
+// SUPPORT
 // ============================================================
 
 async function loadOrdersForDispute() {
@@ -3612,32 +4128,35 @@ async function loadOrdersForDispute() {
 
 
     (data || [])
-      .forEach(order => {
+      .forEach(
+        order => {
 
-        const type =
-          order.side === 'buy'
-            ? 'Achat'
-            : 'Vente';
+          const type =
+            order.side === 'buy'
+              ? 'Achat'
+              : 'Vente';
 
 
-        const option =
-          document.createElement(
-            'option'
+          const option =
+            document.createElement(
+              'option'
+            );
+
+
+          option.value =
+            order.id;
+
+
+          option.textContent =
+            `${type} - ${formatDate(order.created_at)} - ${getStatusLabel(order.status)}`;
+
+
+          select.appendChild(
+            option
           );
 
-
-        option.value =
-          order.id;
-
-
-        option.textContent =
-          `${type} - ${formatDate(order.created_at)} - ${getStatusLabel(order.status)}`;
-
-
-        select.appendChild(
-          option
-        );
-      });
+        }
+      );
 
 
   } catch (error) {
@@ -3756,6 +4275,7 @@ async function submitDispute(
 
       status:
         'open'
+
     };
 
 
@@ -3796,11 +4316,10 @@ async function submitDispute(
 
 
     showMessage(
-      'Impossible d\'envoyer votre demande : ' +
+      "Impossible d'envoyer votre demande : " +
       getSupabaseErrorMessage(error),
       'error'
     );
-
 
   } finally {
 
@@ -3894,9 +4413,7 @@ async function loadDisputes() {
 
 
     list.innerHTML =
-      `<div class="small center">
-        Impossible de charger les demandes.
-      </div>`;
+      '<div class="small center">Impossible de charger les demandes.</div>';
   }
 }
 
@@ -3961,7 +4478,7 @@ function renderDisputeCard(
 
 
 // ============================================================
-// SAUVEGARDE PROFIL
+// PROFIL
 // ============================================================
 
 async function saveProfile(
@@ -4029,7 +4546,9 @@ async function saveProfile(
       await supabaseClient
         .from('profiles')
         .upsert(
+
           {
+
             id:
               currentUser.id,
 
@@ -4041,11 +4560,14 @@ async function saveProfile(
 
             country:
               country
+
           },
+
           {
             onConflict:
               'id'
           }
+
         )
         .select(
           'id,full_name,phone,country'
@@ -4072,6 +4594,7 @@ async function saveProfile(
 
         country:
           country
+
       };
 
 
@@ -4088,6 +4611,7 @@ async function saveProfile(
 
           country:
             country
+
         }
 
       });
@@ -4120,7 +4644,7 @@ async function saveProfile(
 
 
 // ============================================================
-// MODIFIER MOT DE PASSE
+// MOT DE PASSE
 // ============================================================
 
 async function changePassword(
@@ -4143,7 +4667,8 @@ async function changePassword(
 
 
   if (
-    password.length < 6
+    password.length <
+    6
   ) {
 
     return showMessage(
@@ -4172,7 +4697,9 @@ async function changePassword(
     } =
       await supabaseClient.auth
         .updateUser({
+
           password
+
         });
 
 
@@ -4267,9 +4794,11 @@ function setupEvents() {
     ?.addEventListener(
       'click',
       () => {
+
         selectNetwork(
           'trc20'
         );
+
       }
     );
 
@@ -4278,9 +4807,11 @@ function setupEvents() {
     ?.addEventListener(
       'click',
       () => {
+
         selectNetwork(
           'bp20'
         );
+
       }
     );
 
@@ -4312,6 +4843,7 @@ function setupEvents() {
               8
             );
       }
+
     }
   );
 
@@ -4382,25 +4914,29 @@ function setupEvents() {
     .querySelectorAll(
       '.nav-btn'
     )
-    .forEach(button => {
+    .forEach(
+      button => {
 
-      button.addEventListener(
-        'click',
-        () => {
+        button.addEventListener(
+          'click',
+          () => {
 
-          const page =
-            button.dataset.page;
+            const page =
+              button.dataset.page;
 
 
-          if (page) {
+            if (page) {
 
-            showSubPage(
-              page
-            );
+              showSubPage(
+                page
+              );
+            }
+
           }
-        }
-      );
-    });
+        );
+
+      }
+    );
 
 
   $('startBtn')
@@ -4411,6 +4947,7 @@ function setupEvents() {
         showSubPage(
           'exchangePage'
         );
+
       }
     );
 
@@ -4419,41 +4956,49 @@ function setupEvents() {
     .querySelectorAll(
       '[data-open-exchange]'
     )
-    .forEach(button => {
+    .forEach(
+      button => {
 
-      button.addEventListener(
-        'click',
-        () => {
+        button.addEventListener(
+          'click',
+          () => {
 
-          showSubPage(
-            'exchangePage'
-          );
-        }
-      );
-    });
+            showSubPage(
+              'exchangePage'
+            );
+
+          }
+        );
+
+      }
+    );
 
 
   document
     .querySelectorAll(
       '[data-home]'
     )
-    .forEach(button => {
+    .forEach(
+      button => {
 
-      button.addEventListener(
-        'click',
-        () => {
+        button.addEventListener(
+          'click',
+          () => {
 
-          showSubPage(
-            'homePage'
-          );
-        }
-      );
-    });
+            showSubPage(
+              'homePage'
+            );
+
+          }
+        );
+
+      }
+    );
 }
 
 
 // ============================================================
-// LISTENER SUPABASE AUTH
+// AUTH LISTENER
 // ============================================================
 
 function setupAuthListener() {
@@ -4471,7 +5016,10 @@ function setupAuthListener() {
 
   supabaseClient.auth
     .onAuthStateChange(
-      (event, session) => {
+      (
+        event,
+        session
+      ) => {
 
         currentUser =
           session?.user ||
@@ -4496,6 +5044,7 @@ function setupAuthListener() {
 
           return;
         }
+
       }
     );
 }
@@ -4571,7 +5120,7 @@ async function boot() {
 
 
     showMessage(
-      'Impossible de démarrer l\'application : ' +
+      "Impossible de démarrer l'application : " +
       getSupabaseErrorMessage(error),
       'error'
     );
@@ -4580,7 +5129,7 @@ async function boot() {
 
 
 // ============================================================
-// LANCEMENT AUTOMATIQUE
+// LANCEMENT
 // ============================================================
 
 if (
