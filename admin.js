@@ -1,6 +1,6 @@
 // ============================================================
 // NOA DIGIT TRADE
-// ADMIN.JS — VERSION COMPLETE
+// ADMIN.JS — VERSION COMPLETE CORRIGEE
 //
 // ESPACE ADMINISTRATEUR
 //
@@ -15,11 +15,10 @@
 // - Toutes les commandes
 // - ACHATS USDT / VENTES USDT
 // - Wallet client + bouton copier
-// - Réseau TRC20 / BEP20 clairement affiché
+// - Réseau TRC20 / BEP20
 // - Numéro Orange Money client + bouton copier
 // - Modification des statuts
 // - Litiges
-// - Modification des statuts de litiges
 // - Utilisateurs
 // - Statistiques
 // - Déconnexion
@@ -36,19 +35,104 @@ const SUPABASE_URL =
 const SUPABASE_KEY =
   "sb_publishable_umIa4749av8722xus6aQHw_1nf8b-PC";
 
+let supabaseClient = null;
 
-if (!window.supabase) {
-  console.error(
-    "Supabase JS n'est pas chargé."
-  );
+
+// ============================================================
+// INITIALISATION SUPABASE
+// ============================================================
+
+function initSupabase() {
+
+  if (
+    !window.supabase ||
+    typeof window.supabase.createClient !== "function"
+  ) {
+
+    console.warn(
+      "Supabase JS n'est pas encore disponible."
+    );
+
+    return false;
+
+  }
+
+
+  if (!supabaseClient) {
+
+    try {
+
+      supabaseClient =
+        window.supabase.createClient(
+          SUPABASE_URL,
+          SUPABASE_KEY
+        );
+
+      console.log(
+        "Supabase initialisé avec succès."
+      );
+
+    }
+
+    catch (error) {
+
+      console.error(
+        "Erreur création client Supabase:",
+        error
+      );
+
+      return false;
+
+    }
+
+  }
+
+
+  return true;
+
 }
 
 
-const supabaseClient =
-  window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
+// ============================================================
+// ATTENDRE SUPABASE
+// ============================================================
+
+async function waitForSupabase(
+  maxAttempts = 100
+) {
+
+  for (
+    let attempt = 0;
+    attempt < maxAttempts;
+    attempt++
+  ) {
+
+    if (initSupabase()) {
+
+      return true;
+
+    }
+
+
+    await new Promise(
+      resolve =>
+        setTimeout(
+          resolve,
+          100
+        )
+    );
+
+  }
+
+
+  console.error(
+    "Impossible de charger Supabase JS après attente."
   );
+
+
+  return false;
+
+}
 
 
 // ============================================================
@@ -111,7 +195,6 @@ const DEFAULT_SETTINGS = {
 
 function extractWalletAddress(order) {
 
-  // Nouvelle colonne dédiée
   if (order?.wallet_address) {
 
     return String(
@@ -121,14 +204,12 @@ function extractWalletAddress(order) {
   }
 
 
-  // Compatibilité anciennes commandes
   const note =
     String(
       order?.customer_note || ""
     );
 
 
-  // Achat : adresse du portefeuille client
   const buyMatch =
     note.match(
       /Adresse de r[ée]ception USDT\s*:\s*([^\n|]+)/i
@@ -142,7 +223,6 @@ function extractWalletAddress(order) {
   }
 
 
-  // Vente : adresse de dépôt utilisée
   const sellMatch =
     note.match(
       /Adresse de d[ée]p[oô]t NOA\s*:\s*([^\n|]+)/i
@@ -167,7 +247,6 @@ function extractWalletAddress(order) {
 
 function extractPayoutPhone(order) {
 
-  // Nouvelle colonne dédiée
   if (order?.payout_phone) {
 
     return String(
@@ -177,7 +256,6 @@ function extractPayoutPhone(order) {
   }
 
 
-  // Compatibilité anciennes commandes
   const note =
     String(
       order?.customer_note || ""
@@ -290,7 +368,8 @@ async function copyToClipboard(
   try {
 
     if (
-      navigator.clipboard?.writeText
+      navigator.clipboard &&
+      typeof navigator.clipboard.writeText === "function"
     ) {
 
       await navigator.clipboard.writeText(
@@ -716,6 +795,17 @@ async function verifyAdmin() {
   }
 
 
+  if (!supabaseClient) {
+
+    console.error(
+      "Supabase non initialisé."
+    );
+
+    return false;
+
+  }
+
+
   try {
 
     const {
@@ -789,6 +879,18 @@ async function adminLogin(event) {
 
 
   clearLoginMessage();
+
+
+  if (!supabaseClient) {
+
+    showLoginMessage(
+      "Supabase n'est pas encore chargé. Veuillez patienter quelques secondes puis réessayer."
+    );
+
+
+    return;
+
+  }
 
 
   const email =
@@ -946,6 +1048,19 @@ async function adminLogin(event) {
 
 async function checkSession() {
 
+  if (!supabaseClient) {
+
+    showLoginPage();
+
+    showLoginMessage(
+      "Impossible de charger Supabase. Vérifiez que le script Supabase est présent dans admin.html avant admin.js."
+    );
+
+    return;
+
+  }
+
+
   try {
 
     const {
@@ -1048,7 +1163,8 @@ async function checkSession() {
 
 
     showLoginMessage(
-      "Impossible de vérifier votre session."
+      "Impossible de vérifier votre session : " +
+      getErrorMessage(error)
     );
 
   }
@@ -1061,6 +1177,13 @@ async function checkSession() {
 // ============================================================
 
 async function loadDashboard() {
+
+  if (!supabaseClient) {
+
+    return;
+
+  }
+
 
   updateAdminHeader();
 
@@ -1142,10 +1265,6 @@ function getSettingsField(
 }
 
 
-// ============================================================
-// REMPLIR UN CHAMP
-// ============================================================
-
 function setFieldValue(
   names,
   value
@@ -1169,10 +1288,6 @@ function setFieldValue(
 
 }
 
-
-// ============================================================
-// RECUPERER UNE VALEUR
-// ============================================================
 
 function getFieldValue(
   names
@@ -1266,7 +1381,7 @@ async function loadSettings() {
 
 
 // ============================================================
-// REMPLIR FORMULAIRE PARAMETRES
+// REMPLIR PARAMETRES
 // ============================================================
 
 function fillSettingsForm() {
@@ -1484,13 +1599,9 @@ function updateSettingsPreview() {
     ]);
 
 
-  const previewBuy =
-    $("previewBuyRate");
+  if ($("previewBuyRate")) {
 
-
-  if (previewBuy) {
-
-    previewBuy.textContent =
+    $("previewBuyRate").textContent =
       `${formatNumber(
         Number.isFinite(buyRate)
           ? buyRate
@@ -1500,13 +1611,9 @@ function updateSettingsPreview() {
   }
 
 
-  const previewSell =
-    $("previewSellRate");
+  if ($("previewSellRate")) {
 
-
-  if (previewSell) {
-
-    previewSell.textContent =
+    $("previewSellRate").textContent =
       `${formatNumber(
         Number.isFinite(sellRate)
           ? sellRate
@@ -1516,13 +1623,9 @@ function updateSettingsPreview() {
   }
 
 
-  const previewMin =
-    $("previewMinOrder");
+  if ($("previewMinOrder")) {
 
-
-  if (previewMin) {
-
-    previewMin.textContent =
+    $("previewMinOrder").textContent =
       `${formatNumber(
         Number.isFinite(minOrder)
           ? minOrder
@@ -1532,13 +1635,9 @@ function updateSettingsPreview() {
   }
 
 
-  const previewMax =
-    $("previewMaxOrder");
+  if ($("previewMaxOrder")) {
 
-
-  if (previewMax) {
-
-    previewMax.textContent =
+    $("previewMaxOrder").textContent =
       `${formatNumber(
         Number.isFinite(maxOrder)
           ? maxOrder
@@ -1548,13 +1647,9 @@ function updateSettingsPreview() {
   }
 
 
-  const previewTrc =
-    $("previewTrc20Fee");
+  if ($("previewTrc20Fee")) {
 
-
-  if (previewTrc) {
-
-    previewTrc.textContent =
+    $("previewTrc20Fee").textContent =
       `${Number.isFinite(trc20Fee)
         ? trc20Fee
         : settings.trc20_fee_usdt} USDT`;
@@ -1577,13 +1672,9 @@ function updateSettingsPreview() {
   }
 
 
-  const previewOrange =
-    $("previewOrangeMoney");
+  if ($("previewOrangeMoney")) {
 
-
-  if (previewOrange) {
-
-    previewOrange.textContent =
+    $("previewOrangeMoney").textContent =
       orange ||
       settings.orange_money_number;
 
@@ -1743,7 +1834,6 @@ async function saveSettings(event) {
       "Le taux d'achat doit être supérieur à 0."
     );
 
-
     return;
 
   }
@@ -1758,7 +1848,6 @@ async function saveSettings(event) {
       "settingsMessage",
       "Le taux de vente doit être supérieur à 0."
     );
-
 
     return;
 
@@ -1775,7 +1864,6 @@ async function saveSettings(event) {
       "Le montant minimum doit être supérieur à 0."
     );
 
-
     return;
 
   }
@@ -1791,7 +1879,6 @@ async function saveSettings(event) {
       "Le montant maximum doit être supérieur à 0."
     );
 
-
     return;
 
   }
@@ -1806,7 +1893,6 @@ async function saveSettings(event) {
       "Le minimum doit être inférieur au maximum."
     );
 
-
     return;
 
   }
@@ -1819,9 +1905,8 @@ async function saveSettings(event) {
 
     showMessage(
       "settingsMessage",
-      "Le frais TRC20 doit être supérieur ou égal à 0."
+      "Les frais TRC20 doivent être supérieurs ou égaux à 0."
     );
-
 
     return;
 
@@ -1835,9 +1920,8 @@ async function saveSettings(event) {
 
     showMessage(
       "settingsMessage",
-      "Le frais BEP20 doit être supérieur ou égal à 0."
+      "Les frais BEP20 doivent être supérieurs ou égaux à 0."
     );
-
 
     return;
 
@@ -1850,7 +1934,6 @@ async function saveSettings(event) {
       "settingsMessage",
       "Veuillez saisir le numéro Orange Money."
     );
-
 
     return;
 
@@ -1871,7 +1954,6 @@ async function saveSettings(event) {
 
     button.disabled =
       true;
-
 
     button.textContent =
       "Enregistrement...";
@@ -1949,12 +2031,6 @@ async function saveSettings(event) {
       "success"
     );
 
-
-    console.log(
-      "Paramètres enregistrés:",
-      data
-    );
-
   }
 
   catch (error) {
@@ -1979,7 +2055,6 @@ async function saveSettings(event) {
 
       button.disabled =
         false;
-
 
       button.textContent =
         oldText ||
@@ -2055,7 +2130,13 @@ async function loadOrders() {
     if (container) {
 
       container.innerHTML =
-        '<div class="empty">Impossible de charger les commandes.</div>';
+        `<div class="empty">
+          Impossible de charger les commandes.
+          <br>
+          ${escapeHtml(
+            getErrorMessage(error)
+          )}
+        </div>`;
 
     }
 
@@ -2208,10 +2289,6 @@ function renderOrders() {
   let html = "";
 
 
-  // ==========================================================
-  // ACHATS USDT
-  // ==========================================================
-
   if (purchases.length > 0) {
 
     html += `
@@ -2261,10 +2338,6 @@ function renderOrders() {
 
   }
 
-
-  // ==========================================================
-  // VENTES USDT
-  // ==========================================================
 
   if (sales.length > 0) {
 
@@ -2363,12 +2436,6 @@ function renderOrderCard(
     );
 
 
-  const networkClass =
-    getNetworkClass(
-      order.network
-    );
-
-
   const shortId =
     String(
       order.id || ""
@@ -2377,10 +2444,6 @@ function renderOrderCard(
       8
     );
 
-
-  // ==========================================================
-  // ACHAT
-  // ==========================================================
 
   if (isBuy) {
 
@@ -2397,10 +2460,10 @@ function renderOrderCard(
 
           <div>
 
-            <span
-              class="order-type-badge buy"
-            >
+            <span class="order-type-badge buy">
+
               🟢 Achat USDT
+
             </span>
 
             <div class="order-card-id">
@@ -2483,7 +2546,6 @@ function renderOrderCard(
 
 
         <div
-          class="network-row"
           style="
             margin:12px 0;
             padding:12px;
@@ -2497,11 +2559,12 @@ function renderOrderCard(
             style="
               font-size:12px;
               font-weight:700;
-              color:#795548;
               margin-bottom:4px;
             "
           >
+
             ⚠️ RÉSEAU À UTILISER
+
           </div>
 
           <strong
@@ -2535,7 +2598,6 @@ function renderOrderCard(
               >
 
                 <div
-                  class="wallet-box-label"
                   style="
                     font-weight:800;
                     margin-bottom:8px;
@@ -2544,6 +2606,7 @@ function renderOrderCard(
                 >
 
                   📥 WALLET DU CLIENT
+
                   <br>
 
                   <small>
@@ -2554,7 +2617,6 @@ function renderOrderCard(
 
 
                 <div
-                  class="wallet-box-row"
                   style="
                     display:flex;
                     gap:8px;
@@ -2563,7 +2625,6 @@ function renderOrderCard(
                 >
 
                   <span
-                    class="wallet-box-value"
                     style="
                       word-break:break-all;
                       flex:1;
@@ -2598,7 +2659,6 @@ function renderOrderCard(
             : `
 
               <div
-                class="wallet-box"
                 style="
                   padding:12px;
                   border-radius:10px;
@@ -2626,7 +2686,7 @@ function renderOrderCard(
                 >
 
                   L'adresse du portefeuille client
-                  n'est pas enregistrée dans cette commande.
+                  n'est pas enregistrée.
 
                 </div>
 
@@ -2690,10 +2750,6 @@ function renderOrderCard(
   }
 
 
-  // ==========================================================
-  // VENTE
-  // ==========================================================
-
   return `
 
     <div
@@ -2707,10 +2763,10 @@ function renderOrderCard(
 
         <div>
 
-          <span
-            class="order-type-badge sell"
-          >
+          <span class="order-type-badge sell">
+
             🔵 Vente USDT
+
           </span>
 
           <div class="order-card-id">
@@ -2722,7 +2778,6 @@ function renderOrderCard(
           </div>
 
         </div>
-
 
         <span
           class="status ${escapeHtml(
@@ -2794,7 +2849,6 @@ function renderOrderCard(
 
 
       <div
-        class="network-row"
         style="
           margin:12px 0;
           padding:12px;
@@ -2808,11 +2862,12 @@ function renderOrderCard(
           style="
             font-size:12px;
             font-weight:700;
-            color:#0d47a1;
             margin-bottom:4px;
           "
         >
+
           🌐 RÉSEAU DE LA TRANSACTION
+
         </div>
 
         <strong
@@ -2836,7 +2891,6 @@ function renderOrderCard(
           ? `
 
             <div
-              class="wallet-box"
               style="
                 border:2px solid #1565c0;
                 padding:12px;
@@ -2846,7 +2900,6 @@ function renderOrderCard(
             >
 
               <div
-                class="wallet-box-label"
                 style="
                   font-weight:800;
                   margin-bottom:8px;
@@ -2860,7 +2913,6 @@ function renderOrderCard(
 
 
               <div
-                class="wallet-box-row"
                 style="
                   display:flex;
                   gap:8px;
@@ -2869,7 +2921,6 @@ function renderOrderCard(
               >
 
                 <span
-                  class="wallet-box-value"
                   style="
                     font-size:18px;
                     font-weight:800;
@@ -2904,7 +2955,6 @@ function renderOrderCard(
           : `
 
             <div
-              class="wallet-box"
               style="
                 padding:12px;
                 border-radius:10px;
@@ -2924,18 +2974,6 @@ function renderOrderCard(
 
               </div>
 
-              <div
-                style="
-                  margin-top:5px;
-                  font-size:13px;
-                "
-              >
-
-                Le numéro Orange Money du client
-                n'est pas enregistré dans cette commande.
-
-              </div>
-
             </div>
 
           `
@@ -2947,7 +2985,6 @@ function renderOrderCard(
           ? `
 
             <div
-              class="wallet-box"
               style="
                 margin-top:10px;
                 padding:10px;
@@ -2957,7 +2994,6 @@ function renderOrderCard(
             >
 
               <div
-                class="wallet-box-label"
                 style="
                   font-weight:700;
                   margin-bottom:5px;
@@ -3122,63 +3158,47 @@ function updateStatistics() {
 
   if ($("statTotalOrders")) {
 
-    $("statTotalOrders")
-      .textContent =
-      formatNumber(
-        total
-      );
+    $("statTotalOrders").textContent =
+      formatNumber(total);
 
   }
 
 
   if ($("statPending")) {
 
-    $("statPending")
-      .textContent =
-      formatNumber(
-        pending
-      );
+    $("statPending").textContent =
+      formatNumber(pending);
 
   }
 
 
   if ($("statPayments")) {
 
-    $("statPayments")
-      .textContent =
-      formatNumber(
-        payments
-      );
+    $("statPayments").textContent =
+      formatNumber(payments);
 
   }
 
 
   if ($("statCompleted")) {
 
-    $("statCompleted")
-      .textContent =
-      formatNumber(
-        completed
-      );
+    $("statCompleted").textContent =
+      formatNumber(completed);
 
   }
 
 
   if ($("statDisputes")) {
 
-    $("statDisputes")
-      .textContent =
-      formatNumber(
-        disputes
-      );
+    $("statDisputes").textContent =
+      formatNumber(disputes);
 
   }
 
 
   if ($("statUsers")) {
 
-    $("statUsers")
-      .textContent =
+    $("statUsers").textContent =
       formatNumber(
         allUsers.length
       );
@@ -3199,12 +3219,8 @@ function openOrderModal(
   selectedOrder =
     allOrders.find(
       order =>
-        String(
-          order.id
-        ) ===
-        String(
-          orderId
-        )
+        String(order.id) ===
+        String(orderId)
     );
 
 
@@ -3264,11 +3280,9 @@ function openOrderModal(
       <span>ID commande</span>
 
       <strong>
-
         ${escapeHtml(
           selectedOrder.id
         )}
-
       </strong>
 
     </div>
@@ -3386,11 +3400,7 @@ function openOrderModal(
       "
     >
 
-      <span
-        style="
-          font-weight:800;
-        "
-      >
+      <span style="font-weight:800;">
         🌐 RÉSEAU
       </span>
 
@@ -3426,7 +3436,6 @@ function openOrderModal(
           >
 
             <div
-              class="wallet-box-label"
               style="
                 font-weight:800;
                 color:#1b5e20;
@@ -3444,7 +3453,6 @@ function openOrderModal(
                 ? `
 
                   <div
-                    class="wallet-box-row"
                     style="
                       display:flex;
                       gap:8px;
@@ -3453,7 +3461,6 @@ function openOrderModal(
                   >
 
                     <span
-                      class="wallet-box-value"
                       style="
                         word-break:break-all;
                         flex:1;
@@ -3516,7 +3523,6 @@ function openOrderModal(
           >
 
             <div
-              class="wallet-box-label"
               style="
                 font-weight:800;
                 color:#0d47a1;
@@ -3534,7 +3540,6 @@ function openOrderModal(
                 ? `
 
                   <div
-                    class="wallet-box-row"
                     style="
                       display:flex;
                       gap:8px;
@@ -3768,10 +3773,6 @@ async function updateOrderStatus(
   }
 
 
-  // IMPORTANT :
-  // Ces statuts correspondent à la contrainte
-  // actuelle de la table public.orders.
-
   const allowedStatuses = [
 
     "pending",
@@ -3796,7 +3797,6 @@ async function updateOrderStatus(
       "Statut invalide."
     );
 
-
     return;
 
   }
@@ -3812,12 +3812,9 @@ async function updateOrderStatus(
         .from("orders")
         .update({
 
-          status:
-
-            status,
+          status,
 
           updated_at:
-
             new Date().toISOString()
 
         })
@@ -3843,12 +3840,8 @@ async function updateOrderStatus(
     const index =
       allOrders.findIndex(
         order =>
-          String(
-            order.id
-          ) ===
-          String(
-            data.id
-          )
+          String(order.id) ===
+          String(data.id)
       );
 
 
@@ -3863,7 +3856,6 @@ async function updateOrderStatus(
     renderOrders();
 
     updateStatistics();
-
 
     openOrderModal(
       data.id
@@ -4205,12 +4197,8 @@ function openDisputeModal(
   selectedDispute =
     allDisputes.find(
       dispute =>
-        String(
-          dispute.id
-        ) ===
-        String(
-          disputeId
-        )
+        String(dispute.id) ===
+        String(disputeId)
     );
 
 
@@ -4415,7 +4403,6 @@ async function updateDisputeStatus(
       "Statut de litige invalide."
     );
 
-
     return;
 
   }
@@ -4456,12 +4443,8 @@ async function updateDisputeStatus(
     const index =
       allDisputes.findIndex(
         dispute =>
-          String(
-            dispute.id
-          ) ===
-          String(
-            data.id
-          )
+          String(dispute.id) ===
+          String(data.id)
       );
 
 
@@ -4476,7 +4459,6 @@ async function updateDisputeStatus(
     renderDisputes();
 
     updateStatistics();
-
 
     openDisputeModal(
       data.id
@@ -4774,9 +4756,13 @@ async function adminLogout() {
 
   try {
 
-    await supabaseClient
-      .auth
-      .signOut();
+    if (supabaseClient) {
+
+      await supabaseClient
+        .auth
+        .signOut();
+
+    }
 
   }
 
@@ -4793,30 +4779,23 @@ async function adminLogout() {
   currentUser =
     null;
 
-
   currentProfile =
     null;
-
 
   currentSettings =
     null;
 
-
   allOrders =
     [];
-
 
   allDisputes =
     [];
 
-
   allUsers =
     [];
 
-
   selectedOrder =
     null;
-
 
   selectedDispute =
     null;
@@ -4828,7 +4807,7 @@ async function adminLogout() {
 
 
 // ============================================================
-// FERMER MODAL
+// FERMER MODALS
 // ============================================================
 
 function closeOrderModal() {
@@ -4867,10 +4846,6 @@ function closeDisputeModal() {
 
 function setupEvents() {
 
-  // ----------------------------------------------------------
-  // LOGIN
-  // ----------------------------------------------------------
-
   $("adminLoginForm")
     ?.addEventListener(
       "submit",
@@ -4878,20 +4853,12 @@ function setupEvents() {
     );
 
 
-  // ----------------------------------------------------------
-  // LOGOUT
-  // ----------------------------------------------------------
-
   $("adminLogoutBtn")
     ?.addEventListener(
       "click",
       adminLogout
     );
 
-
-  // ----------------------------------------------------------
-  // PARAMETRES
-  // ----------------------------------------------------------
 
   const settingsForm =
     $("settingsForm") ||
@@ -4926,70 +4893,43 @@ function setupEvents() {
     );
 
 
-  // ----------------------------------------------------------
-  // APERCU EN TEMPS REEL
-  // ----------------------------------------------------------
-
   [
 
     "buyRate",
-
     "adminBuyRate",
-
     "settingsBuyRate",
 
     "sellRate",
-
     "adminSellRate",
-
     "settingsSellRate",
 
     "minOrderCfa",
-
     "minOrder",
-
     "adminMinOrder",
-
     "settingsMinOrder",
 
     "maxOrderCfa",
-
     "maxOrder",
-
     "adminMaxOrder",
-
     "settingsMaxOrder",
 
     "trc20Fee",
-
     "trc20FeeUsdt",
-
     "adminTrc20Fee",
-
     "settingsTrc20Fee",
 
     "bp20Fee",
-
     "bep20Fee",
-
     "bp20FeeUsdt",
-
     "bep20FeeUsdt",
-
     "adminBp20Fee",
-
     "adminBep20Fee",
-
     "settingsBp20Fee",
 
     "orangeMoneyNumber",
-
     "orangeMoney",
-
     "orangeMoneyPhone",
-
     "adminOrangeMoneyNumber",
-
     "settingsOrangeMoneyNumber"
 
   ]
@@ -5005,10 +4945,6 @@ function setupEvents() {
     }
   );
 
-
-  // ----------------------------------------------------------
-  // ONGLETS
-  // ----------------------------------------------------------
 
   document
     .querySelectorAll(
@@ -5071,10 +5007,6 @@ function setupEvents() {
     );
 
 
-  // ----------------------------------------------------------
-  // COMMANDES
-  // ----------------------------------------------------------
-
   $("orderSearch")
     ?.addEventListener(
       "input",
@@ -5103,10 +5035,6 @@ function setupEvents() {
     );
 
 
-  // ----------------------------------------------------------
-  // SELECT STATUT COMMANDE
-  // ----------------------------------------------------------
-
   $("orderStatusSelect")
     ?.addEventListener(
       "change",
@@ -5119,10 +5047,6 @@ function setupEvents() {
       }
     );
 
-
-  // ----------------------------------------------------------
-  // SELECT STATUT LITIGE
-  // ----------------------------------------------------------
 
   $("disputeStatusSelect")
     ?.addEventListener(
@@ -5137,17 +5061,9 @@ function setupEvents() {
     );
 
 
-  // ----------------------------------------------------------
-  // ACTIONS TABLEAUX
-  // ----------------------------------------------------------
-
   document.addEventListener(
     "click",
     event => {
-
-      // ------------------------------------------------------
-      // VOIR COMMANDE
-      // ------------------------------------------------------
 
       const orderButton =
         event.target.closest(
@@ -5161,15 +5077,10 @@ function setupEvents() {
           orderButton.dataset.viewOrder
         );
 
-
         return;
 
       }
 
-
-      // ------------------------------------------------------
-      // COPIER WALLET / TELEPHONE
-      // ------------------------------------------------------
 
       const copyButton =
         event.target.closest(
@@ -5184,15 +5095,10 @@ function setupEvents() {
           copyButton
         );
 
-
         return;
 
       }
 
-
-      // ------------------------------------------------------
-      // STATUT COMMANDE
-      // ------------------------------------------------------
 
       const orderStatusButton =
         event.target.closest(
@@ -5203,20 +5109,13 @@ function setupEvents() {
       if (orderStatusButton) {
 
         updateOrderStatus(
-          orderStatusButton
-            .dataset
-            .orderStatus
+          orderStatusButton.dataset.orderStatus
         );
-
 
         return;
 
       }
 
-
-      // ------------------------------------------------------
-      // VOIR LITIGE
-      // ------------------------------------------------------
 
       const disputeButton =
         event.target.closest(
@@ -5230,15 +5129,10 @@ function setupEvents() {
           disputeButton.dataset.viewDispute
         );
 
-
         return;
 
       }
 
-
-      // ------------------------------------------------------
-      // STATUT LITIGE
-      // ------------------------------------------------------
 
       const disputeStatusButton =
         event.target.closest(
@@ -5249,9 +5143,7 @@ function setupEvents() {
       if (disputeStatusButton) {
 
         updateDisputeStatus(
-          disputeStatusButton
-            .dataset
-            .disputeStatus
+          disputeStatusButton.dataset.disputeStatus
         );
 
       }
@@ -5259,10 +5151,6 @@ function setupEvents() {
     }
   );
 
-
-  // ----------------------------------------------------------
-  // FERMETURE COMMANDE
-  // ----------------------------------------------------------
 
   $("closeOrderModalBtn")
     ?.addEventListener(
@@ -5278,10 +5166,6 @@ function setupEvents() {
     );
 
 
-  // ----------------------------------------------------------
-  // FERMETURE LITIGE
-  // ----------------------------------------------------------
-
   $("closeDisputeModalBtn")
     ?.addEventListener(
       "click",
@@ -5296,20 +5180,12 @@ function setupEvents() {
     );
 
 
-  // ----------------------------------------------------------
-  // ACTUALISATION LITIGES
-  // ----------------------------------------------------------
-
   $("refreshDisputesBtn")
     ?.addEventListener(
       "click",
       loadDisputes
     );
 
-
-  // ----------------------------------------------------------
-  // UTILISATEURS
-  // ----------------------------------------------------------
 
   $("userSearch")
     ?.addEventListener(
@@ -5324,10 +5200,6 @@ function setupEvents() {
       loadUsers
     );
 
-
-  // ----------------------------------------------------------
-  // FERMETURE MODALS EN DEHORS
-  // ----------------------------------------------------------
 
   $("orderModal")
     ?.addEventListener(
@@ -5365,10 +5237,6 @@ function setupEvents() {
     );
 
 
-  // ----------------------------------------------------------
-  // TOUCHE ECHAP
-  // ----------------------------------------------------------
-
   document.addEventListener(
     "keydown",
     event => {
@@ -5403,6 +5271,13 @@ function setupAuthListener() {
   }
 
 
+  if (!supabaseClient) {
+
+    return;
+
+  }
+
+
   authListenerReady =
     true;
 
@@ -5420,10 +5295,6 @@ function setupAuthListener() {
         );
 
 
-        // ----------------------------------------------------
-        // DECONNEXION
-        // ----------------------------------------------------
-
         if (
           event ===
           "SIGNED_OUT"
@@ -5432,30 +5303,30 @@ function setupAuthListener() {
           currentUser =
             null;
 
-
           currentProfile =
             null;
-
 
           currentSettings =
             null;
 
+          allOrders =
+            [];
+
+          allDisputes =
+            [];
+
+          allUsers =
+            [];
 
           showLoginPage();
-
 
           return;
 
         }
 
 
-        // ----------------------------------------------------
-        // CONNEXION
-        // ----------------------------------------------------
-
         if (
-          event ===
-            "SIGNED_IN" &&
+          event === "SIGNED_IN" &&
           session?.user
         ) {
 
@@ -5480,18 +5351,14 @@ function setupAuthListener() {
                 currentUser =
                   null;
 
-
                 currentProfile =
                   null;
 
-
                 showLoginPage();
-
 
                 showLoginMessage(
                   "Accès refusé. Ce compte n'est pas administrateur."
                 );
-
 
                 return;
 
@@ -5499,7 +5366,6 @@ function setupAuthListener() {
 
 
               showAdminPage();
-
 
               await loadDashboard();
 
@@ -5527,27 +5393,49 @@ document.addEventListener(
       "================================================"
     );
 
-
     console.log(
       "NOA DIGIT TRADE ADMIN"
     );
 
-
     console.log(
       "Démarrage espace administrateur..."
     );
-
 
     console.log(
       "================================================"
     );
 
 
+    // --------------------------------------------------------
+    // ATTENDRE SUPABASE
+    // --------------------------------------------------------
+
+    const supabaseReady =
+      await waitForSupabase();
+
+
+    if (!supabaseReady) {
+
+      showLoginPage();
+
+
+      showLoginMessage(
+        "Erreur : Supabase JS n'est pas chargé. Vérifiez admin.html : le script Supabase doit être placé avant admin.js."
+      );
+
+
+      return;
+
+    }
+
+
+    // --------------------------------------------------------
+    // INITIALISATION
+    // --------------------------------------------------------
+
     setupEvents();
 
-
     setupAuthListener();
-
 
     await checkSession();
 
