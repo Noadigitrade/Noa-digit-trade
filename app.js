@@ -3459,19 +3459,16 @@ function renderSellPaymentPage() {
 
 
   // ----------------------------------------------------------
-  // BOUTON CONFIRMATION D'ENVOI USDT
+  // BOUTON PAIEMENT DÉCLARÉ
   // ----------------------------------------------------------
 
   if ($('paymentDoneBtn')) {
 
     $('paymentDoneBtn').style.display =
-      '';
+      'none';
 
-    $('paymentDoneBtn').disabled =
-      false;
-
-    $('paymentDoneBtn').textContent =
-      "J'AI ENVOYÉ LES USDT";
+    $('paymentDoneBtn').onclick =
+      null;
   }
 
 
@@ -3958,12 +3955,12 @@ async function declarePayment() {
 
 
   if (
-    currentOrder.side !== 'buy' &&
-    currentOrder.side !== 'sell'
+    currentOrder.side !==
+    'buy'
   ) {
 
     return showMessage(
-      'Type de commande invalide.',
+      'Cette opération ne nécessite pas de paiement Orange Money.',
       'error'
     );
   }
@@ -4124,9 +4121,7 @@ async function declarePayment() {
 
 
     showMessage(
-      currentOrder.side === 'sell'
-        ? 'Envoi des USDT déclaré. Votre commande est maintenant en attente de vérification.'
-        : 'Paiement déclaré. Votre commande est maintenant en attente de vérification.',
+      'Paiement déclaré. Votre commande est maintenant en attente de vérification.',
       'success'
     );
 
@@ -4138,9 +4133,7 @@ async function declarePayment() {
         true;
 
       button.textContent =
-        currentOrder.side === 'sell'
-          ? 'ENVOI USDT DÉCLARÉ ✓'
-          : 'PAIEMENT DÉCLARÉ ✓';
+        'PAIEMENT DÉCLARÉ ✓';
     }
 
 
@@ -5166,6 +5159,130 @@ async function changePassword(
 
 
 // ============================================================
+// MOT DE PASSE OUBLIÉ / RÉINITIALISATION
+// ============================================================
+
+let passwordRecoveryMode = false;
+
+function openPasswordRecoveryModal(recoveryMode = false) {
+  passwordRecoveryMode = recoveryMode;
+
+  const modal = $('passwordRecoveryModal');
+  const emailField = $('passwordRecoveryEmailField');
+  const newFields = $('newPasswordFields');
+  const text = $('passwordRecoveryText');
+  const submit = $('passwordRecoverySubmit');
+
+  if (!modal) return;
+
+  modal.classList.add('active');
+  modal.setAttribute('aria-hidden', 'false');
+
+  if (emailField) emailField.style.display = recoveryMode ? 'none' : 'block';
+  if (newFields) newFields.style.display = recoveryMode ? 'block' : 'none';
+
+  if (text) {
+    text.textContent = recoveryMode
+      ? 'Choisissez maintenant votre nouveau mot de passe.'
+      : 'Saisissez votre adresse email pour recevoir un lien de réinitialisation.';
+  }
+
+  if (submit) {
+    submit.textContent = recoveryMode
+      ? 'Modifier le mot de passe'
+      : 'Envoyer le lien';
+  }
+
+  if (!recoveryMode && $('passwordRecoveryEmail')) {
+    $('passwordRecoveryEmail').value = $('loginEmail')?.value?.trim() || '';
+    $('passwordRecoveryEmail').focus();
+  }
+
+  if (recoveryMode && $('newRecoveryPassword')) {
+    $('newRecoveryPassword').focus();
+  }
+}
+
+function closePasswordRecoveryModal() {
+  const modal = $('passwordRecoveryModal');
+  if (!modal) return;
+
+  modal.classList.remove('active');
+  modal.setAttribute('aria-hidden', 'true');
+
+  $('passwordRecoveryForm')?.reset();
+  passwordRecoveryMode = false;
+}
+
+async function handlePasswordRecovery(event) {
+  event.preventDefault();
+  hideMessage();
+
+  const button = $('passwordRecoverySubmit');
+  const original = button?.textContent;
+
+  try {
+    if (button) {
+      button.disabled = true;
+      button.textContent = passwordRecoveryMode
+        ? 'Modification...'
+        : 'Envoi...';
+    }
+
+    if (!passwordRecoveryMode) {
+      const email = ($('passwordRecoveryEmail')?.value || '').trim().toLowerCase();
+
+      if (!email) {
+        throw new Error('Veuillez saisir votre adresse email.');
+      }
+
+      const redirectTo = window.location.origin + window.location.pathname;
+
+      const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+        redirectTo
+      });
+
+      if (error) throw error;
+
+      closePasswordRecoveryModal();
+      showMessage(
+        'Un lien de réinitialisation a été envoyé à votre adresse email. Vérifiez également vos spams.',
+        'success'
+      );
+
+      return;
+    }
+
+    const password = $('newRecoveryPassword')?.value || '';
+    const confirmation = $('newRecoveryPasswordConfirm')?.value || '';
+
+    if (password.length < 6) {
+      throw new Error('Le mot de passe doit contenir au moins 6 caractères.');
+    }
+
+    if (password !== confirmation) {
+      throw new Error('Les deux mots de passe ne correspondent pas.');
+    }
+
+    const { error } = await supabaseClient.auth.updateUser({ password });
+    if (error) throw error;
+
+    closePasswordRecoveryModal();
+    window.history.replaceState({}, document.title, window.location.pathname);
+    showMessage('Mot de passe modifié avec succès. Vous pouvez maintenant utiliser votre nouveau mot de passe.', 'success');
+
+  } catch (error) {
+    console.error('Erreur réinitialisation mot de passe :', error);
+    showMessage(getSupabaseErrorMessage(error), 'error');
+  } finally {
+    if (button) {
+      button.disabled = false;
+      button.textContent = original || (passwordRecoveryMode ? 'Modifier le mot de passe' : 'Envoyer le lien');
+    }
+  }
+}
+
+// ============================================================
 // ÉVÉNEMENTS
 // ============================================================
 
@@ -5182,6 +5299,24 @@ function setupEvents() {
     ?.addEventListener(
       'submit',
       registerUser
+    );
+
+  $('forgotPasswordBtn')
+    ?.addEventListener(
+      'click',
+      () => openPasswordRecoveryModal(false)
+    );
+
+  $('passwordRecoveryForm')
+    ?.addEventListener(
+      'submit',
+      handlePasswordRecovery
+    );
+
+  $('closePasswordRecoveryBtn')
+    ?.addEventListener(
+      'click',
+      closePasswordRecoveryModal
     );
 
 
@@ -5458,6 +5593,13 @@ function setupAuthListener() {
           session?.user ||
           null;
 
+        if (event === 'PASSWORD_RECOVERY') {
+          showAuthPage();
+          showLoginForm();
+          setTimeout(() => openPasswordRecoveryModal(true), 0);
+          return;
+        }
+
 
         if (
           event ===
@@ -5518,7 +5660,17 @@ async function boot() {
       null;
 
 
-    if (currentUser) {
+    const isRecoveryUrl =
+      /(?:[?#&])type=recovery(?:[&#]|$)/i.test(window.location.hash) ||
+      /(?:[?&])type=recovery(?:&|$)/i.test(window.location.search);
+
+    if (currentUser && isRecoveryUrl) {
+
+      showAuthPage();
+      showLoginForm();
+      setTimeout(() => openPasswordRecoveryModal(true), 0);
+
+    } else if (currentUser) {
 
       await initializeApplication();
 
