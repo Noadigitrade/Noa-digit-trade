@@ -3316,6 +3316,19 @@ function renderPaymentPage() {
   // PREUVE DE PAIEMENT (réinitialisation)
   // ----------------------------------------------------------
 
+  const proofLabelReset =
+    $('paymentPage')
+      ?.querySelector(
+        '.proof-upload-label'
+      );
+
+  if (proofLabelReset) {
+
+    proofLabelReset.textContent =
+      'Preuve de paiement (capture d\'écran)';
+  }
+
+
   resetProofUpload();
 
   const dropzoneReset =
@@ -3459,16 +3472,51 @@ function renderSellPaymentPage() {
 
 
   // ----------------------------------------------------------
-  // BOUTON PAIEMENT DÉCLARÉ
+  // BOUTON "J'AI ENVOYÉ LES USDT"
   // ----------------------------------------------------------
 
   if ($('paymentDoneBtn')) {
 
     $('paymentDoneBtn').style.display =
-      'none';
+      '';
 
-    $('paymentDoneBtn').onclick =
-      null;
+    $('paymentDoneBtn').disabled =
+      false;
+
+    $('paymentDoneBtn').textContent =
+      "J'AI ENVOYÉ LES USDT";
+  }
+
+
+  // ----------------------------------------------------------
+  // LIBELLÉ PREUVE
+  // ----------------------------------------------------------
+
+  const proofLabel =
+    $('paymentPage')
+      ?.querySelector(
+        '.proof-upload-label'
+      );
+
+  if (proofLabel) {
+
+    proofLabel.textContent =
+      "Preuve d'envoi des USDT (capture d'écran)";
+  }
+
+
+  resetProofUpload();
+
+  const dropzoneReset =
+    $('proofDropzone');
+
+  if (dropzoneReset) {
+
+    dropzoneReset.style.pointerEvents =
+      '';
+
+    dropzoneReset.style.opacity =
+      '';
   }
 
 
@@ -3954,22 +4002,17 @@ async function declarePayment() {
   }
 
 
-  if (
-    currentOrder.side !==
-    'buy'
-  ) {
-
-    return showMessage(
-      'Cette opération ne nécessite pas de paiement Orange Money.',
-      'error'
-    );
-  }
+  const isSell =
+    currentOrder.side ===
+    'sell';
 
 
   if (!selectedProofFile) {
 
     return showMessage(
-      "Veuillez joindre une capture d'écran de votre paiement avant de continuer.",
+      isSell
+        ? "Veuillez joindre une capture d'écran de votre envoi de USDT avant de continuer."
+        : "Veuillez joindre une capture d'écran de votre paiement avant de continuer.",
       'error'
     );
   }
@@ -4121,7 +4164,9 @@ async function declarePayment() {
 
 
     showMessage(
-      'Paiement déclaré. Votre commande est maintenant en attente de vérification.',
+      isSell
+        ? 'Envoi déclaré. Votre commande est maintenant en attente de vérification.'
+        : 'Paiement déclaré. Votre commande est maintenant en attente de vérification.',
       'success'
     );
 
@@ -4133,7 +4178,9 @@ async function declarePayment() {
         true;
 
       button.textContent =
-        'PAIEMENT DÉCLARÉ ✓';
+        isSell
+          ? 'ENVOI DÉCLARÉ ✓'
+          : 'PAIEMENT DÉCLARÉ ✓';
     }
 
 
@@ -4185,7 +4232,9 @@ async function declarePayment() {
 
       button.textContent =
         originalText ||
-        "J'AI EFFECTUÉ LE PAIEMENT";
+        (isSell
+          ? "J'AI ENVOYÉ LES USDT"
+          : "J'AI EFFECTUÉ LE PAIEMENT");
     }
   }
 }
