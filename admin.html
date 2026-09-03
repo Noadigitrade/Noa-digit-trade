@@ -825,22 +825,35 @@ function extractPayoutPhone(order){
 return order?.payout_phone?String(order.payout_phone).trim():'';
 }
 
-function getProofUrl(order){
-const value=order?.payment_proof_url;
-if(!value)return'';
-
-const raw=String(value).trim();
-if(/^https?:\/\//i.test(raw))return raw;
-
-const{data}=supabaseClient.storage
-.from(PAYMENT_PROOFS_BUCKET)
-.getPublicUrl(raw);
-
-return data?.publicUrl||'';
+async function openPaymentProof(proofPath){
+if(!proofPath){
+showAdminMessage('Aucune preuve de paiement disponible.','error');
+return;
 }
 
-function isImageUrl(url){
-return /\.(png|jpe?g|gif|webp)(\?.*)?$/i.test(String(url||''));
+const raw=String(proofPath).trim();
+const newWindow=window.open('','_blank');
+
+try{
+if(/^https?:\/\//i.test(raw)){
+if(newWindow){newWindow.location.href=raw;}else{window.open(raw,'_blank','noopener');}
+return;
+}
+
+const{data,error}=await supabaseClient
+.storage
+.from(PAYMENT_PROOFS_BUCKET)
+.createSignedUrl(raw,3600);
+
+if(error)throw error;
+if(!data?.signedUrl){throw new Error('Impossible de générer le lien sécurisé de la preuve.');}
+
+if(newWindow){newWindow.location.href=data.signedUrl;}else{window.open(data.signedUrl,'_blank','noopener');}
+}catch(error){
+console.error('Erreur ouverture preuve:',error);
+if(newWindow){newWindow.close();}
+showAdminMessage('Impossible d’ouvrir la preuve : '+(error?.message||'Erreur inconnue.'),'error');
+}
 }
 
 async function copyOrderValue(value,button){
@@ -903,10 +916,9 @@ return side!=='buy'&&side!=='sell';
 });
 
 function renderProof(order){
-const proofUrl=getProofUrl(order);
-const rawProof=order?.payment_proof_url?String(order.payment_proof_url):'';
+const rawProof=order?.payment_proof_url?String(order.payment_proof_url).trim():'';
 
-if(!proofUrl&&!rawProof){
+if(!rawProof){
 return `
 <div class="proof-box">
 <div class="proof-title">📎 Preuve de paiement</div>
@@ -914,14 +926,13 @@ return `
 </div>`;
 }
 
-const image=isImageUrl(proofUrl||rawProof);
-
 return `
 <div class="proof-box">
 <div class="proof-title">📎 Preuve de paiement</div>
-<a class="proof-link" href="${escapeHtml(proofUrl||rawProof)}" target="_blank" rel="noopener">Ouvrir la preuve de paiement</a>
-${order.payment_proof_uploaded_at?`<div class="proof-meta">Envoyée le : ${escapeHtml(formatDate(order.payment_proof_uploaded_at))}</div>`:''}
-${image?`<img class="proof-image" src="${escapeHtml(proofUrl||rawProof)}" alt="Preuve de paiement">`:''}
+<button type="button" class="btn btn-primary btn-small" data-open-proof="${escapeHtml(rawProof)}">
+👁️ Voir la preuve de paiement
+</button>
+${order.payment_proof_uploaded_at?`<div class="proof-meta">Envoyée le : ${escapeHtml(formatDate(order.payment_proof_uploaded_at))}</div>`:`<div class="proof-meta">Preuve de paiement envoyée. Cliquez sur le bouton pour l’ouvrir.</div>`}
 </div>`;
 }
 
@@ -1039,6 +1050,12 @@ output+=`<div class="order-section"><div class="order-section-title">⚠️ COMM
 }
 
 container.innerHTML=output;
+
+container.querySelectorAll('[data-open-proof]').forEach(button=>{
+button.addEventListener('click',async()=>{
+await openPaymentProof(button.dataset.openProof);
+});
+});
 
 container.querySelectorAll('[data-copy-type]').forEach(button=>{
 button.addEventListener('click',async()=>{
