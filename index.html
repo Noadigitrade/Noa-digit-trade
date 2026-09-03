@@ -122,11 +122,35 @@
       color: #7b8493;
     }
 
-    .auth-tab.active,
-    .exchange-tab.active {
-      background: #fff;
-      color: #0757d9;
-      box-shadow: 0 2px 8px rgba(0,0,0,.06);
+    /* Couleurs des boutons Connexion / Inscription / Acheter / Vendre */
+    #loginTab {
+      color: #16a34a;
+    }
+
+    #registerTab {
+      color: #dc2626;
+    }
+
+    #buyTab {
+      color: #16a34a;
+    }
+
+    #sellTab {
+      color: #dc2626;
+    }
+
+    #loginTab.active,
+    #buyTab.active {
+      background: #16a34a;
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(22,163,74,.22);
+    }
+
+    #registerTab.active,
+    #sellTab.active {
+      background: #dc2626;
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(220,38,38,.22);
     }
 
     .auth-form {
