@@ -223,6 +223,54 @@
       color: #667085;
     }
 
+
+    .forgot-password-btn {
+      display: block;
+      margin: 10px auto 18px;
+      border: none;
+      background: transparent;
+      color: #0757d9;
+      font-weight: 700;
+      font-size: 13px;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    .recovery-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(15, 23, 42, .55);
+    }
+
+    .recovery-modal.active {
+      display: flex;
+    }
+
+    .recovery-modal-card {
+      width: 100%;
+      max-width: 420px;
+      background: #fff;
+      border-radius: 20px;
+      padding: 22px;
+      box-shadow: 0 15px 45px rgba(0,0,0,.18);
+    }
+
+    .recovery-modal-card h3 {
+      margin: 0 0 8px;
+    }
+
+    .recovery-modal-card p {
+      margin: 0 0 16px;
+      color: #6b7280;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
     .btn {
       width: 100%;
       border: none;
@@ -866,6 +914,14 @@
             >
 
           </div>
+
+          <button
+            type="button"
+            id="forgotPasswordBtn"
+            class="forgot-password-btn"
+          >
+            Mot de passe oublié ?
+          </button>
 
           <button
             type="submit"
@@ -1956,6 +2012,63 @@
 
   </nav>
 
+</div>
+
+<!-- RÉINITIALISATION DU MOT DE PASSE -->
+<div
+  id="passwordRecoveryModal"
+  class="recovery-modal"
+  aria-hidden="true"
+>
+  <div class="recovery-modal-card">
+    <h3>Réinitialiser le mot de passe</h3>
+    <p id="passwordRecoveryText">
+      Saisissez votre adresse email pour recevoir un lien de réinitialisation.
+    </p>
+
+    <form id="passwordRecoveryForm">
+      <div class="field" id="passwordRecoveryEmailField">
+        <label for="passwordRecoveryEmail">Adresse email</label>
+        <input
+          type="email"
+          id="passwordRecoveryEmail"
+          placeholder="exemple@email.com"
+          autocomplete="email"
+          required
+        >
+      </div>
+
+      <div id="newPasswordFields" style="display:none;">
+        <div class="field">
+          <label for="newRecoveryPassword">Nouveau mot de passe</label>
+          <input
+            type="password"
+            id="newRecoveryPassword"
+            placeholder="Au moins 6 caractères"
+            autocomplete="new-password"
+          >
+        </div>
+
+        <div class="field">
+          <label for="newRecoveryPasswordConfirm">Confirmer le nouveau mot de passe</label>
+          <input
+            type="password"
+            id="newRecoveryPasswordConfirm"
+            placeholder="Répétez le nouveau mot de passe"
+            autocomplete="new-password"
+          >
+        </div>
+      </div>
+
+      <button type="submit" id="passwordRecoverySubmit" class="btn btn-primary">
+        Envoyer le lien
+      </button>
+
+      <button type="button" id="closePasswordRecoveryBtn" class="btn btn-secondary">
+        Annuler
+      </button>
+    </form>
+  </div>
 </div>
 
 
