@@ -3459,16 +3459,19 @@ function renderSellPaymentPage() {
 
 
   // ----------------------------------------------------------
-  // BOUTON PAIEMENT DÉCLARÉ
+  // BOUTON CONFIRMATION D'ENVOI USDT
   // ----------------------------------------------------------
 
   if ($('paymentDoneBtn')) {
 
     $('paymentDoneBtn').style.display =
-      'none';
+      '';
 
-    $('paymentDoneBtn').onclick =
-      null;
+    $('paymentDoneBtn').disabled =
+      false;
+
+    $('paymentDoneBtn').textContent =
+      "J'AI ENVOYÉ LES USDT";
   }
 
 
@@ -3955,12 +3958,12 @@ async function declarePayment() {
 
 
   if (
-    currentOrder.side !==
-    'buy'
+    currentOrder.side !== 'buy' &&
+    currentOrder.side !== 'sell'
   ) {
 
     return showMessage(
-      'Cette opération ne nécessite pas de paiement Orange Money.',
+      'Type de commande invalide.',
       'error'
     );
   }
@@ -4121,7 +4124,9 @@ async function declarePayment() {
 
 
     showMessage(
-      'Paiement déclaré. Votre commande est maintenant en attente de vérification.',
+      currentOrder.side === 'sell'
+        ? 'Envoi des USDT déclaré. Votre commande est maintenant en attente de vérification.'
+        : 'Paiement déclaré. Votre commande est maintenant en attente de vérification.',
       'success'
     );
 
@@ -4133,7 +4138,9 @@ async function declarePayment() {
         true;
 
       button.textContent =
-        'PAIEMENT DÉCLARÉ ✓';
+        currentOrder.side === 'sell'
+          ? 'ENVOI USDT DÉCLARÉ ✓'
+          : 'PAIEMENT DÉCLARÉ ✓';
     }
 
 
