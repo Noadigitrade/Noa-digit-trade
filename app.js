@@ -90,6 +90,8 @@ let currentProfile = null;
 
 let currentOrder = null;
 
+let selectedProofFile = null;
+
 let currentExchangeType = 'buy';
 
 let currentNetwork = 'trc20';
@@ -423,26 +425,36 @@ function validateNoaDepositAddress(
 // ============================================================
 
 function showAuthPage() {
-  $('authPage')?.classList.add('active');
-  $('resetPage')?.classList.remove('active');
-  $('appPage')?.classList.remove('active');
-  $('bottomNav')?.classList.add('hidden');
+
+  $('authPage')?.classList.add(
+    'active'
+  );
+
+  $('appPage')?.classList.remove(
+    'active'
+  );
+
+  $('bottomNav')?.classList.add(
+    'hidden'
+  );
 }
 
-function showResetPasswordPage() {
-  $('authPage')?.classList.remove('active');
-  $('appPage')?.classList.remove('active');
-  $('resetPage')?.classList.add('active');
-  $('bottomNav')?.classList.add('hidden');
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
 
 function showAppPage() {
-  $('authPage')?.classList.remove('active');
-  $('resetPage')?.classList.remove('active');
-  $('appPage')?.classList.add('active');
-  $('bottomNav')?.classList.remove('hidden');
+
+  $('authPage')?.classList.remove(
+    'active'
+  );
+
+  $('appPage')?.classList.add(
+    'active'
+  );
+
+  $('bottomNav')?.classList.remove(
+    'hidden'
+  );
 }
+
 
 function showSubPage(
   pageId
@@ -564,49 +576,6 @@ function showRegisterForm() {
   $('registerForm')?.classList.add(
     'active'
   );
-}
-
-
-// ============================================================
-// MOT DE PASSE OUBLIÉ
-// ============================================================
-
-async function requestPasswordReset() {
-  hideMessage();
-  const email = $('loginEmail')?.value.trim() || '';
-
-  if (!email) {
-    return showMessage(
-      'Saisissez votre adresse email pour recevoir le lien de réinitialisation.',
-      'error'
-    );
-  }
-
-  try {
-    const { error } =
-      await supabaseClient.auth.resetPasswordForEmail(
-        email,
-        {
-          redirectTo:
-            window.location.origin +
-            window.location.pathname
-        }
-      );
-
-    if (error) throw error;
-
-    showMessage(
-      'Un lien de réinitialisation a été envoyé à votre adresse email. Vérifiez aussi vos spams.',
-      'success'
-    );
-  } catch (error) {
-    console.error('Erreur réinitialisation mot de passe :', error);
-    showMessage(
-      'Impossible d’envoyer le lien : ' +
-      getSupabaseErrorMessage(error),
-      'error'
-    );
-  }
 }
 
 
@@ -3341,13 +3310,26 @@ function renderPaymentPage() {
     $('viewOrderBtn').textContent =
       'Voir ma commande';
   }
+
+
+  // ----------------------------------------------------------
+  // PREUVE DE PAIEMENT (réinitialisation)
+  // ----------------------------------------------------------
+
+  resetProofUpload();
+
+  const dropzoneReset =
+    $('proofDropzone');
+
+  if (dropzoneReset) {
+
+    dropzoneReset.style.pointerEvents =
+      '';
+
+    dropzoneReset.style.opacity =
+      '';
+  }
 }
-
-
-// ============================================================
-// PAGE PAIEMENT VENTE
-// NOUVELLE VERSION COMPATIBLE AVEC INDEX.HTML
-// ============================================================
 
 function renderSellPaymentPage() {
 
@@ -3603,6 +3585,348 @@ function renderSellPaymentPage() {
 // RPC SUPABASE SÉCURISÉ
 // ============================================================
 
+// ============================================================
+// PREUVE DE PAIEMENT (upload)
+// ============================================================
+
+const PROOF_MAX_SIZE_BYTES =
+  5 * 1024 * 1024;
+
+
+const PROOF_ALLOWED_TYPES = [
+
+  'image/jpeg',
+
+  'image/png',
+
+  'image/webp'
+
+];
+
+
+function resetProofUpload() {
+
+  selectedProofFile =
+    null;
+
+
+  const fileInput =
+    $('proofFileInput');
+
+  if (fileInput) {
+    fileInput.value =
+      '';
+  }
+
+
+  const content =
+    $('proofDropzoneContent');
+
+  if (content) {
+    content.classList.remove(
+      'hidden'
+    );
+  }
+
+
+  const previewWrap =
+    $('proofPreviewWrap');
+
+  if (previewWrap) {
+    previewWrap.classList.add(
+      'hidden'
+    );
+  }
+
+
+  const previewImg =
+    $('proofPreviewImg');
+
+  if (previewImg) {
+    previewImg.src =
+      '';
+  }
+
+
+  const status =
+    $('proofUploadStatus');
+
+  if (status) {
+    status.textContent =
+      '';
+    status.className =
+      '';
+  }
+
+
+  const dropzone =
+    $('proofDropzone');
+
+  if (dropzone) {
+    dropzone.classList.remove(
+      'dragover'
+    );
+  }
+}
+
+
+function handleProofFile(
+  file
+) {
+
+  const status =
+    $('proofUploadStatus');
+
+
+  if (!file) {
+    return;
+  }
+
+
+  if (
+    !PROOF_ALLOWED_TYPES.includes(
+      file.type
+    )
+  ) {
+
+    if (status) {
+      status.textContent =
+        'Format non supporté. Utilisez une image JPG, PNG ou WEBP.';
+      status.className =
+        'error';
+    }
+
+    return;
+  }
+
+
+  if (
+    file.size >
+    PROOF_MAX_SIZE_BYTES
+  ) {
+
+    if (status) {
+      status.textContent =
+        'Fichier trop volumineux (5 Mo maximum).';
+      status.className =
+        'error';
+    }
+
+    return;
+  }
+
+
+  selectedProofFile =
+    file;
+
+
+  if (status) {
+    status.textContent =
+      '';
+    status.className =
+      '';
+  }
+
+
+  const reader =
+    new FileReader();
+
+
+  reader.onload =
+    () => {
+
+      const previewImg =
+        $('proofPreviewImg');
+
+      if (previewImg) {
+        previewImg.src =
+          reader.result;
+      }
+
+
+      const content =
+        $('proofDropzoneContent');
+
+      if (content) {
+        content.classList.add(
+          'hidden'
+        );
+      }
+
+
+      const previewWrap =
+        $('proofPreviewWrap');
+
+      if (previewWrap) {
+        previewWrap.classList.remove(
+          'hidden'
+        );
+      }
+    };
+
+
+  reader.readAsDataURL(
+    file
+  );
+}
+
+
+function initProofUploadEvents() {
+
+  const dropzone =
+    $('proofDropzone');
+
+  const fileInput =
+    $('proofFileInput');
+
+  const removeBtn =
+    $('proofRemoveBtn');
+
+
+  if (dropzone) {
+
+    dropzone.addEventListener(
+      'click',
+      event => {
+
+        if (
+          event.target.closest(
+            '#proofRemoveBtn'
+          )
+        ) {
+          return;
+        }
+
+        fileInput?.click();
+      }
+    );
+
+
+    dropzone.addEventListener(
+      'dragover',
+      event => {
+
+        event.preventDefault();
+
+        dropzone.classList.add(
+          'dragover'
+        );
+      }
+    );
+
+
+    dropzone.addEventListener(
+      'dragleave',
+      () => {
+
+        dropzone.classList.remove(
+          'dragover'
+        );
+      }
+    );
+
+
+    dropzone.addEventListener(
+      'drop',
+      event => {
+
+        event.preventDefault();
+
+        dropzone.classList.remove(
+          'dragover'
+        );
+
+
+        const file =
+          event.dataTransfer
+            ?.files?.[0];
+
+        if (file) {
+          handleProofFile(
+            file
+          );
+        }
+      }
+    );
+  }
+
+
+  fileInput?.addEventListener(
+    'change',
+    event => {
+
+      const file =
+        event.target
+          .files?.[0];
+
+      if (file) {
+        handleProofFile(
+          file
+        );
+      }
+    }
+  );
+
+
+  removeBtn?.addEventListener(
+    'click',
+    event => {
+
+      event.stopPropagation();
+
+      resetProofUpload();
+    }
+  );
+}
+
+
+async function uploadProofFile(
+  file,
+  orderId
+) {
+
+  const extension =
+    (
+      file.name
+        .split('.')
+        .pop() ||
+      'jpg'
+    )
+    .toLowerCase();
+
+
+  const path =
+    `${currentUser.id}/${orderId}-${Date.now()}.${extension}`;
+
+
+  const {
+    error: uploadError
+  } =
+    await supabaseClient
+      .storage
+      .from('payment-proofs')
+      .upload(
+        path,
+        file,
+        {
+          contentType:
+            file.type,
+
+          upsert:
+            false
+        }
+      );
+
+
+  if (uploadError) {
+    throw uploadError;
+  }
+
+
+  return path;
+}
+
+
 async function declarePayment() {
 
   hideMessage();
@@ -3642,6 +3966,15 @@ async function declarePayment() {
   }
 
 
+  if (!selectedProofFile) {
+
+    return showMessage(
+      "Veuillez joindre une capture d'écran de votre paiement avant de continuer.",
+      'error'
+    );
+  }
+
+
   const button =
     $('paymentDoneBtn');
 
@@ -3658,6 +3991,10 @@ async function declarePayment() {
     button.textContent =
       'Confirmation...';
   }
+
+
+  const status =
+    $('proofUploadStatus');
 
 
   try {
@@ -3694,6 +4031,33 @@ async function declarePayment() {
 
 
     // --------------------------------------------------------
+    // ENVOI DE LA PREUVE DE PAIEMENT (bucket privé)
+    // --------------------------------------------------------
+
+    if (status) {
+      status.textContent =
+        'Envoi de la preuve de paiement...';
+      status.className =
+        '';
+    }
+
+
+    const proofPath =
+      await uploadProofFile(
+        selectedProofFile,
+        currentOrder.id
+      );
+
+
+    if (status) {
+      status.textContent =
+        'Preuve envoyée ✓';
+      status.className =
+        'success';
+    }
+
+
+    // --------------------------------------------------------
     // APPEL DE LA FONCTION SQL SÉCURISÉE
     // Aucun UPDATE direct depuis le navigateur.
     // --------------------------------------------------------
@@ -3706,7 +4070,10 @@ async function declarePayment() {
         'declare_order_payment',
         {
           p_order_id:
-            currentOrder.id
+            currentOrder.id,
+
+          p_payment_proof_url:
+            proofPath
         }
       );
 
@@ -3770,6 +4137,19 @@ async function declarePayment() {
     }
 
 
+    const dropzoneAfterSuccess =
+      $('proofDropzone');
+
+    if (dropzoneAfterSuccess) {
+
+      dropzoneAfterSuccess.style.pointerEvents =
+        'none';
+
+      dropzoneAfterSuccess.style.opacity =
+        '0.6';
+    }
+
+
     await loadOrderHistory();
 
 
@@ -3786,6 +4166,16 @@ async function declarePayment() {
       getSupabaseErrorMessage(error),
       'error'
     );
+
+
+    if (status) {
+
+      status.textContent =
+        "Échec de l'envoi. Réessayez.";
+
+      status.className =
+        'error';
+    }
 
 
     if (button) {
@@ -4751,13 +5141,6 @@ async function changePassword(
     );
 
 
-    if (
-      $('resetPage')?.classList.contains('active')
-    ) {
-      showAppPage();
-      showSubPage('homePage');
-    }
-
   } catch (error) {
 
     console.error(
@@ -4792,13 +5175,6 @@ function setupEvents() {
     ?.addEventListener(
       'submit',
       registerUser
-    );
-
-
-  $('forgotPasswordBtn')
-    ?.addEventListener(
-      'click',
-      requestPasswordReset
     );
 
 
@@ -4921,6 +5297,9 @@ function setupEvents() {
       'click',
       declarePayment
     );
+
+
+  initProofUploadEvents();
 
 
   $('viewOrderBtn')
@@ -5071,15 +5450,6 @@ function setupAuthListener() {
         currentUser =
           session?.user ||
           null;
-
-
-        if (
-          event ===
-            'PASSWORD_RECOVERY'
-        ) {
-          showResetPasswordPage();
-          return;
-        }
 
 
         if (
