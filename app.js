@@ -1240,6 +1240,19 @@ async function registerUser(
   }
 
 
+  if (
+    !/^\+226\d{8}$/.test(
+      phone
+    )
+  ) {
+
+    return showMessage(
+      'Veuillez saisir un numéro du Burkina Faso valide de 8 chiffres.',
+      'error'
+    );
+  }
+
+
   if (!email) {
 
     return showMessage(
@@ -1684,35 +1697,15 @@ async function loadAppSettings() {
       );
 
 
-    // Compatibilité avec les différents noms de colonnes utilisés par l'administration.
-    const getNumericSetting = (...values) => {
-      for (const value of values) {
-        if (value === null || value === undefined || value === '') continue;
-        const normalized = typeof value === 'string'
-          ? value.replace(/\s/g, '').replace(/,/g, '.')
-          : value;
-        const number = Number(normalized);
-        if (Number.isFinite(number)) return number;
-      }
-      return NaN;
-    };
-
     const usdtBalance =
-      getNumericSetting(
-        data.usdt_balance,
-        data.balance_usdt,
-        data.usdtBalance,
-        data.usdt_stock,
-        data.solde_usdt
+      Number(
+        data.usdt_balance
       );
 
+
     const fcfaBalance =
-      getNumericSetting(
-        data.fcfa_balance,
-        data.balance_fcfa,
-        data.fcfaBalance,
-        data.fcfa_stock,
-        data.solde_fcfa
+      Number(
+        data.fcfa_balance
       );
 
 
@@ -2894,7 +2887,7 @@ function reviewOrder() {
 
 
     if (
-      !/^(0\d{7}|\d{8})$/.test(
+      !/^\+226\d{8}$/.test(
         payoutPhone
       )
     ) {
@@ -5570,6 +5563,19 @@ async function saveProfile(
 
     return showMessage(
       'Veuillez saisir votre numéro.',
+      'error'
+    );
+  }
+
+
+  if (
+    !/^\+226\d{8}$/.test(
+      phone
+    )
+  ) {
+
+    return showMessage(
+      'Veuillez saisir un numéro du Burkina Faso valide de 8 chiffres.',
       'error'
     );
   }
