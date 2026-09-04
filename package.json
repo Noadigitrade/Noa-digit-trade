@@ -1,0 +1,14 @@
+{
+  "name": "noa-digit-trade",
+  "version": "1.0.0",
+  "description": "Plateforme d'achat et vente de USDT au Burkina Faso",
+  "type": "module",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js",
+    "build": "echo 'Static build ready'"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}

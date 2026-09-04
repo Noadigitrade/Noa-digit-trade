@@ -1,0 +1,8 @@
+{
+  "name": "NOA DIGIT TRADE",
+  "description": "NOA DIGIT TRADE - Achat et vente de USDT au Burkina Faso",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
