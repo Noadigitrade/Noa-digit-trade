@@ -96,7 +96,11 @@ const DEFAULT_SETTINGS = {
 
   orange_money_number: "74602553",
 
-  payment_method: "Orange Money"
+  payment_method: "Orange Money",
+
+  usdt_balance: 0,
+
+  fcfa_balance: 0
 
 };
 
@@ -718,6 +722,9 @@ async function adminLogin(event) {
 
     await loadDashboard();
 
+    initNotifUI();
+    initRealtimeAlerts();
+
   }
 
   catch (error) {
@@ -827,6 +834,9 @@ async function checkSession() {
 
 
     await loadDashboard();
+
+    initNotifUI();
+    initRealtimeAlerts();
 
   }
 
@@ -1158,6 +1168,30 @@ function fillSettingsForm() {
       "settingsBp20Fee"
     ],
     settings.bp20_fee_usdt
+  );
+
+
+  // ----------------------------------------------------------
+  // SOLDES DISPONIBLES
+  // ----------------------------------------------------------
+
+  setFieldValue(
+    [
+      "usdtBalanceInput",
+      "usdtBalance",
+      "adminUsdtBalance"
+    ],
+    settings.usdt_balance
+  );
+
+
+  setFieldValue(
+    [
+      "fcfaBalanceInput",
+      "fcfaBalance",
+      "adminFcfaBalance"
+    ],
+    settings.fcfa_balance
   );
 
 
@@ -1519,6 +1553,26 @@ async function saveSettings(event) {
     ]);
 
 
+  const usdtBalance =
+    Number(
+      getFieldValue([
+        "usdtBalanceInput",
+        "usdtBalance",
+        "adminUsdtBalance"
+      ])
+    );
+
+
+  const fcfaBalance =
+    Number(
+      getFieldValue([
+        "fcfaBalanceInput",
+        "fcfaBalance",
+        "adminFcfaBalance"
+      ])
+    );
+
+
   let paymentMethod =
     getFieldValue([
       "paymentMethod",
@@ -1702,6 +1756,40 @@ async function saveSettings(event) {
 
 
   // ----------------------------------------------------------
+  // VALIDATION SOLDES
+  // ----------------------------------------------------------
+
+  if (
+    !Number.isFinite(usdtBalance) ||
+    usdtBalance < 0
+  ) {
+
+    showMessage(
+      "settingsMessage",
+      "Le solde USDT doit être supérieur ou égal à 0."
+    );
+
+    return;
+
+  }
+
+
+  if (
+    !Number.isFinite(fcfaBalance) ||
+    fcfaBalance < 0
+  ) {
+
+    showMessage(
+      "settingsMessage",
+      "Le solde FCFA doit être supérieur ou égal à 0."
+    );
+
+    return;
+
+  }
+
+
+  // ----------------------------------------------------------
   // BOUTON
   // ----------------------------------------------------------
 
@@ -1757,7 +1845,13 @@ async function saveSettings(event) {
       orangeMoney,
 
     payment_method:
-      paymentMethod
+      paymentMethod,
+
+    usdt_balance:
+      usdtBalance,
+
+    fcfa_balance:
+      fcfaBalance
 
   };
 
@@ -4269,6 +4363,9 @@ function setupAuthListener() {
 
               await loadDashboard();
 
+              initNotifUI();
+              initRealtimeAlerts();
+
             },
             0
           );
@@ -4278,6 +4375,329 @@ function setupAuthListener() {
       }
     );
 
+}
+
+
+// ============================================================
+// NOTIFICATIONS TEMPS REEL
+// ============================================================
+
+let notifItems = [];
+
+
+function formatNotifTime(date) {
+
+  try {
+
+    return new Date(date).toLocaleString(
+      "fr-FR",
+      {
+
+        day: "2-digit",
+        month: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+
+      }
+    );
+
+  } catch (error) {
+
+    return "";
+  }
+}
+
+
+function renderNotifPanel() {
+
+  const list =
+    $("notifList");
+
+  const badge =
+    $("notifBadge");
+
+
+  if (badge) {
+
+    if (notifItems.length > 0) {
+
+      badge.textContent =
+        notifItems.length > 9
+          ? "9+"
+          : String(notifItems.length);
+
+      badge.classList.remove(
+        "hidden"
+      );
+
+    } else {
+
+      badge.classList.add(
+        "hidden"
+      );
+    }
+  }
+
+
+  if (!list) {
+
+    return;
+  }
+
+
+  if (notifItems.length === 0) {
+
+    list.innerHTML =
+      `<div class="notif-empty">Aucune notification pour le moment.</div>`;
+
+    return;
+  }
+
+
+  list.innerHTML =
+    notifItems
+      .map(
+        (item) => `
+
+          <div class="notif-item">
+
+            <div class="notif-item-title">
+              ${item.icon} ${escapeHtml(item.title)}
+            </div>
+
+            <div>
+              ${escapeHtml(item.description)}
+            </div>
+
+            <div class="notif-item-time">
+              ${formatNotifTime(item.time)}
+            </div>
+
+          </div>
+
+        `
+      )
+      .join("");
+}
+
+
+function pushNotification(
+  icon,
+  title,
+  description
+) {
+
+  notifItems.unshift({
+
+    icon,
+
+    title,
+
+    description,
+
+    time: new Date()
+
+  });
+
+
+  if (notifItems.length > 30) {
+
+    notifItems =
+      notifItems.slice(0, 30);
+  }
+
+
+  renderNotifPanel();
+
+
+  try {
+
+    if (
+      "Notification" in window &&
+      Notification.permission === "granted"
+    ) {
+
+      new Notification(
+        title,
+        {
+          body: description,
+          icon: undefined
+        }
+      );
+    }
+
+  } catch (error) {
+
+    console.error(
+      "Erreur notification navigateur :",
+      error
+    );
+  }
+}
+
+
+function initNotifUI() {
+
+  const bellBtn =
+    $("notifBellBtn");
+
+  const panel =
+    $("notifPanel");
+
+  const clearBtn =
+    $("notifClearBtn");
+
+
+  bellBtn?.addEventListener(
+    "click",
+    () => {
+
+      panel?.classList.toggle(
+        "hidden"
+      );
+    }
+  );
+
+
+  clearBtn?.addEventListener(
+    "click",
+    () => {
+
+      notifItems = [];
+
+      renderNotifPanel();
+    }
+  );
+
+
+  document.addEventListener(
+    "click",
+    (event) => {
+
+      if (
+        !panel ||
+        panel.classList.contains("hidden")
+      ) {
+
+        return;
+      }
+
+
+      if (
+        panel.contains(event.target) ||
+        bellBtn?.contains(event.target)
+      ) {
+
+        return;
+      }
+
+
+      panel.classList.add(
+        "hidden"
+      );
+    }
+  );
+}
+
+
+let realtimeAlertsInitialized = false;
+
+
+function initRealtimeAlerts() {
+
+  if (realtimeAlertsInitialized) {
+
+    return;
+  }
+
+  realtimeAlertsInitialized = true;
+
+  try {
+
+    if (
+      "Notification" in window &&
+      Notification.permission === "default"
+    ) {
+
+      Notification.requestPermission();
+    }
+
+  } catch (error) {
+
+    console.error(
+      "Erreur permission notification :",
+      error
+    );
+  }
+
+
+  try {
+
+    supabaseClient
+      .channel("admin-orders-alerts")
+      .on(
+        "postgres_changes",
+        {
+
+          event: "INSERT",
+          schema: "public",
+          table: "orders"
+
+        },
+        (payload) => {
+
+          const order =
+            payload.new || {};
+
+          const side =
+            order.side === "sell"
+              ? "Vente"
+              : "Achat";
+
+          pushNotification(
+            "🛒",
+            "Nouvelle commande",
+            `${side} — commande #${String(order.id || "").slice(0, 8)}`
+          );
+        }
+      )
+      .subscribe();
+
+
+    supabaseClient
+      .channel("admin-users-alerts")
+      .on(
+        "postgres_changes",
+        {
+
+          event: "INSERT",
+          schema: "public",
+          table: "profiles"
+
+        },
+        (payload) => {
+
+          const profile =
+            payload.new || {};
+
+          pushNotification(
+            "👤",
+            "Nouvel utilisateur",
+            profile.full_name ||
+              profile.email ||
+              "Un nouvel utilisateur s'est inscrit."
+          );
+        }
+      )
+      .subscribe();
+
+  } catch (error) {
+
+    console.error(
+      "Erreur abonnement temps réel :",
+      error
+    );
+  }
 }
 
 
