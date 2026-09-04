@@ -6544,3 +6544,27 @@ if (
 
   boot();
 }
+
+
+// ============================================================
+// PWA - ENREGISTREMENT DU SERVICE WORKER
+// ============================================================
+
+if ('serviceWorker' in navigator) {
+
+  window.addEventListener(
+    'load',
+    () => {
+
+      navigator.serviceWorker
+        .register('sw.js')
+        .catch((error) => {
+
+          console.error(
+            'Erreur service worker :',
+            error
+          );
+        });
+    }
+  );
+}
