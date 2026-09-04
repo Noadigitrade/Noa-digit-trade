@@ -2418,16 +2418,26 @@ function calculateOrder() {
     amount;
 
 
-  const netUsdt =
-    Math.max(
-      usdtAmount - fee,
-      0
-    );
+  /*
+   * VENTE :
+   * Le vendeur envoie toute la quantité d'USDT saisie.
+   * Les frais sont déduits du montant FCFA qu'il reçoit.
+   */
+  const grossCfa =
+    usdtAmount *
+    CONFIG.sellRate;
+
+
+  const feeCfa =
+    fee *
+    CONFIG.sellRate;
 
 
   const receiveCfa =
-    netUsdt *
-    CONFIG.sellRate;
+    Math.max(
+      grossCfa - feeCfa,
+      0
+    );
 
 
   return {
@@ -2436,8 +2446,7 @@ function calculateOrder() {
       'sell',
 
     amountCfa:
-      usdtAmount *
-      CONFIG.sellRate,
+      grossCfa,
 
     usdtAmount:
       usdtAmount,
@@ -2445,8 +2454,11 @@ function calculateOrder() {
     feeUsdt:
       fee,
 
+    feeCfa:
+      feeCfa,
+
     netUsdt:
-      netUsdt,
+      usdtAmount,
 
     receiveCfa:
       receiveCfa,
@@ -2538,8 +2550,15 @@ function updateCalculator() {
 
   if ($('summaryFee')) {
 
+    const sellFeeCfa =
+      Number(c.feeCfa) ||
+      (
+        Number(c.feeUsdt) *
+        Number(c.rate)
+      );
+
     $('summaryFee').textContent =
-      `${c.feeUsdt} USDT`;
+      `${formatNumber(sellFeeCfa)} FCFA`;
   }
 
 
@@ -2839,11 +2858,11 @@ function reviewOrder() {
 
 
     if (
-      c.netUsdt <= 0
+      c.receiveCfa <= 0
     ) {
 
       return showMessage(
-        "La quantité d'USDT après frais est insuffisante.",
+        "Le montant à recevoir après frais est insuffisant.",
         'error'
       );
     }
@@ -2966,6 +2985,9 @@ function reviewOrder() {
 
     feeUsdt:
       c.feeUsdt,
+
+    feeCfa:
+      c.feeCfa || 0,
 
     netUsdt:
       c.netUsdt,
@@ -3132,16 +3154,22 @@ function renderConfirmation() {
     </div>
 
     <div class="summary-row">
-      <span>Frais réseau</span>
+      <span>Frais réseau déduits</span>
       <strong>
-        ${Number(currentOrder.feeUsdt)} USDT
+        ${formatNumber(
+          Number(currentOrder.feeCfa) ||
+          (
+            Number(currentOrder.feeUsdt) *
+            Number(currentOrder.rate)
+          )
+        )} FCFA
       </strong>
     </div>
 
     <div class="summary-row">
-      <span>USDT après frais</span>
+      <span>Montant brut</span>
       <strong>
-        ${Number(currentOrder.netUsdt).toFixed(6)} USDT
+        ${formatNumber(currentOrder.amountCfa)} FCFA
       </strong>
     </div>
 
