@@ -2175,59 +2175,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
 
-<!-- AFFICHAGE / MASQUAGE MOT DE PASSE -->
-
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-
-  document
-    .querySelectorAll(".password-toggle")
-    .forEach(function (button) {
-
-      button.addEventListener("click", function () {
-
-        const target =
-          button.getAttribute("data-password-target");
-
-        const input =
-          document.getElementById(target);
-
-        if (!input) {
-          return;
-        }
-
-        if (input.type === "password") {
-
-          input.type = "text";
-
-          button.textContent = "🙈";
-
-          button.setAttribute(
-            "aria-label",
-            "Masquer le mot de passe"
-          );
-
-        } else {
-
-          input.type = "password";
-
-          button.textContent = "👁️";
-
-          button.setAttribute(
-            "aria-label",
-            "Afficher le mot de passe"
-          );
-
-        }
-
-      });
-
-    });
-
-});
-</script>
-
-
 <!-- APPLICATION -->
 
 <script src="app.js"></script>
