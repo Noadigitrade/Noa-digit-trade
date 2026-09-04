@@ -734,41 +734,99 @@ async function sendPasswordReset(
 }
 
 
+function getPasswordInput(
+  toggleBtn,
+  targetId
+) {
+
+  if (targetId) {
+
+    const directInput =
+      $(targetId);
+
+    if (directInput) {
+
+      return directInput;
+    }
+  }
+
+
+  const explicitTarget =
+    toggleBtn?.getAttribute?.(
+      'data-target'
+    ) ||
+    toggleBtn?.dataset?.target;
+
+  if (explicitTarget) {
+
+    const id =
+      explicitTarget.replace(
+        /^#/,
+        ''
+      );
+
+    const explicitInput =
+      $(id);
+
+    if (explicitInput) {
+
+      return explicitInput;
+    }
+  }
+
+
+  const form =
+    toggleBtn?.closest?.(
+      'form'
+    );
+
+  const localInput =
+    toggleBtn?.parentElement?.querySelector?.(
+      'input[type="password"], input[type="text"][data-password]'
+    ) ||
+    toggleBtn?.closest?.(
+      '.password-field, .password-wrapper, .input-wrapper, .form-group, .field'
+    )?.querySelector?.(
+      'input[type="password"], input[type="text"][data-password]'
+    );
+
+  if (localInput) {
+
+    return localInput;
+  }
+
+
+  const formPassword =
+    form?.querySelector?.(
+      'input[type="password"], input[id*="Password"], input[name*="password"]'
+    );
+
+  if (formPassword) {
+
+    return formPassword;
+  }
+
+
+  return null;
+}
+
+
 function togglePassword(
   targetId,
   toggleBtn
 ) {
 
-  let input =
-    targetId &&
-    $(targetId);
-
-  /*
-   * Compatibilité :
-   * si le bouton n'a pas de cible précise,
-   * on cherche le champ password dans le même conteneur.
-   */
-  if (
-    !input &&
-    toggleBtn
-  ) {
-
-    const container =
-      toggleBtn.closest(
-        '.password-field, .password-wrapper, .input-wrapper, .form-group, .field'
-      );
-
-    input =
-      container?.querySelector(
-        'input[type="password"], input[data-password]'
-      ) ||
-      toggleBtn.parentElement?.querySelector(
-        'input[type="password"], input[type="text"]'
-      );
-  }
-
+  const input =
+    getPasswordInput(
+      toggleBtn,
+      targetId
+    );
 
   if (!input) {
+
+    console.warn(
+      'Champ mot de passe introuvable.'
+    );
 
     return false;
   }
@@ -798,13 +856,6 @@ function togglePassword(
         ? 'Masquer le mot de passe'
         : 'Afficher le mot de passe'
     );
-
-    toggleBtn.setAttribute(
-      'aria-pressed',
-      isHidden
-        ? 'true'
-        : 'false'
-    );
   }
 
 
@@ -812,13 +863,15 @@ function togglePassword(
 }
 
 
+/*
+ * Disponible aussi pour les boutons HTML utilisant onclick="togglePassword(...)"
+ */
+window.togglePassword =
+  togglePassword;
+
+
 function initPasswordToggles() {
 
-  /*
-   * Délégation d'événement :
-   * cela fonctionne même si les formulaires ou les boutons
-   * sont affichés/masqués ou recréés après le chargement.
-   */
   if (
     document.documentElement.dataset
       .passwordTogglesReady ===
@@ -840,7 +893,7 @@ function initPasswordToggles() {
 
       const toggleBtn =
         event.target.closest?.(
-          '.password-toggle, [data-password-target], [data-password-toggle], [aria-label*="mot de passe"]'
+          '.password-toggle, .toggle-password, .password-eye, .password-visibility, [data-password-target], [data-password-toggle], [data-toggle-password], [id*="togglePassword"], [id*="PasswordToggle"]'
         );
 
       if (!toggleBtn) {
@@ -853,12 +906,14 @@ function initPasswordToggles() {
 
 
       const targetId =
-        toggleBtn.dataset
-          ?.passwordTarget ||
-        toggleBtn.dataset
-          ?.passwordToggle ||
-        toggleBtn.getAttribute(
+        toggleBtn.dataset?.passwordTarget ||
+        toggleBtn.dataset?.passwordToggle ||
+        toggleBtn.dataset?.togglePassword ||
+        toggleBtn.getAttribute?.(
           'data-target'
+        )?.replace(
+          /^#/,
+          ''
         );
 
 
@@ -867,6 +922,99 @@ function initPasswordToggles() {
         toggleBtn
       );
     }
+  );
+}
+
+
+function initWhatsAppButton() {
+
+  /*
+   * Le bouton est créé directement par JavaScript afin
+   * de rester présent sur toutes les pages de l'application.
+   */
+  if (
+    document.getElementById(
+      'floatingWhatsAppButton'
+    )
+  ) {
+
+    return;
+  }
+
+
+  const style =
+    document.createElement(
+      'style'
+    );
+
+  style.textContent =
+    `
+      #floatingWhatsAppButton {
+        position: fixed;
+        right: 18px;
+        bottom: 88px;
+        width: 58px;
+        height: 58px;
+        border: none;
+        border-radius: 50%;
+        background: #25D366;
+        color: #ffffff;
+        font-size: 30px;
+        line-height: 58px;
+        text-align: center;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, .28);
+        z-index: 99999;
+        cursor: pointer;
+      }
+
+      #floatingWhatsAppButton:active {
+        transform: scale(.96);
+      }
+    `;
+
+  document.head.appendChild(
+    style
+  );
+
+
+  const button =
+    document.createElement(
+      'button'
+    );
+
+  button.id =
+    'floatingWhatsAppButton';
+
+  button.type =
+    'button';
+
+  button.setAttribute(
+    'aria-label',
+    'Contacter le support sur WhatsApp'
+  );
+
+  button.title =
+    'Contacter le support sur WhatsApp';
+
+  button.textContent =
+    '💬';
+
+
+  button.addEventListener(
+    'click',
+    () => {
+
+      window.open(
+        'https://wa.me/22662591922',
+        '_blank',
+        'noopener,noreferrer'
+      );
+    }
+  );
+
+
+  document.body.appendChild(
+    button
   );
 }
 
@@ -5931,6 +6079,9 @@ function setupEvents() {
 
 
   initPasswordToggles();
+
+
+  initWhatsAppButton();
 
 
   $('logoutBtn')
