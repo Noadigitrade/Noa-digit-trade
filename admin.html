@@ -3224,14 +3224,33 @@ function renderOrders() {
               <div><strong>Date :</strong> ${escapeHtml(formatDate(order.created_at))}</div>
             </div>
 
-            <button
-              type="button"
-              class="btn btn-primary btn-small"
-              style="margin-top:12px;"
-              data-order-id="${escapeHtml(order.id)}"
-            >
-              Modifier le statut
-            </button>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;">
+              ${
+                order.payment_proof_url
+                  ? `
+                    <button
+                      type="button"
+                      class="btn btn-secondary btn-small"
+                      data-proof-path="${escapeHtml(order.payment_proof_url)}"
+                    >
+                      📎 Voir la preuve
+                    </button>
+                  `
+                  : `
+                    <span style="font-size:11px;color:#7b8493;">
+                      Aucune preuve jointe
+                    </span>
+                  `
+              }
+
+              <button
+                type="button"
+                class="btn btn-primary btn-small"
+                data-order-id="${escapeHtml(order.id)}"
+              >
+                Modifier le statut
+              </button>
+            </div>
           </div>
         `;
       }
@@ -3252,7 +3271,126 @@ function renderOrders() {
       }
     );
 
+  container
+    .querySelectorAll('[data-proof-path]')
+    .forEach(
+      function(button) {
+        button.addEventListener(
+          'click',
+          async function() {
+            await openPaymentProof(
+              button.dataset.proofPath
+            );
+          }
+        );
+      }
+    );
+
 }
+
+async function openPaymentProof(proofPath) {
+
+  if (!proofPath) {
+    showAdminMessage(
+      'Aucune preuve de paiement n’est disponible pour cette commande.',
+      'info'
+    );
+    return;
+  }
+
+  const originalButton =
+    document.activeElement;
+
+  if (
+    originalButton &&
+    originalButton.tagName === 'BUTTON'
+  ) {
+    originalButton.disabled = true;
+  }
+
+  showAdminMessage(
+    'Ouverture de la preuve de paiement...',
+    'info'
+  );
+
+  try {
+
+    /*
+     * Le bucket "payment-proofs" est privé.
+     * Le client enregistre donc seulement le chemin du fichier.
+     * L'administration doit créer une URL signée temporaire.
+     */
+    const {
+      data,
+      error
+    } =
+      await supabaseClient
+        .storage
+        .from('payment-proofs')
+        .createSignedUrl(
+          proofPath,
+          60 * 10
+        );
+
+    if (error) {
+      throw error;
+    }
+
+    if (!data?.signedUrl) {
+      throw new Error(
+        'Impossible de générer le lien sécurisé de la preuve.'
+      );
+    }
+
+    const proofWindow =
+      window.open(
+        data.signedUrl,
+        '_blank',
+        'noopener,noreferrer'
+      );
+
+    if (!proofWindow) {
+      showAdminMessage(
+        'La preuve est prête, mais le navigateur a bloqué son ouverture. Autorisez les fenêtres contextuelles puis réessayez.',
+        'error'
+      );
+      return;
+    }
+
+    showAdminMessage(
+      'Preuve de paiement ouverte.',
+      'success'
+    );
+
+  } catch (error) {
+
+    console.error(
+      'Erreur ouverture preuve de paiement:',
+      error
+    );
+
+    showAdminMessage(
+      'Impossible d’ouvrir la preuve : ' +
+      (
+        error?.message ||
+        'erreur inconnue'
+      ),
+      'error'
+    );
+
+  } finally {
+
+    if (
+      originalButton &&
+      originalButton.tagName === 'BUTTON'
+    ) {
+      originalButton.disabled = false;
+    }
+
+  }
+
+}
+
 
 async function openOrderStatus(orderId) {
 
