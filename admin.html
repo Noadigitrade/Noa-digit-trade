@@ -2289,7 +2289,7 @@ function switchAdminPage(pageId) {
 
 
   if (pageId === 'ordersAdminPage') {
-    renderOrders();
+    loadOrders();
   }
 
   if (pageId === 'usersAdminPage') {
@@ -3083,22 +3083,43 @@ if (settingsForm) {
 
 async function loadOrders() {
 
-  const {
-    data,
-    error
-  } =
-    await supabaseClient
-      .from('orders')
-      .select('*')
-      .order(
-        'created_at',
-        {
-          ascending: false
-        }
-      );
+  const container =
+    document.getElementById('ordersList');
 
+  if (container) {
+    container.innerHTML =
+      '<div class="empty">Chargement des commandes...</div>';
+  }
 
-  if (error) {
+  try {
+
+    const {
+      data,
+      error
+    } =
+      await supabaseClient
+        .from('orders')
+        .select('*')
+        .order(
+          'created_at',
+          {
+            ascending: false
+          }
+        );
+
+    if (error) {
+      throw error;
+    }
+
+    allOrders =
+      Array.isArray(data)
+        ? data
+        : [];
+
+    renderOrders();
+    renderRecentOrders();
+
+  } catch (error) {
 
     console.error(
       'Erreur commandes:',
@@ -3107,207 +3128,131 @@ async function loadOrders() {
 
     allOrders = [];
 
-    renderOrders();
-    renderRecentOrders();
+    if (container) {
+      container.innerHTML =
+        '<div class="empty">Impossible de charger les commandes. Vérifiez les autorisations Supabase puis réessayez.</div>';
+    }
 
-    return;
+    renderRecentOrders();
 
   }
 
-
-  allOrders =
-    Array.isArray(data)
-      ? data
-      : [];
-
-
-  renderOrders();
-  renderRecentOrders();
-
 }
-
 
 function renderOrders() {
 
-  const tbody =
-    document.getElementById(
-      'ordersTableBody'
-    );
+  const container =
+    document.getElementById('ordersList');
 
-
-  if (!tbody) return;
-
+  if (!container) return;
 
   const statusFilter =
-    document.getElementById(
-      'orderStatusFilter'
-    )?.value || '';
-
+    document.getElementById('orderStatusFilter')?.value || '';
 
   const typeFilter =
-    document.getElementById(
-      'orderTypeFilter'
-    )?.value || '';
-
+    document.getElementById('orderTypeFilter')?.value || '';
 
   let orders =
     [...allOrders];
 
-
   if (statusFilter) {
-
-    orders =
-      orders.filter(
-        order =>
-          normalizeStatus(
-            order.status
-          ) === statusFilter
-      );
-
+    orders = orders.filter(
+      order =>
+        normalizeStatus(order.status) === statusFilter
+    );
   }
-
 
   if (typeFilter) {
-
-    orders =
-      orders.filter(
-        order =>
-          String(
-            order.order_type || ''
-          ).toLowerCase() ===
-          typeFilter
-      );
-
+    orders = orders.filter(
+      order =>
+        String(
+          order.side || order.order_type || ''
+        ).toLowerCase() === typeFilter
+    );
   }
-
 
   if (!orders.length) {
-
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="8">
-          <div class="empty">
-            Aucune commande trouvée.
-          </div>
-        </td>
-      </tr>
-    `;
-
+    container.innerHTML =
+      '<div class="empty">Aucune commande trouvée.</div>';
     return;
-
   }
 
-
-  tbody.innerHTML =
+  container.innerHTML =
     orders.map(
       function(order) {
 
         const status =
-          normalizeStatus(
-            order.status
+          normalizeStatus(order.status);
+
+        const side =
+          String(
+            order.side || order.order_type || ''
+          ).toLowerCase();
+
+        const type =
+          side === 'sell'
+            ? 'Vente USDT'
+            : 'Achat USDT';
+
+        const amountCfa =
+          Number(
+            order.amount_cfa ??
+            order.amount ??
+            0
           );
 
-        const orderId =
-          escapeHtml(
-            order.id
+        const amountUsdt =
+          Number(
+            order.amount_usdt ??
+            order.usdt_amount ??
+            0
           );
 
         return `
-          <tr>
-
-            <td>
-              <strong>
-                ${orderId}
-              </strong>
-            </td>
-
-            <td>
-              ${escapeHtml(
-                order.user_id || '—'
-              )}
-            </td>
-
-            <td>
-              ${escapeHtml(
-                orderTypeLabel(
-                  order.order_type
-                )
-              )}
-            </td>
-
-            <td>
-              ${formatNumber(
-                order.amount_cfa
-              )}
-              FCFA
-            </td>
-
-            <td>
-              ${networkLabel(
-                order.network
-              )}
-            </td>
-
-            <td>
-              <span
-                class="status ${escapeHtml(
-                  statusClass(status)
-                )}"
-              >
-                ${escapeHtml(
-                  statusLabel(status)
-                )}
+          <div class="order-detail" style="margin-bottom:12px;">
+            <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;">
+              <strong>${escapeHtml(type)}</strong>
+              <span class="status ${escapeHtml(statusClass(status))}">
+                ${escapeHtml(statusLabel(status))}
               </span>
-            </td>
+            </div>
 
-            <td>
-              ${formatDate(
-                order.created_at
-              )}
-            </td>
+            <div style="margin-top:10px;">
+              <div><strong>Montant :</strong> ${formatNumber(amountCfa)} FCFA</div>
+              <div><strong>USDT :</strong> ${formatUsdt(amountUsdt)} USDT</div>
+              <div><strong>Réseau :</strong> ${escapeHtml(networkLabel(order.network))}</div>
+              <div><strong>Date :</strong> ${escapeHtml(formatDate(order.created_at))}</div>
+            </div>
 
-            <td>
-
-              <button
-                type="button"
-                class="btn btn-primary btn-small"
-                data-order-id="${orderId}"
-              >
-                Modifier
-              </button>
-
-            </td>
-
-          </tr>
+            <button
+              type="button"
+              class="btn btn-primary btn-small"
+              style="margin-top:12px;"
+              data-order-id="${escapeHtml(order.id)}"
+            >
+              Modifier le statut
+            </button>
+          </div>
         `;
-
       }
     ).join('');
 
-
-  tbody
-    .querySelectorAll(
-      '[data-order-id]'
-    )
+  container
+    .querySelectorAll('[data-order-id]')
     .forEach(
       function(button) {
-
         button.addEventListener(
           'click',
           function() {
-
             openOrderStatus(
               button.dataset.orderId
             );
-
           }
         );
-
       }
     );
 
 }
-
 
 async function openOrderStatus(orderId) {
 
