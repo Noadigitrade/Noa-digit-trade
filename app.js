@@ -872,56 +872,179 @@ window.togglePassword =
 
 function initPasswordToggles() {
 
-  if (
-    document.documentElement.dataset
-      .passwordTogglesReady ===
-    'true'
-  ) {
+  function toggleFromButton(button) {
 
-    return;
+    if (!button) {
+      return;
+    }
+
+    const targetId =
+      button.getAttribute('data-password-target') ||
+      button.getAttribute('data-target') ||
+      button.dataset?.passwordTarget ||
+      button.dataset?.target;
+
+    let input = null;
+
+    if (targetId) {
+      input = document.getElementById(
+        targetId.replace(/^#/, '')
+      );
+    }
+
+    if (!input) {
+      const wrapper =
+        button.closest('.password-wrapper');
+
+      input =
+        wrapper?.querySelector(
+          'input'
+        ) || null;
+    }
+
+    if (!input) {
+      return;
+    }
+
+    const showPassword =
+      input.type === 'password';
+
+    input.type =
+      showPassword
+        ? 'text'
+        : 'password';
+
+    button.textContent =
+      showPassword
+        ? '🙈'
+        : '👁️';
+
+    button.setAttribute(
+      'aria-label',
+      showPassword
+        ? 'Masquer le mot de passe'
+        : 'Afficher le mot de passe'
+    );
   }
 
 
-  document.documentElement.dataset
-    .passwordTogglesReady =
-    'true';
+  function bindPasswordButtons() {
+
+    document
+      .querySelectorAll(
+        '.password-toggle, [data-password-target]'
+      )
+      .forEach(
+        button => {
+
+          if (
+            button.dataset.passwordToggleBound ===
+            'true'
+          ) {
+            return;
+          }
+
+          button.dataset.passwordToggleBound =
+            'true';
+
+          button.addEventListener(
+            'click',
+            event => {
+
+              event.preventDefault();
+              event.stopPropagation();
+
+              toggleFromButton(
+                event.currentTarget
+              );
+            },
+            true
+          );
+        }
+      );
+  }
 
 
+  /*
+   * Liaison immédiate aux boutons déjà présents.
+   */
+  bindPasswordButtons();
+
+
+  /*
+   * Certains éléments peuvent être recréés dynamiquement.
+   * On les relie automatiquement dès qu'ils apparaissent.
+   */
+  const observer =
+    new MutationObserver(
+      () => {
+        bindPasswordButtons();
+      }
+    );
+
+  observer.observe(
+    document.documentElement,
+    {
+      childList: true,
+      subtree: true
+    }
+  );
+
+
+  /*
+   * Sécurité supplémentaire : capture le clic avant
+   * les autres gestionnaires de la page.
+   */
   document.addEventListener(
     'click',
     event => {
 
-      const toggleBtn =
-        event.target.closest?.(
-          '.password-toggle, .toggle-password, .password-eye, .password-visibility, [data-password-target], [data-password-toggle], [data-toggle-password], [id*="togglePassword"], [id*="PasswordToggle"]'
+      const path =
+        event.composedPath
+          ? event.composedPath()
+          : [];
+
+      const button =
+        path.find(
+          item =>
+            item?.nodeType === 1 &&
+            item.matches?.(
+              '.password-toggle, [data-password-target]'
+            )
+        ) ||
+        event.target?.closest?.(
+          '.password-toggle, [data-password-target]'
         );
 
-      if (!toggleBtn) {
-
+      if (!button) {
         return;
       }
 
+      if (
+        button.dataset.passwordToggleHandled ===
+        'true'
+      ) {
+        return;
+      }
+
+      button.dataset.passwordToggleHandled =
+        'true';
 
       event.preventDefault();
 
-
-      const targetId =
-        toggleBtn.dataset?.passwordTarget ||
-        toggleBtn.dataset?.passwordToggle ||
-        toggleBtn.dataset?.togglePassword ||
-        toggleBtn.getAttribute?.(
-          'data-target'
-        )?.replace(
-          /^#/,
-          ''
-        );
-
-
-      togglePassword(
-        targetId,
-        toggleBtn
+      toggleFromButton(
+        button
       );
-    }
+
+      setTimeout(
+        () => {
+          button.dataset.passwordToggleHandled =
+            'false';
+        },
+        0
+      );
+    },
+    true
   );
 }
 
