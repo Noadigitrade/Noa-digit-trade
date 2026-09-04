@@ -75,6 +75,21 @@ const CONFIG = {
     displayNumber:
       '74 60 25 53'
 
+  },
+
+  binance: {
+
+    id:
+      '37467149'
+
+  },
+
+  balances: {
+
+    usdt: 0,
+
+    fcfa: 0
+
   }
 
 };
@@ -203,14 +218,30 @@ function formatDate(value) {
 
 function normalizePhone(phone) {
 
-  return String(
-    phone || ''
-  )
-    .replace(
-      /\s+/g,
-      ''
-    )
-    .trim();
+  let digits =
+    String(phone || '')
+      .replace(
+        /\D/g,
+        ''
+      );
+
+  if (digits.startsWith('00226')) {
+
+    digits =
+      digits.slice(5);
+
+  } else if (digits.startsWith('226')) {
+
+    digits =
+      digits.slice(3);
+  }
+
+  if (!digits) {
+
+    return '';
+  }
+
+  return `+226${digits}`;
 }
 
 
@@ -575,6 +606,295 @@ function showRegisterForm() {
 
   $('registerForm')?.classList.add(
     'active'
+  );
+}
+
+
+function showForgotPasswordForm() {
+
+  $('loginForm')?.classList.remove(
+    'active'
+  );
+
+  $('registerForm')?.classList.remove(
+    'active'
+  );
+
+  $('forgotPasswordForm')?.classList.add(
+    'active'
+  );
+}
+
+
+async function sendPasswordReset(
+  event
+) {
+
+  event.preventDefault();
+
+  hideMessage();
+
+
+  const email =
+    (
+      $('forgotPasswordEmail')
+        ?.value
+        .trim() || ''
+    ).toLowerCase();
+
+
+  if (!email) {
+
+    return showMessage(
+      'Veuillez saisir votre adresse email.',
+      'error'
+    );
+  }
+
+
+  const button =
+    event.submitter ||
+    $('forgotPasswordForm')
+      ?.querySelector(
+        'button[type="submit"]'
+      );
+
+  const original =
+    button?.textContent;
+
+  if (button) {
+
+    button.disabled =
+      true;
+
+    button.textContent =
+      'Envoi en cours...';
+  }
+
+
+  try {
+
+    const {
+      error
+    } =
+      await supabaseClient.auth
+        .resetPasswordForEmail(
+          email,
+          {
+
+            redirectTo:
+              window.location.origin +
+              window.location.pathname
+
+          }
+        );
+
+
+    if (error) {
+
+      throw error;
+    }
+
+
+    showMessage(
+      'Un email de réinitialisation a été envoyé si ce compte existe.',
+      'success'
+    );
+
+
+    showLoginForm();
+
+  } catch (error) {
+
+    console.error(
+      'Erreur réinitialisation :',
+      error
+    );
+
+    showMessage(
+      getSupabaseErrorMessage(
+        error
+      ) ||
+      "Impossible d'envoyer l'email de réinitialisation.",
+      'error'
+    );
+
+  } finally {
+
+    if (button) {
+
+      button.disabled =
+        false;
+
+      button.textContent =
+        original ||
+        'Envoyer le lien de réinitialisation';
+    }
+  }
+}
+
+
+function initPasswordToggles() {
+
+  document
+    .querySelectorAll(
+      '.password-toggle'
+    )
+    .forEach(
+      (toggleBtn) => {
+
+        toggleBtn.addEventListener(
+          'click',
+          () => {
+
+            const targetId =
+              toggleBtn.dataset
+                .passwordTarget;
+
+            const input =
+              targetId &&
+              $(targetId);
+
+            if (!input) {
+
+              return;
+            }
+
+
+            const isHidden =
+              input.type ===
+              'password';
+
+            input.type =
+              isHidden
+                ? 'text'
+                : 'password';
+
+            toggleBtn.textContent =
+              isHidden
+                ? '🙈'
+                : '👁️';
+
+            toggleBtn.setAttribute(
+              'aria-label',
+              isHidden
+                ? 'Masquer le mot de passe'
+                : 'Afficher le mot de passe'
+            );
+          }
+        );
+      }
+    );
+}
+
+
+function copyToClipboard(
+  text,
+  button
+) {
+
+  if (!text) {
+
+    return;
+  }
+
+
+  const originalLabel =
+    button?.textContent;
+
+
+  const onCopied = () => {
+
+    if (!button) {
+
+      return;
+    }
+
+    button.textContent =
+      '✅ Copié !';
+
+    setTimeout(
+      () => {
+
+        button.textContent =
+          originalLabel ||
+          '📋 Copier';
+
+      },
+      2000
+    );
+  };
+
+
+  if (
+    navigator.clipboard &&
+    window.isSecureContext
+  ) {
+
+    navigator.clipboard
+      .writeText(text)
+      .then(onCopied)
+      .catch(
+        () => {
+
+          fallbackCopy(
+            text
+          );
+
+          onCopied();
+        }
+      );
+
+    return;
+  }
+
+
+  fallbackCopy(text);
+
+  onCopied();
+}
+
+
+function fallbackCopy(text) {
+
+  const textarea =
+    document.createElement(
+      'textarea'
+    );
+
+  textarea.value =
+    text;
+
+  textarea.style.position =
+    'fixed';
+
+  textarea.style.opacity =
+    '0';
+
+  document.body.appendChild(
+    textarea
+  );
+
+  textarea.select();
+
+
+  try {
+
+    document.execCommand(
+      'copy'
+    );
+
+  } catch (error) {
+
+    console.error(
+      'Erreur copie presse-papiers :',
+      error
+    );
+  }
+
+
+  document.body.removeChild(
+    textarea
   );
 }
 
@@ -1352,13 +1672,27 @@ async function loadAppSettings() {
 
     const trc20Fee =
       Number(
-        data.trc20_fee
+        data.trc20_fee ??
+        data.trc20_fee_usdt
       );
 
 
     const bp20Fee =
       Number(
-        data.bp20_fee
+        data.bp20_fee ??
+        data.bp20_fee_usdt
+      );
+
+
+    const usdtBalance =
+      Number(
+        data.usdt_balance
+      );
+
+
+    const fcfaBalance =
+      Number(
+        data.fcfa_balance
       );
 
 
@@ -1435,6 +1769,30 @@ async function loadAppSettings() {
         .bp20
         .fee =
         bp20Fee;
+    }
+
+
+    if (
+      Number.isFinite(
+        usdtBalance
+      ) &&
+      usdtBalance >= 0
+    ) {
+
+      CONFIG.balances.usdt =
+        usdtBalance;
+    }
+
+
+    if (
+      Number.isFinite(
+        fcfaBalance
+      ) &&
+      fcfaBalance >= 0
+    ) {
+
+      CONFIG.balances.fcfa =
+        fcfaBalance;
     }
 
 
@@ -2144,6 +2502,9 @@ function updateCalculator() {
     }
 
 
+    updateBalanceUI(c);
+
+
     return;
   }
 
@@ -2180,6 +2541,106 @@ function updateCalculator() {
 
     $('summaryResult').textContent =
       `${formatNumber(c.receiveCfa)} FCFA`;
+  }
+
+
+  updateBalanceUI(c);
+}
+
+
+// ============================================================
+// SOLDE DISPONIBLE
+// ============================================================
+
+function updateBalanceUI(c) {
+
+  const box =
+    $('availableBalanceBox');
+
+  const valueEl =
+    $('availableBalanceValue');
+
+  const alertEl =
+    $('insufficientBalanceAlert');
+
+  const reviewBtn =
+    $('reviewOrderBtn');
+
+
+  if (!box || !valueEl) {
+
+    return;
+  }
+
+
+  let available = 0;
+
+  let needed = 0;
+
+  let unit = '';
+
+
+  if (
+    currentExchangeType ===
+    'buy'
+  ) {
+
+    available =
+      Number(
+        CONFIG.balances.usdt
+      ) || 0;
+
+    needed =
+      c.usdtAmount;
+
+    unit =
+      'USDT';
+
+    valueEl.textContent =
+      `${available.toFixed(2)} USDT`;
+
+  } else {
+
+    available =
+      Number(
+        CONFIG.balances.fcfa
+      ) || 0;
+
+    needed =
+      c.receiveCfa;
+
+    unit =
+      'FCFA';
+
+    valueEl.textContent =
+      `${formatNumber(available)} FCFA`;
+  }
+
+
+  const insufficient =
+    needed > 0 &&
+    needed > available;
+
+
+  box.classList.toggle(
+    'insufficient',
+    insufficient
+  );
+
+
+  if (alertEl) {
+
+    alertEl.classList.toggle(
+      'visible',
+      insufficient
+    );
+  }
+
+
+  if (reviewBtn) {
+
+    reviewBtn.disabled =
+      insufficient;
   }
 }
 
@@ -3098,6 +3559,13 @@ function renderPaymentPage() {
   }
 
 
+  if ($('qrInstructionText')) {
+
+    $('qrInstructionText').style.display =
+      '';
+  }
+
+
   // ----------------------------------------------------------
   // MONTANT
   // ----------------------------------------------------------
@@ -3385,9 +3853,20 @@ function renderSellPaymentPage() {
 
 
   // ----------------------------------------------------------
+  // TEXTE "SCANNEZ LE QR CODE" (masqué en vente)
+  // ----------------------------------------------------------
+
+  if ($('qrInstructionText')) {
+
+    $('qrInstructionText').style.display =
+      'none';
+  }
+
+
+  // ----------------------------------------------------------
   // QR BOX
   // Pour SELL, on n'utilise pas le QR Orange Money.
-  // On affiche l'adresse NOA directement.
+  // On affiche l'adresse NOA + l'option Binance.
   // ----------------------------------------------------------
 
   const qrContainer =
@@ -3431,7 +3910,74 @@ function renderSellPaymentPage() {
 
       </div>
 
+      <button
+        type="button"
+        id="copyDepositAddressBtn"
+        class="copy-btn-inline"
+      >
+        📋 Copier l'adresse
+      </button>
+
+      <div class="payment-or-inline">
+        OU
+      </div>
+
+      <div class="binance-transfer-box">
+
+        <div class="binance-transfer-header">
+
+          <span class="binance-logo">
+            <span>B</span>
+          </span>
+
+          Transférer via Binance
+
+        </div>
+
+        <div class="small">
+          ID Binance :
+          <strong id="binanceIdText">
+            ${escapeHtml(CONFIG.binance.id)}
+          </strong>
+        </div>
+
+        <button
+          type="button"
+          id="copyBinanceIdBtn"
+          class="copy-btn-inline"
+        >
+          📋 Copier l'ID Binance
+        </button>
+
+      </div>
+
     `;
+
+
+    $('copyDepositAddressBtn')
+      ?.addEventListener(
+        'click',
+        (event) => {
+
+          copyToClipboard(
+            currentOrder.walletAddress,
+            event.currentTarget
+          );
+        }
+      );
+
+
+    $('copyBinanceIdBtn')
+      ?.addEventListener(
+        'click',
+        (event) => {
+
+          copyToClipboard(
+            CONFIG.binance.id,
+            event.currentTarget
+          );
+        }
+      );
   }
 
 
@@ -3454,7 +4000,7 @@ function renderSellPaymentPage() {
 
 
   // ----------------------------------------------------------
-  // "OU"
+  // "OU" (statique, masqué — on utilise celui généré ci-dessus)
   // ----------------------------------------------------------
 
   const paymentOr =
@@ -5225,6 +5771,30 @@ function setupEvents() {
       'submit',
       registerUser
     );
+
+
+  $('forgotPasswordForm')
+    ?.addEventListener(
+      'submit',
+      sendPasswordReset
+    );
+
+
+  $('forgotPasswordLink')
+    ?.addEventListener(
+      'click',
+      showForgotPasswordForm
+    );
+
+
+  $('backToLoginBtn')
+    ?.addEventListener(
+      'click',
+      showLoginForm
+    );
+
+
+  initPasswordToggles();
 
 
   $('logoutBtn')
