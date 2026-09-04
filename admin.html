@@ -1,1114 +1,3291 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>NOA DIGIT TRADE — ADMIN</title>
-<meta name="theme-color" content="#0757d9">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:Arial,Helvetica,sans-serif;background:#f4f7fb;color:#172033;min-height:100vh}
-button,input,select,textarea{font:inherit}
-button{cursor:pointer}
-button:disabled{opacity:.65;cursor:not-allowed}
-.hidden{display:none!important}
+  <title>NOA DIGIT TRADE — ADMIN</title>
 
-#loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
-.login-card{width:100%;max-width:430px;background:#fff;border-radius:24px;padding:28px;box-shadow:0 15px 50px rgba(18,46,84,.1)}
-.admin-logo{width:68px;height:68px;margin:0 auto 18px;border-radius:20px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#064dcc,#0878e8);color:#fff;font-size:30px;font-weight:900}
-.login-title{text-align:center;font-size:25px;font-weight:900}
-.login-subtitle{text-align:center;color:#7b8493;font-size:13px;line-height:1.5;margin:8px 0 25px}
+  <meta name="theme-color" content="#0757d9">
 
-#adminApp{min-height:100vh}
-.admin-header{background:linear-gradient(135deg,#064dcc,#0878e8);color:#fff;padding:20px max(20px,calc((100% - 1200px)/2)) 24px}
-.header-inner{max-width:1200px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:20px}
-.brand-area h1{font-size:23px;font-weight:900}
-.brand-area p{margin-top:5px;font-size:13px;opacity:.9}
-.admin-badge{display:inline-flex;align-items:center;gap:7px;margin-top:10px;padding:7px 11px;background:rgba(255,255,255,.16);border-radius:20px;font-size:12px;font-weight:800}
-.logout-header{border:none;background:rgba(255,255,255,.15);color:#fff;border-radius:11px;padding:10px 14px;font-size:12px;font-weight:800}
-.admin-container{width:100%;max-width:1200px;margin:auto;padding:22px 18px 80px}
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-.dashboard-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin-bottom:20px}
-.stat-card,.card{background:#fff;box-shadow:0 7px 25px rgba(18,46,84,.07)}
-.stat-card{border-radius:18px;padding:18px}
-.stat-label{color:#7b8493;font-size:12px;font-weight:700}
-.stat-value{margin-top:9px;font-size:26px;font-weight:900;color:#0757d9}
-.card{border-radius:20px;padding:20px;margin-bottom:18px}
-.card-header{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:18px}
-.card-title{font-size:19px;font-weight:900}
-.card-description{color:#7b8493;font-size:13px;line-height:1.5;margin-top:5px}
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f4f7fb;
+      color: #172033;
+      min-height: 100vh;
+    }
 
-.admin-nav{display:flex;gap:7px;overflow-x:auto;background:#fff;border-radius:16px;padding:6px;margin-bottom:20px;box-shadow:0 5px 20px rgba(18,46,84,.06)}
-.admin-nav button{flex:1;min-width:120px;border:none;background:transparent;color:#727d8d;padding:11px 12px;border-radius:11px;font-size:12px;font-weight:800}
-.admin-nav button.active{background:#edf5ff;color:#0757d9}
-.admin-page{display:none}
-.admin-page.active{display:block}
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
 
-.field{margin-bottom:15px}
-.field label{display:block;margin-bottom:7px;color:#3c4658;font-size:13px;font-weight:800}
-.field input,.field select,.field textarea{width:100%;border:1px solid #dce3ed;background:#fafcff;border-radius:12px;padding:12px 13px;outline:none;color:#172033}
-.field input:focus,.field select:focus,.field textarea:focus{border-color:#0878e8;box-shadow:0 0 0 3px rgba(8,120,232,.09)}
-.form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:15px}
-.form-grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:15px}
+    button {
+      cursor: pointer;
+    }
 
-.btn{border:none;border-radius:12px;padding:12px 15px;font-weight:800}
-.btn-primary{background:#0757d9;color:#fff}
-.btn-secondary{background:#eaf1fb;color:#0757d9}
-.btn-success{background:#e7f8ee;color:#168447}
-.btn-danger{background:#fee9e9;color:#c62828}
-.btn-small{padding:8px 10px;font-size:11px}
+    button:disabled {
+      opacity: .65;
+      cursor: not-allowed;
+    }
 
-.setting-box{border:1px solid #e2e7ef;border-radius:15px;padding:16px;background:#fbfcfe}
-.setting-title{font-size:15px;font-weight:900;margin-bottom:13px}
-.setting-help{font-size:12px;color:#7b8493;line-height:1.5;margin-top:7px}
-.save-info{margin-top:12px;padding:12px;border-radius:12px;background:#f5f8fd;color:#667085;font-size:12px;line-height:1.5}
+    .hidden {
+      display: none !important;
+    }
 
-.table-wrapper{width:100%;overflow-x:auto}
-table{width:100%;border-collapse:collapse;min-width:760px}
-th{text-align:left;background:#f5f8fd;color:#667085;padding:11px 10px;font-size:11px;text-transform:uppercase}
-td{padding:12px 10px;border-bottom:1px solid #edf0f4;font-size:12px;vertical-align:middle}
+    /* =====================================================
+       LOGIN
+    ====================================================== */
 
-.order-section{margin-top:18px}
-.order-section-title{display:flex;align-items:center;gap:9px;font-size:15px;font-weight:900;margin-bottom:10px}
-.order-section-title.buy{color:#168447}
-.order-section-title.sell{color:#b8560a}
-.order-count{font-size:11px;padding:4px 8px;border-radius:20px;background:#edf5ff;color:#0757d9}
+    #loginScreen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
 
-.order-card{border:1px solid #e2e7ef;border-radius:16px;padding:15px;margin-bottom:12px;background:#fff}
-.order-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px}
-.order-type-badge{display:inline-block;padding:5px 10px;border-radius:20px;font-size:11px;font-weight:900}
-.order-type-badge.buy{background:#e7f8ee;color:#168447}
-.order-type-badge.sell{background:#fff0e2;color:#b8560a}
-.order-card-id{color:#98a2b3;font-size:11px;margin-top:4px}
-.order-card-row{display:flex;justify-content:space-between;gap:10px;padding:7px 0;font-size:13px;border-bottom:1px solid #f3f5f8}
-.order-card-row:last-of-type{border-bottom:none}
-.order-card-row span:first-child{color:#7d8795;flex-shrink:0}
-.order-card-row strong{text-align:right;word-break:break-all}
+    .login-card {
+      width: 100%;
+      max-width: 430px;
+      background: #fff;
+      border-radius: 24px;
+      padding: 28px;
+      box-shadow: 0 15px 50px rgba(18,46,84,.10);
+    }
 
-.network-highlight{display:inline-block;background:#eaf3ff;color:#0757d9;padding:5px 9px;border-radius:8px;font-weight:900;font-size:12px}
-.wallet-box{background:#f5f8fd;border:1px dashed #c7d5ea;border-radius:12px;padding:10px 12px;margin-top:10px}
-.wallet-box-label{color:#667085;font-size:11px;font-weight:800;text-transform:uppercase;margin-bottom:5px}
-.wallet-box-row{display:flex;align-items:center;gap:8px}
-.wallet-box-value{flex:1;font-family:monospace;font-size:12px;word-break:break-all;color:#172033}
-.copy-btn{flex-shrink:0;border:none;background:#0757d9;color:#fff;border-radius:9px;padding:8px 11px;font-size:11px;font-weight:800;white-space:nowrap}
-.copy-btn.copied{background:#168447}
-.order-warning{margin-top:10px;padding:10px;border-radius:10px;background:#fff4d7;color:#8a5a00;font-size:12px;font-weight:700;line-height:1.4}
-.order-card-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-.order-card-actions .btn{flex:1;min-width:120px}
+    .admin-logo {
+      width: 68px;
+      height: 68px;
+      margin: 0 auto 18px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg,#064dcc,#0878e8);
+      color: white;
+      font-size: 30px;
+      font-weight: 900;
+    }
 
-.status{display:inline-block;padding:5px 9px;border-radius:20px;font-size:10px;font-weight:900}
-.status.pending{background:#fff4d7;color:#a16c00}
-.status.processing{background:#e8f1ff;color:#0757d9}
-.status.completed{background:#e7f8ee;color:#168447}
-.status.cancelled{background:#fdeaea;color:#c62828}
-.status.dispute{background:#f4eaff;color:#7135a8}
-.status.rejected{background:#fdeaea;color:#c62828}
+    .login-title {
+      text-align: center;
+      font-size: 25px;
+      font-weight: 900;
+    }
 
-.proof-box{margin-top:12px;padding:12px;border:1px solid #dce3ed;border-radius:12px;background:#fbfcfe}
-.proof-title{font-size:12px;font-weight:900;margin-bottom:8px}
-.proof-link{display:inline-block;font-size:12px;font-weight:800;color:#0757d9;word-break:break-all}
-.proof-meta{font-size:11px;color:#7b8493;margin-top:7px;line-height:1.5}
-.proof-image{display:block;width:100%;max-width:420px;max-height:420px;object-fit:contain;border-radius:10px;border:1px solid #e2e7ef;background:#fff;margin-top:10px}
+    .login-subtitle {
+      text-align: center;
+      color: #7b8493;
+      font-size: 13px;
+      line-height: 1.5;
+      margin-top: 8px;
+      margin-bottom: 25px;
+    }
 
-#adminMessage{display:none;padding:13px 15px;border-radius:12px;margin-bottom:15px;font-size:13px;font-weight:700;line-height:1.4}
-#adminMessage.success{display:block;background:#e8f8ef;color:#168447}
-#adminMessage.error{display:block;background:#feecec;color:#c62828}
-#adminMessage.info{display:block;background:#eaf3ff;color:#0757d9}
-.empty{padding:30px;text-align:center;color:#7b8493;font-size:13px}
-.order-detail{background:#f7f9fc;border-radius:12px;padding:13px;line-height:1.6;font-size:12px}
+    /* =====================================================
+       APP
+    ====================================================== */
 
-@media(max-width:900px){
-.dashboard-grid{grid-template-columns:repeat(2,1fr)}
-.form-grid-4{grid-template-columns:repeat(2,1fr)}
-}
-@media(max-width:650px){
-.header-inner{align-items:flex-start;flex-direction:column}
-.dashboard-grid{grid-template-columns:repeat(2,1fr)}
-.form-grid,.form-grid-4{grid-template-columns:1fr}
-.admin-container{padding:15px 12px 70px}
-.card{padding:16px}
-.order-card-row{flex-direction:column;gap:3px}
-.order-card-row strong{text-align:left}
-.order-card-actions{flex-direction:column}
-}
-</style>
+    #adminApp {
+      min-height: 100vh;
+    }
+
+    .admin-header {
+      background: linear-gradient(135deg,#064dcc,#0878e8);
+      color: white;
+      padding: 20px max(20px,calc((100% - 1200px)/2)) 24px;
+    }
+
+    .header-inner {
+      max-width: 1200px;
+      margin: auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .brand-area h1 {
+      font-size: 23px;
+      font-weight: 900;
+    }
+
+    .brand-area p {
+      margin-top: 5px;
+      font-size: 13px;
+      opacity: .9;
+    }
+
+    .admin-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      margin-top: 10px;
+      padding: 7px 11px;
+      background: rgba(255,255,255,.16);
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .notif-bell-btn {
+      position: relative;
+      background: rgba(255,255,255,.16);
+      border: none;
+      border-radius: 12px;
+      width: 42px;
+      height: 42px;
+      font-size: 19px;
+      color: white;
+      cursor: pointer;
+    }
+
+    .notif-badge {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      background: #e53935;
+      color: white;
+      font-size: 11px;
+      font-weight: 900;
+      min-width: 18px;
+      height: 18px;
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 4px;
+    }
+
+    .notif-badge.hidden {
+      display: none;
+    }
+
+    .notif-panel {
+      position: fixed;
+      top: 70px;
+      right: 16px;
+      width: min(340px, calc(100vw - 32px));
+      max-height: 60vh;
+      overflow-y: auto;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 10px 40px rgba(0,0,0,.2);
+      z-index: 999;
+    }
+
+    .notif-panel.hidden {
+      display: none;
+    }
+
+    .notif-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      border-bottom: 1px solid #eef1f5;
+    }
+
+    .notif-panel-header button {
+      background: none;
+      border: none;
+      color: #0757d9;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .notif-list {
+      padding: 6px;
+    }
+
+    .notif-item {
+      padding: 12px;
+      border-radius: 12px;
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
+
+    .notif-item:hover {
+      background: #f5f7fb;
+    }
+
+    .notif-item-title {
+      font-weight: 800;
+      margin-bottom: 2px;
+    }
+
+    .notif-item-time {
+      color: #98a2b3;
+      font-size: 11px;
+      margin-top: 4px;
+    }
+
+    .notif-empty {
+      padding: 24px 16px;
+      text-align: center;
+      color: #98a2b3;
+      font-size: 13px;
+    }
+
+    .logout-header {
+      border: none;
+      background: rgba(255,255,255,.15);
+      color: white;
+      border-radius: 11px;
+      padding: 10px 14px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .admin-container {
+      width: 100%;
+      max-width: 1200px;
+      margin: auto;
+      padding: 22px 18px 80px;
+    }
+
+    /* =====================================================
+       DASHBOARD
+    ====================================================== */
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(4,1fr);
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card,
+    .card {
+      background: white;
+      box-shadow: 0 7px 25px rgba(18,46,84,.07);
+    }
+
+    .stat-card {
+      border-radius: 18px;
+      padding: 18px;
+    }
+
+    .stat-label {
+      color: #7b8493;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .stat-value {
+      margin-top: 9px;
+      font-size: 26px;
+      font-weight: 900;
+      color: #0757d9;
+    }
+
+    .card {
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 18px;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 18px;
+    }
+
+    .card-title {
+      font-size: 19px;
+      font-weight: 900;
+    }
+
+    .card-description {
+      color: #7b8493;
+      font-size: 13px;
+      line-height: 1.5;
+      margin-top: 5px;
+    }
+
+    /* =====================================================
+       NAVIGATION
+    ====================================================== */
+
+    .admin-nav {
+      display: flex;
+      gap: 7px;
+      overflow-x: auto;
+      background: white;
+      border-radius: 16px;
+      padding: 6px;
+      margin-bottom: 20px;
+      box-shadow: 0 5px 20px rgba(18,46,84,.06);
+    }
+
+    .admin-nav button {
+      flex: 1;
+      min-width: 120px;
+      border: none;
+      background: transparent;
+      color: #727d8d;
+      padding: 11px 12px;
+      border-radius: 11px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .admin-nav button.active {
+      background: #edf5ff;
+      color: #0757d9;
+    }
+
+    .admin-page {
+      display: none;
+    }
+
+    .admin-page.active {
+      display: block;
+    }
+
+    /* =====================================================
+       FORMULAIRES
+    ====================================================== */
+
+    .field {
+      margin-bottom: 15px;
+    }
+
+    .field label {
+      display: block;
+      margin-bottom: 7px;
+      color: #3c4658;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      border: 1px solid #dce3ed;
+      background: #fafcff;
+      border-radius: 12px;
+      padding: 12px 13px;
+      outline: none;
+      color: #172033;
+    }
+
+    .field input:focus,
+    .field select:focus,
+    .field textarea:focus {
+      border-color: #0878e8;
+      box-shadow: 0 0 0 3px rgba(8,120,232,.09);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2,1fr);
+      gap: 15px;
+    }
+
+    .form-grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4,1fr);
+      gap: 15px;
+    }
+
+    /* =====================================================
+       BOUTONS
+    ====================================================== */
+
+    .btn {
+      border: none;
+      border-radius: 12px;
+      padding: 12px 15px;
+      font-weight: 800;
+    }
+
+    .btn-primary {
+      background: #0757d9;
+      color: white;
+    }
+
+    .btn-secondary {
+      background: #eaf1fb;
+      color: #0757d9;
+    }
+
+    .btn-success {
+      background: #e7f8ee;
+      color: #168447;
+    }
+
+    .btn-danger {
+      background: #fee9e9;
+      color: #c62828;
+    }
+
+    .btn-small {
+      padding: 8px 10px;
+      font-size: 11px;
+    }
+
+    /* =====================================================
+       PARAMETRES
+    ====================================================== */
+
+    .setting-box {
+      border: 1px solid #e2e7ef;
+      border-radius: 15px;
+      padding: 16px;
+      background: #fbfcfe;
+    }
+
+    .setting-title {
+      font-size: 15px;
+      font-weight: 900;
+      margin-bottom: 13px;
+    }
+
+    .setting-help {
+      font-size: 12px;
+      color: #7b8493;
+      line-height: 1.5;
+      margin-top: 7px;
+    }
+
+    .save-info {
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 12px;
+      background: #f5f8fd;
+      color: #667085;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    /* =====================================================
+       TABLEAUX
+    ====================================================== */
+
+    .table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 760px;
+    }
+
+    th {
+      text-align: left;
+      background: #f5f8fd;
+      color: #667085;
+      padding: 11px 10px;
+      font-size: 11px;
+      text-transform: uppercase;
+    }
+
+    td {
+      padding: 12px 10px;
+      border-bottom: 1px solid #edf0f4;
+      font-size: 12px;
+      vertical-align: middle;
+    }
+
+    /* =====================================================
+       CARTES DE COMMANDES (ADMIN)
+    ====================================================== */
+
+    .order-card {
+      border: 1px solid #e2e7ef;
+      border-radius: 16px;
+      padding: 15px;
+      margin-bottom: 12px;
+      background: #fff;
+    }
+
+    .order-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .order-type-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .order-type-badge.buy {
+      background: #e7f8ee;
+      color: #168447;
+    }
+
+    .order-type-badge.sell {
+      background: #fff0e2;
+      color: #b8560a;
+    }
+
+    .order-card-id {
+      color: #98a2b3;
+      font-size: 11px;
+      margin-top: 4px;
+    }
+
+    .order-card-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 6px 0;
+      font-size: 13px;
+      border-bottom: 1px solid #f3f5f8;
+    }
+
+    .order-card-row:last-of-type {
+      border-bottom: none;
+    }
+
+    .order-card-row span:first-child {
+      color: #7d8795;
+      flex-shrink: 0;
+    }
+
+    .order-card-row strong {
+      text-align: right;
+      word-break: break-all;
+    }
+
+    .wallet-box {
+      background: #f5f8fd;
+      border: 1px dashed #c7d5ea;
+      border-radius: 12px;
+      padding: 10px 12px;
+      margin-top: 10px;
+    }
+
+    .wallet-box-label {
+      color: #667085;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+
+    .wallet-box-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .wallet-box-value {
+      flex: 1;
+      font-family: monospace;
+      font-size: 12px;
+      word-break: break-all;
+      color: #172033;
+    }
+
+    .copy-btn {
+      flex-shrink: 0;
+      border: none;
+      background: #0757d9;
+      color: #fff;
+      border-radius: 9px;
+      padding: 8px 11px;
+      font-size: 11px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .copy-btn.copied {
+      background: #168447;
+    }
+
+    .order-card-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .order-card-actions .btn {
+      flex: 1;
+    }
+
+    /* =====================================================
+       STATUTS
+    ====================================================== */
+
+    .status {
+      display: inline-block;
+      padding: 5px 9px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 900;
+    }
+
+    .status.pending {
+      background: #fff4d7;
+      color: #a16c00;
+    }
+
+    .status.processing {
+      background: #e8f1ff;
+      color: #0757d9;
+    }
+
+    .status.completed {
+      background: #e7f8ee;
+      color: #168447;
+    }
+
+    .status.cancelled {
+      background: #fdeaea;
+      color: #c62828;
+    }
+
+    .status.dispute {
+      background: #f4eaff;
+      color: #7135a8;
+    }
+
+    /* =====================================================
+       MESSAGES
+    ====================================================== */
+
+    #adminMessage {
+      display: none;
+      padding: 13px 15px;
+      border-radius: 12px;
+      margin-bottom: 15px;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+
+    #adminMessage.success {
+      display: block;
+      background: #e8f8ef;
+      color: #168447;
+    }
+
+    #adminMessage.error {
+      display: block;
+      background: #feecec;
+      color: #c62828;
+    }
+
+    #adminMessage.info {
+      display: block;
+      background: #eaf3ff;
+      color: #0757d9;
+    }
+
+    .empty {
+      padding: 30px;
+      text-align: center;
+      color: #7b8493;
+      font-size: 13px;
+    }
+
+    .order-detail {
+      background: #f7f9fc;
+      border-radius: 12px;
+      padding: 13px;
+      line-height: 1.6;
+      font-size: 12px;
+    }
+
+    /* =====================================================
+       RESPONSIVE
+    ====================================================== */
+
+    @media (max-width: 900px) {
+      .dashboard-grid {
+        grid-template-columns: repeat(2,1fr);
+      }
+
+      .form-grid-4 {
+        grid-template-columns: repeat(2,1fr);
+      }
+    }
+
+    @media (max-width: 650px) {
+      .header-inner {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .dashboard-grid {
+        grid-template-columns: repeat(2,1fr);
+      }
+
+      .form-grid,
+      .form-grid-4 {
+        grid-template-columns: 1fr;
+      }
+
+      .admin-container {
+        padding: 15px 12px 70px;
+      }
+
+      .card {
+        padding: 16px;
+      }
+    }
+  </style>
 </head>
 
 <body>
 
+<!-- =========================================================
+     LOGIN
+========================================================== -->
+
 <section id="loginScreen">
-<div class="login-card">
-<div class="admin-logo">N</div>
-<div class="login-title">NOA DIGIT TRADE</div>
-<div class="login-subtitle">Espace d'administration sécurisé</div>
-<div id="loginMessage"></div>
 
-<form id="adminLoginForm">
-<div class="field">
-<label for="adminEmail">Email administrateur</label>
-<input type="email" id="adminEmail" placeholder="admin@email.com" autocomplete="username" required>
-</div>
+  <div class="login-card">
 
-<div class="field">
-<label for="adminPassword">Mot de passe</label>
-<input type="password" id="adminPassword" placeholder="Votre mot de passe" autocomplete="current-password" required>
-</div>
+    <div class="admin-logo">N</div>
 
-<button type="submit" class="btn btn-primary" style="width:100%">Se connecter à l'administration</button>
-</form>
-</div>
+    <div class="login-title">
+      NOA DIGIT TRADE
+    </div>
+
+    <div class="login-subtitle">
+      Espace d'administration sécurisé
+    </div>
+
+    <div id="loginMessage"></div>
+
+    <form id="adminLoginForm">
+
+      <div class="field">
+        <label for="adminEmail">
+          Email administrateur
+        </label>
+
+        <input
+          type="email"
+          id="adminEmail"
+          placeholder="admin@email.com"
+          autocomplete="username"
+          required
+        >
+      </div>
+
+      <div class="field">
+        <label for="adminPassword">
+          Mot de passe
+        </label>
+
+        <input
+          type="password"
+          id="adminPassword"
+          placeholder="Votre mot de passe"
+          autocomplete="current-password"
+          required
+        >
+      </div>
+
+      <button
+        type="submit"
+        class="btn btn-primary"
+        style="width:100%;"
+      >
+        Se connecter à l'administration
+      </button>
+
+    </form>
+  </div>
+
 </section>
+
+
+<!-- =========================================================
+     APPLICATION ADMIN
+========================================================== -->
 
 <div id="adminApp" class="hidden">
-<header class="admin-header">
-<div class="header-inner">
-<div class="brand-area">
-<h1>NOA DIGIT TRADE</h1>
-<p>Panneau d'administration</p>
-<div class="admin-badge">🔐 ADMINISTRATEUR</div>
-</div>
-<button type="button" id="logoutAdminBtn" class="logout-header">Déconnexion</button>
-</div>
-</header>
 
-<main class="admin-container">
-<div id="adminMessage"></div>
+  <header class="admin-header">
 
-<nav class="admin-nav">
-<button type="button" class="admin-nav-btn active" data-page="dashboardPage">📊 Tableau de bord</button>
-<button type="button" class="admin-nav-btn" data-page="ordersAdminPage">📋 Commandes</button>
-<button type="button" class="admin-nav-btn" data-page="ratesAdminPage">💰 Tarifs</button>
-<button type="button" class="admin-nav-btn" data-page="usersAdminPage">👥 Utilisateurs</button>
-<button type="button" class="admin-nav-btn" data-page="disputesAdminPage">💬 Litiges</button>
-</nav>
+    <div class="header-inner">
 
-<section id="dashboardPage" class="admin-page active">
-<div class="dashboard-grid">
-<div class="stat-card"><div class="stat-label">Total commandes</div><div id="statOrders" class="stat-value">0</div></div>
-<div class="stat-card"><div class="stat-label">En attente</div><div id="statPending" class="stat-value">0</div></div>
-<div class="stat-card"><div class="stat-label">En traitement</div><div id="statProcessing" class="stat-value">0</div></div>
-<div class="stat-card"><div class="stat-label">Utilisateurs</div><div id="statUsers" class="stat-value">0</div></div>
+      <div class="brand-area">
+
+        <h1>NOA DIGIT TRADE</h1>
+
+        <p>Panneau d'administration</p>
+
+        <div class="admin-badge">
+          🔐 ADMINISTRATEUR
+        </div>
+
+      </div>
+
+      <div class="header-actions">
+
+        <button
+          type="button"
+          id="notifBellBtn"
+          class="notif-bell-btn"
+        >
+          🔔
+          <span
+            id="notifBadge"
+            class="notif-badge hidden"
+          >0</span>
+        </button>
+
+        <button
+          type="button"
+          id="logoutAdminBtn"
+          class="logout-header"
+        >
+          Déconnexion
+        </button>
+
+      </div>
+
+    </div>
+
+  </header>
+
+
+  <div
+    id="notifPanel"
+    class="notif-panel hidden"
+  >
+
+    <div class="notif-panel-header">
+
+      <strong>Notifications</strong>
+
+      <button
+        type="button"
+        id="notifClearBtn"
+      >
+        Tout effacer
+      </button>
+
+    </div>
+
+    <div id="notifList" class="notif-list">
+
+      <div class="notif-empty">
+        Aucune notification pour le moment.
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <main class="admin-container">
+
+    <div id="adminMessage"></div>
+
+
+    <!-- =====================================================
+         NAVIGATION
+    ====================================================== -->
+
+    <nav class="admin-nav">
+
+      <button
+        type="button"
+        class="admin-nav-btn active"
+        data-page="dashboardPage"
+      >
+        📊 Tableau de bord
+      </button>
+
+      <button
+        type="button"
+        class="admin-nav-btn"
+        data-page="ordersAdminPage"
+      >
+        📋 Commandes
+      </button>
+
+      <button
+        type="button"
+        class="admin-nav-btn"
+        data-page="ratesAdminPage"
+      >
+        💰 Tarifs
+      </button>
+
+      <button
+        type="button"
+        class="admin-nav-btn"
+        data-page="usersAdminPage"
+      >
+        👥 Utilisateurs
+      </button>
+
+      <button
+        type="button"
+        class="admin-nav-btn"
+        data-page="disputesAdminPage"
+      >
+        💬 Litiges
+      </button>
+
+    </nav>
+
+
+    <!-- =====================================================
+         DASHBOARD
+    ====================================================== -->
+
+    <section
+      id="dashboardPage"
+      class="admin-page active"
+    >
+
+      <div class="dashboard-grid">
+
+        <div class="stat-card">
+          <div class="stat-label">Total commandes</div>
+          <div id="statOrders" class="stat-value">0</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-label">En attente</div>
+          <div id="statPending" class="stat-value">0</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-label">En traitement</div>
+          <div id="statProcessing" class="stat-value">0</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-label">Utilisateurs</div>
+          <div id="statUsers" class="stat-value">0</div>
+        </div>
+
+      </div>
+
+
+      <div class="card">
+
+        <div class="card-header">
+
+          <div>
+            <div class="card-title">
+              Configuration actuelle
+            </div>
+
+            <div class="card-description">
+              Paramètres utilisés par l'application client.
+            </div>
+          </div>
+
+          <button
+            type="button"
+            class="btn btn-secondary btn-small"
+            data-go-page="ratesAdminPage"
+          >
+            Modifier
+          </button>
+
+        </div>
+
+
+        <div class="form-grid-4">
+
+          <div class="setting-box">
+            <div class="setting-title">Achat</div>
+            <strong>
+              <span id="dashboardBuyRate">—</span>
+              FCFA
+            </strong>
+          </div>
+
+          <div class="setting-box">
+            <div class="setting-title">Vente</div>
+            <strong>
+              <span id="dashboardSellRate">—</span>
+              FCFA
+            </strong>
+          </div>
+
+          <div class="setting-box">
+            <div class="setting-title">TRC20</div>
+            <strong>
+              <span id="dashboardTrc20Fee">—</span>
+              USDT
+            </strong>
+          </div>
+
+          <div class="setting-box">
+            <div class="setting-title">BEP20</div>
+            <strong>
+              <span id="dashboardBp20Fee">—</span>
+              USDT
+            </strong>
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <div class="card">
+
+        <div class="card-header">
+
+          <div>
+            <div class="card-title">
+              Commandes récentes
+            </div>
+
+            <div class="card-description">
+              Les dernières commandes reçues.
+            </div>
+          </div>
+
+          <button
+            type="button"
+            class="btn btn-secondary btn-small"
+            data-go-page="ordersAdminPage"
+          >
+            Toutes les commandes
+          </button>
+
+        </div>
+
+        <div id="recentOrders">
+          <div class="empty">
+            Chargement...
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         COMMANDES
+    ====================================================== -->
+
+    <section
+      id="ordersAdminPage"
+      class="admin-page"
+    >
+
+      <div class="card">
+
+        <div class="card-header">
+
+          <div>
+            <div class="card-title">
+              Gestion des commandes
+            </div>
+
+            <div class="card-description">
+              Consultez et mettez à jour les commandes.
+            </div>
+          </div>
+
+          <button
+            type="button"
+            id="refreshOrdersBtn"
+            class="btn btn-secondary btn-small"
+          >
+            🔄 Actualiser
+          </button>
+
+        </div>
+
+
+        <div class="form-grid">
+
+          <div class="field">
+            <label for="orderStatusFilter">
+              Filtrer par statut
+            </label>
+
+            <select id="orderStatusFilter">
+              <option value="">Tous les statuts</option>
+              <option value="pending">En attente</option>
+              <option value="processing">En traitement</option>
+              <option value="completed">Terminée</option>
+              <option value="cancelled">Annulée</option>
+            </select>
+          </div>
+
+
+          <div class="field">
+            <label for="orderTypeFilter">
+              Type de commande
+            </label>
+
+            <select id="orderTypeFilter">
+              <option value="">Achat + Vente</option>
+              <option value="buy">Achat</option>
+              <option value="sell">Vente</option>
+            </select>
+          </div>
+
+        </div>
+
+
+        <div id="ordersList" class="orders-list">
+          <div class="empty">Chargement...</div>
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         TARIFS
+    ====================================================== -->
+
+    <section
+      id="ratesAdminPage"
+      class="admin-page"
+    >
+
+      <div class="card">
+
+        <div class="card-title">
+          Paramètres commerciaux
+        </div>
+
+        <div class="card-description">
+          Ces paramètres sont utilisés pour calculer
+          les commandes des clients.
+        </div>
+
+      </div>
+
+
+      <form id="settingsForm">
+
+        <div class="form-grid">
+
+          <div class="card">
+
+            <div class="setting-title">
+              💰 Taux d'achat
+            </div>
+
+            <div class="field">
+
+              <label for="buyRate">
+                FCFA pour 1 USDT
+              </label>
+
+              <input
+                type="number"
+                id="buyRate"
+                min="0"
+                step="0.01"
+                required
+              >
+
+            </div>
+
+            <div class="setting-help">
+              Prix auquel NOA DIGIT TRADE vend les USDT
+              aux clients.
+            </div>
+
+          </div>
+
+
+          <div class="card">
+
+            <div class="setting-title">
+              💵 Taux de vente
+            </div>
+
+            <div class="field">
+
+              <label for="sellRate">
+                FCFA pour 1 USDT
+              </label>
+
+              <input
+                type="number"
+                id="sellRate"
+                min="0"
+                step="0.01"
+                required
+              >
+
+            </div>
+
+            <div class="setting-help">
+              Prix auquel NOA DIGIT TRADE achète les USDT
+              aux clients.
+            </div>
+
+          </div>
+
+
+          <div class="card">
+
+            <div class="setting-title">
+              ⛓️ Frais USDT TRC20
+            </div>
+
+            <div class="field">
+
+              <label for="trc20FeeInput">
+                Frais en USDT
+              </label>
+
+              <input
+                type="number"
+                id="trc20FeeInput"
+                min="0"
+                step="0.01"
+                required
+              >
+
+            </div>
+
+          </div>
+
+
+          <div class="card">
+
+            <div class="setting-title">
+              ⛓️ Frais USDT BEP20
+            </div>
+
+            <div class="field">
+
+              <label for="bp20FeeInput">
+                Frais en USDT
+              </label>
+
+              <input
+                type="number"
+                id="bp20FeeInput"
+                min="0"
+                step="0.01"
+                required
+              >
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <div class="card">
+
+          <div class="card-title">
+            💼 Soldes disponibles
+          </div>
+
+          <div class="card-description">
+            Ces soldes déterminent si les clients peuvent passer
+            une commande. Mets-les à jour selon ta trésorerie réelle.
+          </div>
+
+
+          <div class="form-grid">
+
+            <div class="field">
+
+              <label for="usdtBalanceInput">
+                Solde USDT (pour les achats)
+              </label>
+
+              <input
+                type="number"
+                id="usdtBalanceInput"
+                min="0"
+                step="0.01"
+                required
+              >
+
+            </div>
+
+
+            <div class="field">
+
+              <label for="fcfaBalanceInput">
+                Solde FCFA (pour les ventes)
+              </label>
+
+              <input
+                type="number"
+                id="fcfaBalanceInput"
+                min="0"
+                step="1"
+                required
+              >
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <div class="card">
+
+          <div class="card-title">
+            Limites de commande
+          </div>
+
+          <div class="card-description">
+            Définissez les montants minimum et maximum.
+          </div>
+
+
+          <div class="form-grid">
+
+            <div class="field">
+
+              <label for="minOrderInput">
+                Minimum — FCFA
+              </label>
+
+              <input
+                type="number"
+                id="minOrderInput"
+                min="0"
+                step="1"
+                required
+              >
+
+            </div>
+
+
+            <div class="field">
+
+              <label for="maxOrderInput">
+                Maximum — FCFA
+              </label>
+
+              <input
+                type="number"
+                id="maxOrderInput"
+                min="0"
+                step="1"
+                required
+              >
+
+            </div>
+
+          </div>
+
+
+          <button
+            type="submit"
+            id="saveSettingsBtn"
+            class="btn btn-primary"
+          >
+            💾 Enregistrer les paramètres
+          </button>
+
+
+          <div class="save-info">
+            Les modifications sont enregistrées directement
+            dans la configuration administrateur Supabase.
+            Elles ne sont pas modifiables depuis l'espace client.
+          </div>
+
+        </div>
+
+      </form>
+
+    </section>
+
+
+    <!-- =====================================================
+         UTILISATEURS
+    ====================================================== -->
+
+    <section
+      id="usersAdminPage"
+      class="admin-page"
+    >
+
+      <div class="card">
+
+        <div class="card-header">
+
+          <div>
+            <div class="card-title">
+              Utilisateurs
+            </div>
+
+            <div class="card-description">
+              Liste des comptes clients enregistrés.
+            </div>
+          </div>
+
+          <button
+            type="button"
+            id="refreshUsersBtn"
+            class="btn btn-secondary btn-small"
+          >
+            🔄 Actualiser
+          </button>
+
+        </div>
+
+
+        <div class="table-wrapper">
+
+          <table>
+
+            <thead>
+              <tr>
+                <th>Nom</th>
+                <th>Téléphone</th>
+                <th>Email</th>
+                <th>Pays</th>
+                <th>Inscription</th>
+              </tr>
+            </thead>
+
+            <tbody id="usersTableBody">
+
+              <tr>
+                <td colspan="5">
+                  <div class="empty">
+                    Chargement...
+                  </div>
+                </td>
+              </tr>
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         LITIGES
+    ====================================================== -->
+
+    <section
+      id="disputesAdminPage"
+      class="admin-page"
+    >
+
+      <div class="card">
+
+        <div class="card-header">
+
+          <div>
+            <div class="card-title">
+              Litiges clients
+            </div>
+
+            <div class="card-description">
+              Consultez les problèmes signalés par les clients.
+            </div>
+          </div>
+
+          <button
+            type="button"
+            id="refreshDisputesBtn"
+            class="btn btn-secondary btn-small"
+          >
+            🔄 Actualiser
+          </button>
+
+        </div>
+
+
+        <div id="disputesList">
+
+          <div class="empty">
+            Chargement...
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
 </div>
 
-<div class="card">
-<div class="card-header">
-<div>
-<div class="card-title">Configuration actuelle</div>
-<div class="card-description">Paramètres utilisés par l'application client.</div>
-</div>
-<button type="button" class="btn btn-secondary btn-small" data-go-page="ratesAdminPage">Modifier</button>
-</div>
 
-<div class="form-grid-4">
-<div class="setting-box"><div class="setting-title">Achat</div><strong><span id="dashboardBuyRate">—</span> FCFA</strong></div>
-<div class="setting-box"><div class="setting-title">Vente</div><strong><span id="dashboardSellRate">—</span> FCFA</strong></div>
-<div class="setting-box"><div class="setting-title">TRC20</div><strong><span id="dashboardTrc20Fee">—</span> USDT</strong></div>
-<div class="setting-box"><div class="setting-title">BEP20</div><strong><span id="dashboardBp20Fee">—</span> USDT</strong></div>
-</div>
-</div>
-
-<div class="card">
-<div class="card-header">
-<div>
-<div class="card-title">Commandes récentes</div>
-<div class="card-description">Les dernières commandes reçues.</div>
-</div>
-<button type="button" class="btn btn-secondary btn-small" data-go-page="ordersAdminPage">Toutes les commandes</button>
-</div>
-<div id="recentOrders"><div class="empty">Chargement...</div></div>
-</div>
-</section>
-
-<section id="ordersAdminPage" class="admin-page">
-<div class="card">
-<div class="card-header">
-<div>
-<div class="card-title">Gestion des commandes</div>
-<div class="card-description">Consultez les paiements, les preuves et mettez à jour les commandes.</div>
-</div>
-<button type="button" id="refreshOrdersBtn" class="btn btn-secondary btn-small">🔄 Actualiser</button>
-</div>
-
-<div class="form-grid">
-<div class="field">
-<label for="orderStatusFilter">Filtrer par statut</label>
-<select id="orderStatusFilter">
-<option value="">Tous les statuts</option>
-<option value="pending">En attente</option>
-<option value="processing">En traitement</option>
-<option value="completed">Terminée</option>
-<option value="cancelled">Annulée</option>
-<option value="disputed">Litige</option>
-</select>
-</div>
-
-<div class="field">
-<label for="orderTypeFilter">Type de commande</label>
-<select id="orderTypeFilter">
-<option value="">Achat + Vente</option>
-<option value="buy">Achat</option>
-<option value="sell">Vente</option>
-</select>
-</div>
-</div>
-
-<div id="ordersList"><div class="empty">Chargement...</div></div>
-</div>
-</section>
-
-<section id="ratesAdminPage" class="admin-page">
-<div class="card">
-<div class="card-title">Paramètres commerciaux</div>
-<div class="card-description">Ces paramètres sont utilisés pour calculer les commandes des clients.</div>
-</div>
-
-<form id="settingsForm">
-<div class="form-grid">
-<div class="card">
-<div class="setting-title">💰 Taux d'achat</div>
-<div class="field">
-<label for="buyRate">FCFA pour 1 USDT</label>
-<input type="number" id="buyRate" min="0" step="0.01" required>
-</div>
-<div class="setting-help">Prix auquel NOA DIGIT TRADE vend les USDT aux clients.</div>
-</div>
-
-<div class="card">
-<div class="setting-title">💵 Taux de vente</div>
-<div class="field">
-<label for="sellRate">FCFA pour 1 USDT</label>
-<input type="number" id="sellRate" min="0" step="0.01" required>
-</div>
-<div class="setting-help">Prix auquel NOA DIGIT TRADE achète les USDT aux clients.</div>
-</div>
-
-<div class="card">
-<div class="setting-title">⛓️ Frais USDT TRC20</div>
-<div class="field">
-<label for="trc20FeeInput">Frais en USDT</label>
-<input type="number" id="trc20FeeInput" min="0" step="0.01" required>
-</div>
-</div>
-
-<div class="card">
-<div class="setting-title">⛓️ Frais USDT BEP20</div>
-<div class="field">
-<label for="bp20FeeInput">Frais en USDT</label>
-<input type="number" id="bp20FeeInput" min="0" step="0.01" required>
-</div>
-</div>
-</div>
-
-<div class="card">
-<div class="card-title">Limites de commande</div>
-<div class="card-description">Définissez les montants minimum et maximum.</div>
-
-<div class="form-grid">
-<div class="field">
-<label for="minOrderInput">Minimum — FCFA</label>
-<input type="number" id="minOrderInput" min="0" step="1" required>
-</div>
-<div class="field">
-<label for="maxOrderInput">Maximum — FCFA</label>
-<input type="number" id="maxOrderInput" min="0" step="1" required>
-</div>
-</div>
-
-<button type="submit" id="saveSettingsBtn" class="btn btn-primary">💾 Enregistrer les paramètres</button>
-<div class="save-info">Les modifications sont enregistrées directement dans la configuration administrateur Supabase.</div>
-</div>
-</form>
-</section>
-
-<section id="usersAdminPage" class="admin-page">
-<div class="card">
-<div class="card-header">
-<div>
-<div class="card-title">Utilisateurs</div>
-<div class="card-description">Liste des comptes clients enregistrés.</div>
-</div>
-<button type="button" id="refreshUsersBtn" class="btn btn-secondary btn-small">🔄 Actualiser</button>
-</div>
-
-<div class="table-wrapper">
-<table>
-<thead>
-<tr><th>Nom</th><th>Téléphone</th><th>Email</th><th>Pays</th><th>Inscription</th></tr>
-</thead>
-<tbody id="usersTableBody">
-<tr><td colspan="5"><div class="empty">Chargement...</div></td></tr>
-</tbody>
-</table>
-</div>
-</div>
-</section>
-
-<section id="disputesAdminPage" class="admin-page">
-<div class="card">
-<div class="card-header">
-<div>
-<div class="card-title">Litiges clients</div>
-<div class="card-description">Consultez les problèmes signalés par les clients.</div>
-</div>
-<button type="button" id="refreshDisputesBtn" class="btn btn-secondary btn-small">🔄 Actualiser</button>
-</div>
-<div id="disputesList"><div class="empty">Chargement...</div></div>
-</div>
-</section>
-</main>
-</div>
+<!-- =========================================================
+     SUPABASE
+========================================================== -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-const SUPABASE_URL='https://vowafwsvrjpkhkocptih.supabase.co';
-const SUPABASE_KEY='sb_publishable_umIa4749av8722xus6aQHw_1nf8b-PC';
-const PAYMENT_PROOFS_BUCKET='payment-proofs';
-
-const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-
-let currentAdmin=null;
-let adminProfile=null;
-let allOrders=[];
-let allUsers=[];
-let allDisputes=[];
-let settings=null;
-let isCheckingSession=false;
-
-const loginScreen=document.getElementById('loginScreen');
-const adminApp=document.getElementById('adminApp');
-const adminLoginForm=document.getElementById('adminLoginForm');
-const logoutAdminBtn=document.getElementById('logoutAdminBtn');
-const loginMessage=document.getElementById('loginMessage');
-const adminMessage=document.getElementById('adminMessage');
-
-function showLoginMessage(message,type='error'){
-if(!loginMessage)return;
-loginMessage.textContent=message;
-loginMessage.style.display='block';
-loginMessage.style.padding='12px 14px';
-loginMessage.style.borderRadius='10px';
-loginMessage.style.marginBottom='15px';
-loginMessage.style.fontSize='13px';
-loginMessage.style.fontWeight='700';
-
-if(type==='success'){
-loginMessage.style.background='#e8f8ef';
-loginMessage.style.color='#168447';
-}else if(type==='info'){
-loginMessage.style.background='#eaf3ff';
-loginMessage.style.color='#0757d9';
-}else{
-loginMessage.style.background='#feecec';
-loginMessage.style.color='#c62828';
-}
-}
 
-function hideLoginMessage(){
-if(loginMessage){
-loginMessage.style.display='none';
-loginMessage.textContent='';
-}
-}
+/* ============================================================
+   NOA DIGIT TRADE
+   ADMIN
+   VERSION CORRIGÉE
+   ============================================================ */
 
-function showAdminMessage(message,type='info'){
-if(!adminMessage)return;
-adminMessage.textContent=message;
-adminMessage.className='';
-adminMessage.classList.add(type);
-clearTimeout(showAdminMessage.timeout);
-showAdminMessage.timeout=setTimeout(()=>{
-adminMessage.className='';
-},6000);
-}
+const SUPABASE_URL =
+  'https://vowafwsvrjpkhkocptih.supabase.co';
 
-function formatNumber(value){
-const n=Number(value);
-return Number.isFinite(n)?new Intl.NumberFormat('fr-FR').format(n):'0';
-}
+const SUPABASE_KEY =
+  'sb_publishable_umIa4749av8722xus6aQHw_1nf8b-PC';
 
-function formatUsdt(value){
-const n=Number(value);
-return Number.isFinite(n)?new Intl.NumberFormat('fr-FR',{
-minimumFractionDigits:0,
-maximumFractionDigits:6
-}).format(n):'0';
-}
+const supabaseClient =
+  window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+  );
 
-function formatDate(value){
-if(!value)return'—';
-const d=new Date(value);
-return Number.isNaN(d.getTime())?'—':d.toLocaleString('fr-FR',{
-dateStyle:'short',
-timeStyle:'short'
-});
-}
 
-function escapeHtml(value){
-if(value===null||value===undefined)return'';
-return String(value)
-.replaceAll('&','&amp;')
-.replaceAll('<','&lt;')
-.replaceAll('>','&gt;')
-.replaceAll('"','&quot;')
-.replaceAll("'",'&#039;');
-}
+/* ============================================================
+   VARIABLES
+============================================================ */
 
-function normalizeStatus(status){
-return status?String(status).trim().toLowerCase():'pending';
-}
+let currentAdmin = null;
+let adminProfile = null;
 
-function statusLabel(status){
-const labels={
-pending:'En attente',
-processing:'En traitement',
-completed:'Terminée',
-cancelled:'Annulée',
-disputed:'Litige',
-dispute:'Litige',
-rejected:'Rejetée'
-};
-const v=normalizeStatus(status);
-return labels[v]||v||'Inconnu';
-}
+let allOrders = [];
+let allUsers = [];
+let allDisputes = [];
 
-function statusClass(status){
-const v=normalizeStatus(status);
-if(v==='disputed'||v==='dispute')return'dispute';
-return v;
-}
+let settings = null;
 
-function paymentStatusLabel(status){
-if(!status)return'Non renseigné';
-const labels={
-pending:'En attente',
-uploaded:'Preuve envoyée',
-confirmed:'Confirmé',
-rejected:'Rejeté',
-not_required:'Non requis'
-};
-return labels[String(status).trim().toLowerCase()]||status;
-}
+let isCheckingSession = false;
 
-function orderTypeLabel(type){
-const v=String(type||'').trim().toLowerCase();
-if(v==='buy')return'Achat';
-if(v==='sell')return'Vente';
-return type||'—';
-}
 
-function networkLabel(network){
-if(!network)return'—';
-const v=String(network).trim().toUpperCase();
-if(v==='TRC20')return'TRC20';
-if(v==='BEP20'||v==='BP20')return'BEP20';
-return v;
-}
+/* ============================================================
+   ELEMENTS
+============================================================ */
 
-function showLogin(){
-loginScreen?.classList.remove('hidden');
-adminApp?.classList.add('hidden');
-}
+const loginScreen =
+  document.getElementById('loginScreen');
 
-function showAdmin(){
-loginScreen?.classList.add('hidden');
-adminApp?.classList.remove('hidden');
-}
+const adminApp =
+  document.getElementById('adminApp');
 
-function resetAdminData(){
-currentAdmin=null;
-adminProfile=null;
-allOrders=[];
-allUsers=[];
-allDisputes=[];
-settings=null;
-}
+const adminLoginForm =
+  document.getElementById('adminLoginForm');
 
-async function checkSession(){
-if(isCheckingSession)return;
-isCheckingSession=true;
-
-try{
-const{data,error}=await supabaseClient.auth.getSession();
-
-if(error){
-console.error('Erreur session:',error);
-resetAdminData();
-showLogin();
-showLoginMessage('Impossible de vérifier la session.');
-return;
-}
+const logoutAdminBtn =
+  document.getElementById('logoutAdminBtn');
 
-if(!data?.session?.user){
-resetAdminData();
-showLogin();
-return;
-}
+const loginMessage =
+  document.getElementById('loginMessage');
 
-currentAdmin=data.session.user;
-await verifyAdmin();
-}finally{
-isCheckingSession=false;
-}
-}
+const adminMessage =
+  document.getElementById('adminMessage');
 
-async function verifyAdmin(){
-if(!currentAdmin?.id){
-showLogin();
-return false;
-}
 
-const{data,error}=await supabaseClient
-.from('profiles')
-.select('id,full_name,phone,country,role')
-.eq('id',currentAdmin.id)
-.maybeSingle();
-
-if(error){
-console.error('Erreur vérification admin:',error);
-await supabaseClient.auth.signOut();
-resetAdminData();
-showLogin();
-showLoginMessage('Impossible de vérifier les droits administrateur.');
-return false;
-}
+/* ============================================================
+   MESSAGES
+============================================================ */
 
-if(!data||String(data.role||'').toLowerCase()!=='admin'){
-await supabaseClient.auth.signOut();
-resetAdminData();
-showLogin();
-showLoginMessage('Accès refusé : ce compte n’est pas administrateur.');
-return false;
-}
+function showLoginMessage(
+  message,
+  type = 'error'
+) {
 
-adminProfile=data;
-showAdmin();
-await loadEverything();
-return true;
-}
+  if (!loginMessage) return;
 
-adminLoginForm?.addEventListener('submit',async event=>{
-event.preventDefault();
+  loginMessage.textContent = message;
+  loginMessage.style.display = 'block';
+  loginMessage.style.padding = '12px 14px';
+  loginMessage.style.borderRadius = '10px';
+  loginMessage.style.marginBottom = '15px';
+  loginMessage.style.fontSize = '13px';
+  loginMessage.style.fontWeight = '700';
 
-const email=document.getElementById('adminEmail')?.value.trim();
-const password=document.getElementById('adminPassword')?.value||'';
+  if (type === 'success') {
 
-if(!email){
-showLoginMessage('Veuillez saisir votre adresse email.');
-return;
-}
-if(!password){
-showLoginMessage('Veuillez saisir votre mot de passe.');
-return;
-}
+    loginMessage.style.background = '#e8f8ef';
+    loginMessage.style.color = '#168447';
 
-showLoginMessage('Connexion en cours...','info');
+  } else if (type === 'info') {
 
-const{data,error}=await supabaseClient.auth.signInWithPassword({email,password});
+    loginMessage.style.background = '#eaf3ff';
+    loginMessage.style.color = '#0757d9';
 
-if(error){
-console.error('Erreur connexion:',error);
-showLoginMessage('Email ou mot de passe incorrect.');
-return;
-}
-if(!data?.user){
-showLoginMessage('Connexion impossible.');
-return;
-}
+  } else {
 
-currentAdmin=data.user;
-await verifyAdmin();
-});
-
-logoutAdminBtn?.addEventListener('click',async()=>{
-const{error}=await supabaseClient.auth.signOut();
-if(error){
-showAdminMessage('Erreur lors de la déconnexion.','error');
-return;
-}
-resetAdminData();
-showLogin();
-hideLoginMessage();
-});
-
-document.querySelectorAll('.admin-nav-btn').forEach(button=>{
-button.addEventListener('click',()=>switchAdminPage(button.dataset.page));
-});
-
-document.querySelectorAll('[data-go-page]').forEach(button=>{
-button.addEventListener('click',()=>switchAdminPage(button.dataset.goPage));
-});
-
-function switchAdminPage(pageId){
-if(!pageId)return;
-
-document.querySelectorAll('.admin-page').forEach(page=>page.classList.remove('active'));
-document.getElementById(pageId)?.classList.add('active');
-
-document.querySelectorAll('.admin-nav-btn').forEach(button=>{
-button.classList.toggle('active',button.dataset.page===pageId);
-});
-
-if(pageId==='ordersAdminPage')renderOrders();
-if(pageId==='usersAdminPage')renderUsers();
-if(pageId==='disputesAdminPage')renderDisputes();
+    loginMessage.style.background = '#feecec';
+    loginMessage.style.color = '#c62828';
+
+  }
+
 }
 
-/* ==================== CHARGEMENT GLOBAL ==================== */
 
-async function loadEverything(){
-showAdminMessage('Chargement des données...','info');
+function hideLoginMessage() {
 
-const results=await Promise.allSettled([
-loadSettings(),
-loadOrders(),
-loadUsers(),
-loadDisputes()
-]);
+  if (!loginMessage) return;
 
-results.forEach((result,index)=>{
-if(result.status==='rejected'){
-console.error('Erreur chargement #'+index,result.reason);
-}
-});
+  loginMessage.style.display = 'none';
+  loginMessage.textContent = '';
 
-updateDashboard();
 }
 
-/* ==================== PARAMÈTRES ==================== */
-
-async function loadSettings(){
-const{data,error}=await supabaseClient
-.from('app_settings')
-.select('id,country,buy_rate,sell_rate,min_order_cfa,max_order_cfa,trc20_fee_usdt,bp20_fee_usdt,orange_money_number,updated_at')
-.eq('id',1)
-.maybeSingle();
-
-if(error){
-console.error('Erreur paramètres:',error);
-settings=null;
-updateSettingsDisplay(null);
-showAdminMessage('Impossible de charger les paramètres commerciaux : '+error.message,'error');
-return;
-}
 
-if(!data){
-settings=null;
-updateSettingsDisplay(null);
-showAdminMessage('La configuration app_settings avec id = 1 est introuvable.','error');
-return;
-}
+function showAdminMessage(
+  message,
+  type = 'info'
+) {
 
-settings=data;
-updateSettingsDisplay(data);
-}
+  if (!adminMessage) return;
 
-function updateSettingsDisplay(data){
-const ids={
-buyRate:data?.buy_rate,
-sellRate:data?.sell_rate,
-trc20FeeInput:data?.trc20_fee_usdt,
-bp20FeeInput:data?.bp20_fee_usdt,
-minOrderInput:data?.min_order_cfa,
-maxOrderInput:data?.max_order_cfa
-};
-
-Object.entries(ids).forEach(([id,value])=>{
-const el=document.getElementById(id);
-if(el)el.value=value??'';
-});
-
-document.getElementById('dashboardBuyRate').textContent=data?formatNumber(data.buy_rate):'—';
-document.getElementById('dashboardSellRate').textContent=data?formatNumber(data.sell_rate):'—';
-document.getElementById('dashboardTrc20Fee').textContent=data?formatUsdt(data.trc20_fee_usdt):'—';
-document.getElementById('dashboardBp20Fee').textContent=data?formatUsdt(data.bp20_fee_usdt):'—';
-}
+  adminMessage.textContent = message;
+  adminMessage.className = '';
 
-document.getElementById('settingsForm')?.addEventListener('submit',async event=>{
-event.preventDefault();
+  adminMessage.classList.add(type);
 
-if(!settings?.id){
-showAdminMessage('La configuration app_settings (id = 1) est introuvable.','error');
-return;
-}
+  clearTimeout(
+    showAdminMessage.timeout
+  );
 
-const buyRate=Number(document.getElementById('buyRate')?.value);
-const sellRate=Number(document.getElementById('sellRate')?.value);
-const trc20Fee=Number(document.getElementById('trc20FeeInput')?.value);
-const bp20Fee=Number(document.getElementById('bp20FeeInput')?.value);
-const minOrder=Number(document.getElementById('minOrderInput')?.value);
-const maxOrder=Number(document.getElementById('maxOrderInput')?.value);
-
-if([buyRate,sellRate,trc20Fee,bp20Fee,minOrder,maxOrder].some(v=>!Number.isFinite(v))){
-showAdminMessage('Veuillez remplir correctement tous les paramètres.','error');
-return;
-}
-if(buyRate<=0||sellRate<=0){
-showAdminMessage('Les taux d’achat et de vente doivent être supérieurs à zéro.','error');
-return;
-}
-if(trc20Fee<0||bp20Fee<0||minOrder<0||maxOrder<0){
-showAdminMessage('Les valeurs ne peuvent pas être négatives.','error');
-return;
-}
-if(minOrder>maxOrder){
-showAdminMessage('Le montant minimum ne peut pas être supérieur au maximum.','error');
-return;
-}
+  showAdminMessage.timeout =
+    setTimeout(
+      function() {
 
-const button=document.getElementById('saveSettingsBtn');
-if(button){
-button.disabled=true;
-button.textContent='⏳ Enregistrement...';
-}
+        adminMessage.className = '';
 
-try{
-const updateValues={
-buy_rate:buyRate,
-sell_rate:sellRate,
-min_order_cfa:minOrder,
-max_order_cfa:maxOrder,
-trc20_fee_usdt:trc20Fee,
-bp20_fee_usdt:bp20Fee,
-updated_at:new Date().toISOString()
-};
-
-const{error}=await supabaseClient
-.from('app_settings')
-.update(updateValues)
-.eq('id',settings.id);
-
-if(error){
-showAdminMessage('❌ Erreur Supabase : '+error.message,'error');
-return;
-}
+      },
+      6000
+    );
 
-await loadSettings();
-updateDashboard();
-showAdminMessage('✅ Les paramètres ont été enregistrés avec succès.','success');
-}finally{
-if(button){
-button.disabled=false;
-button.textContent='💾 Enregistrer les paramètres';
-}
 }
-});
-
-/* ==================== COMMANDES ==================== */
-
-async function loadOrders(){
-const{data,error}=await supabaseClient
-.from('orders')
-.select('*')
-.order('created_at',{ascending:false});
-
-if(error){
-console.error('Erreur commandes:',error);
-allOrders=[];
-renderOrders();
-renderRecentOrders();
-showAdminMessage('Impossible de charger les commandes : '+error.message,'error');
-return;
-}
 
-allOrders=Array.isArray(data)?data:[];
-renderOrders();
-renderRecentOrders();
-}
 
-function extractWalletAddress(order){
-return order?.wallet_address?String(order.wallet_address).trim():'';
-}
+/* ============================================================
+   FORMAT
+============================================================ */
 
-function extractPayoutPhone(order){
-return order?.payout_phone?String(order.payout_phone).trim():'';
-}
+function formatNumber(value) {
 
-async function openPaymentProof(proofPath){
-if(!proofPath){
-showAdminMessage('Aucune preuve de paiement disponible.','error');
-return;
-}
+  const number = Number(value);
 
-const raw=String(proofPath).trim();
-const newWindow=window.open('','_blank');
+  if (!Number.isFinite(number)) {
+    return '0';
+  }
 
-try{
-if(/^https?:\/\//i.test(raw)){
-if(newWindow){newWindow.location.href=raw;}else{window.open(raw,'_blank','noopener');}
-return;
-}
+  return new Intl.NumberFormat(
+    'fr-FR'
+  ).format(number);
 
-const{data,error}=await supabaseClient
-.storage
-.from(PAYMENT_PROOFS_BUCKET)
-.createSignedUrl(raw,3600);
-
-if(error)throw error;
-if(!data?.signedUrl){throw new Error('Impossible de générer le lien sécurisé de la preuve.');}
-
-if(newWindow){newWindow.location.href=data.signedUrl;}else{window.open(data.signedUrl,'_blank','noopener');}
-}catch(error){
-console.error('Erreur ouverture preuve:',error);
-if(newWindow){newWindow.close();}
-showAdminMessage('Impossible d’ouvrir la preuve : '+(error?.message||'Erreur inconnue.'),'error');
 }
-}
 
-async function copyOrderValue(value,button){
-if(!value)return;
-
-try{
-if(navigator.clipboard&&window.isSecureContext){
-await navigator.clipboard.writeText(value);
-}else{
-const textarea=document.createElement('textarea');
-textarea.value=value;
-textarea.style.position='fixed';
-textarea.style.opacity='0';
-document.body.appendChild(textarea);
-textarea.select();
-document.execCommand('copy');
-textarea.remove();
-}
 
-const old=button.textContent;
-button.textContent='✓ Copié';
-button.classList.add('copied');
-
-setTimeout(()=>{
-button.textContent=old;
-button.classList.remove('copied');
-},1500);
-}catch(error){
-console.error('Erreur copie:',error);
-window.prompt('Copiez cette information :',value);
-}
-}
+function formatUsdt(value) {
 
-function renderOrders(){
-const container=document.getElementById('ordersList');
-if(!container)return;
+  const number = Number(value);
 
-const statusFilter=document.getElementById('orderStatusFilter')?.value||'';
-const typeFilter=document.getElementById('orderTypeFilter')?.value||'';
+  if (!Number.isFinite(number)) {
+    return '0';
+  }
 
-let orders=[...allOrders];
+  return new Intl.NumberFormat(
+    'fr-FR',
+    {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 6
+    }
+  ).format(number);
 
-if(statusFilter){
-orders=orders.filter(order=>normalizeStatus(order.status)===statusFilter);
 }
-if(typeFilter){
-orders=orders.filter(order=>String(order.side||'').toLowerCase()===typeFilter);
-}
 
-if(!orders.length){
-container.innerHTML='<div class="empty">Aucune commande trouvée.</div>';
-return;
-}
 
-const buys=orders.filter(order=>String(order.side||'').toLowerCase()==='buy');
-const sells=orders.filter(order=>String(order.side||'').toLowerCase()==='sell');
-const unknown=orders.filter(order=>{
-const side=String(order.side||'').toLowerCase();
-return side!=='buy'&&side!=='sell';
-});
-
-function renderProof(order){
-const rawProof=order?.payment_proof_url?String(order.payment_proof_url).trim():'';
-
-if(!rawProof){
-return `
-<div class="proof-box">
-<div class="proof-title">📎 Preuve de paiement</div>
-<div class="proof-meta">Aucune preuve de paiement envoyée.</div>
-</div>`;
-}
+function formatDate(value) {
 
-return `
-<div class="proof-box">
-<div class="proof-title">📎 Preuve de paiement</div>
-<button type="button" class="btn btn-primary btn-small" data-open-proof="${escapeHtml(rawProof)}">
-👁️ Voir la preuve de paiement
-</button>
-${order.payment_proof_uploaded_at?`<div class="proof-meta">Envoyée le : ${escapeHtml(formatDate(order.payment_proof_uploaded_at))}</div>`:`<div class="proof-meta">Preuve de paiement envoyée. Cliquez sur le bouton pour l’ouvrir.</div>`}
-</div>`;
-}
+  if (!value) return '—';
 
-function renderOrderCard(order){
-const side=String(order.side||'').toLowerCase();
-const isBuy=side==='buy';
-const status=normalizeStatus(order.status);
-const network=networkLabel(order.network);
-const wallet=extractWalletAddress(order);
-const payoutPhone=extractPayoutPhone(order);
-const id=escapeHtml(order.id||'—');
-const userId=escapeHtml(order.user_id||'—');
-const customerNote=escapeHtml(order.customer_note||'');
-const adminNote=escapeHtml(order.admin_note||'');
-const paymentReference=escapeHtml(order.payment_reference||'—');
-const paymentStatus=escapeHtml(paymentStatusLabel(order.payment_status));
-
-let html=`
-<div class="order-card">
-<div class="order-card-top">
-<div>
-<span class="order-type-badge ${isBuy?'buy':'sell'}">${isBuy?'🟢 Achat USDT':'🟠 Vente USDT'}</span>
-<div class="order-card-id">Commande : ${id}</div>
-</div>
-<span class="status ${escapeHtml(statusClass(status))}">${escapeHtml(statusLabel(status))}</span>
-</div>
-
-<div class="order-card-row"><span>Client ID</span><strong>${userId}</strong></div>
-<div class="order-card-row"><span>Méthode de paiement</span><strong>${escapeHtml(order.payment_method||'—')}</strong></div>
-`;
-
-if(isBuy){
-html+=`
-<div class="order-card-row"><span>Montant payé</span><strong>${formatNumber(order.amount_cfa)} FCFA</strong></div>
-<div class="order-card-row"><span>USDT à envoyer</span><strong>${formatUsdt(order.net_usdt)} USDT</strong></div>
-<div class="order-card-row"><span>Frais</span><strong>${formatUsdt(order.fee_usdt)} USDT</strong></div>
-<div class="order-card-row"><span>Réseau</span><strong><span class="network-highlight">⛓️ ${escapeHtml(network)}</span></strong></div>`;
-
-if(wallet){
-html+=`
-<div class="wallet-box">
-<div class="wallet-box-label">Adresse wallet du client</div>
-<div class="wallet-box-row">
-<div class="wallet-box-value">${escapeHtml(wallet)}</div>
-<button type="button" class="copy-btn" data-copy-type="wallet" data-order-id="${id}">Copier</button>
-</div>
-</div>`;
-}else{
-html+=`<div class="wallet-box"><div class="wallet-box-label">Adresse wallet</div><div class="wallet-box-value">⚠️ Adresse non renseignée</div></div>`;
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return '—';
+  }
+
+  return date.toLocaleString(
+    'fr-FR',
+    {
+      dateStyle: 'short',
+      timeStyle: 'short'
+    }
+  );
+
 }
+
 
-html+=`<div class="order-warning">⚠️ Vérifiez impérativement que le réseau utilisé pour l'envoi correspond au réseau indiqué ci-dessus.</div>`;
-}else{
-html+=`
-<div class="order-card-row"><span>USDT reçu</span><strong>${formatUsdt(order.usdt_amount)} USDT</strong></div>
-<div class="order-card-row"><span>FCFA à payer</span><strong>${formatNumber(order.receive_cfa)} FCFA</strong></div>
-<div class="order-card-row"><span>Réseau</span><strong><span class="network-highlight">⛓️ ${escapeHtml(network)}</span></strong></div>`;
-
-if(payoutPhone){
-html+=`
-<div class="wallet-box">
-<div class="wallet-box-label">Numéro à payer</div>
-<div class="wallet-box-row">
-<div class="wallet-box-value">${escapeHtml(payoutPhone)}</div>
-<button type="button" class="copy-btn" data-copy-type="phone" data-order-id="${id}">Copier</button>
-</div>
-</div>`;
+/* ============================================================
+   SECURITE HTML
+============================================================ */
+
+function escapeHtml(value) {
+
+  if (
+    value === null ||
+    value === undefined
+  ) {
+    return '';
+  }
+
+  return String(value)
+    .replaceAll('&','&amp;')
+    .replaceAll('<','&lt;')
+    .replaceAll('>','&gt;')
+    .replaceAll('"','&quot;')
+    .replaceAll("'",'&#039;');
+
 }
+
+
+/* ============================================================
+   STATUT
+============================================================ */
+
+function normalizeStatus(status) {
+
+  if (!status) return 'pending';
 
-html+=`<div class="order-warning">⚠️ Vérifiez que les USDT ont bien été reçus sur le bon réseau avant de payer le client.</div>`;
+  return String(status)
+    .trim()
+    .toLowerCase();
+
 }
+
+
+function statusLabel(status) {
+
+  const value =
+    normalizeStatus(status);
 
-html+=`
-<div class="order-card-row"><span>Référence paiement</span><strong>${paymentReference}</strong></div>
-<div class="order-card-row"><span>Statut paiement</span><strong>${paymentStatus}</strong></div>`;
+  const labels = {
+    pending: 'En attente',
+    processing: 'En traitement',
+    completed: 'Terminée',
+    cancelled: 'Annulée',
+    disputed: 'Litige',
+    dispute: 'Litige'
+  };
 
-if(order.payment_confirmed_at){
-html+=`<div class="order-card-row"><span>Paiement confirmé le</span><strong>${escapeHtml(formatDate(order.payment_confirmed_at))}</strong></div>`;
+  return labels[value] || value || 'Inconnu';
+
 }
-if(order.payment_rejection_reason){
-html+=`<div class="order-warning">❌ Motif de rejet : ${escapeHtml(order.payment_rejection_reason)}</div>`;
+
+
+function statusClass(status) {
+
+  const value =
+    normalizeStatus(status);
+
+  if (
+    value === 'disputed' ||
+    value === 'dispute'
+  ) {
+    return 'dispute';
+  }
+
+  return value;
+
 }
+
 
-html+=renderProof(order);
+function orderTypeLabel(type) {
 
-if(customerNote){
-html+=`<div class="order-card-row"><span>Note client</span><strong>${customerNote}</strong></div>`;
+  const value =
+    String(type || '')
+      .trim()
+      .toLowerCase();
+
+  if (value === 'buy') return 'Achat';
+  if (value === 'sell') return 'Vente';
+
+  return type || '—';
+
 }
-if(adminNote){
-html+=`<div class="order-card-row"><span>Note admin</span><strong>${adminNote}</strong></div>`;
+
+
+function networkLabel(network) {
+
+  if (!network) return '—';
+
+  const value =
+    String(network)
+      .trim()
+      .toUpperCase();
+
+  if (value === 'TRC20') {
+    return 'TRC20';
+  }
+
+  if (
+    value === 'BEP20' ||
+    value === 'BP20'
+  ) {
+    return 'BEP20';
+  }
+
+  return escapeHtml(network);
+
 }
+
 
-html+=`
-<div class="order-card-row"><span>Date</span><strong>${escapeHtml(formatDate(order.created_at))}</strong></div>
-<div class="order-card-actions">
-<button type="button" class="btn btn-primary btn-small" data-status-order-id="${id}">Modifier le statut</button>
-<button type="button" class="btn btn-secondary btn-small" data-payment-order-id="${id}">Gérer le paiement</button>
-<button type="button" class="btn btn-secondary btn-small" data-note-order-id="${id}">Note admin</button>
-</div>
-</div>`;
-
-return html;
+/* ============================================================
+   AFFICHAGE
+============================================================ */
+
+function showLogin() {
+
+  loginScreen?.classList.remove('hidden');
+  adminApp?.classList.add('hidden');
+
 }
+
 
-let output='';
+function showAdmin() {
 
-if(buys.length){
-output+=`<div class="order-section"><div class="order-section-title buy">🟢 ACHATS USDT <span class="order-count">${buys.length}</span></div>${buys.map(renderOrderCard).join('')}</div>`;
+  loginScreen?.classList.add('hidden');
+  adminApp?.classList.remove('hidden');
+
 }
-if(sells.length){
-output+=`<div class="order-section"><div class="order-section-title sell">🟠 VENTES USDT <span class="order-count">${sells.length}</span></div>${sells.map(renderOrderCard).join('')}</div>`;
+
+
+function resetAdminData() {
+
+  currentAdmin = null;
+  adminProfile = null;
+
+  allOrders = [];
+  allUsers = [];
+  allDisputes = [];
+
+  settings = null;
+
 }
-if(unknown.length){
-output+=`<div class="order-section"><div class="order-section-title">⚠️ COMMANDES À VÉRIFIER <span class="order-count">${unknown.length}</span></div>${unknown.map(renderOrderCard).join('')}</div>`;
+
+
+/* ============================================================
+   SESSION
+============================================================ */
+
+async function checkSession() {
+
+  if (isCheckingSession) return;
+
+  isCheckingSession = true;
+
+  try {
+
+    const {
+      data,
+      error
+    } =
+      await supabaseClient
+        .auth
+        .getSession();
+
+
+    if (error) {
+
+      console.error(
+        'Erreur session:',
+        error
+      );
+
+      resetAdminData();
+      showLogin();
+
+      showLoginMessage(
+        'Impossible de vérifier la session.'
+      );
+
+      return;
+
+    }
+
+
+    if (
+      !data ||
+      !data.session ||
+      !data.session.user
+    ) {
+
+      resetAdminData();
+      showLogin();
+
+      return;
+
+    }
+
+
+    currentAdmin =
+      data.session.user;
+
+    await verifyAdmin();
+
+  } finally {
+
+    isCheckingSession = false;
+
+  }
+
 }
+
+
+/* ============================================================
+   VERIFICATION ADMIN
+============================================================ */
+
+async function verifyAdmin() {
+
+  if (
+    !currentAdmin ||
+    !currentAdmin.id
+  ) {
+
+    showLogin();
+    return false;
+
+  }
+
+
+  const {
+    data,
+    error
+  } =
+    await supabaseClient
+      .from('profiles')
+      .select(
+        'id, full_name, phone, country, role'
+      )
+      .eq(
+        'id',
+        currentAdmin.id
+      )
+      .maybeSingle();
+
+
+  if (error) {
+
+    console.error(
+      'Erreur vérification admin:',
+      error
+    );
+
+    await supabaseClient
+      .auth
+      .signOut();
+
+    resetAdminData();
+    showLogin();
+
+    showLoginMessage(
+      'Impossible de vérifier les droits administrateur.'
+    );
+
+    return false;
+
+  }
+
+
+  if (
+    !data ||
+    String(data.role).toLowerCase() !== 'admin'
+  ) {
+
+    await supabaseClient
+      .auth
+      .signOut();
+
+    resetAdminData();
+    showLogin();
+
+    showLoginMessage(
+      'Accès refusé : ce compte n’est pas administrateur.'
+    );
+
+    return false;
+
+  }
+
+
+  adminProfile = data;
+
+  showAdmin();
+
+  await loadEverything();
 
-container.innerHTML=output;
-
-container.querySelectorAll('[data-open-proof]').forEach(button=>{
-button.addEventListener('click',async()=>{
-await openPaymentProof(button.dataset.openProof);
-});
-});
-
-container.querySelectorAll('[data-copy-type]').forEach(button=>{
-button.addEventListener('click',async()=>{
-const order=allOrders.find(item=>String(item.id)===String(button.dataset.orderId));
-if(!order)return;
-const value=button.dataset.copyType==='wallet'?extractWalletAddress(order):extractPayoutPhone(order);
-await copyOrderValue(value,button);
-});
-});
-
-container.querySelectorAll('[data-status-order-id]').forEach(button=>{
-button.addEventListener('click',()=>openOrderStatus(button.dataset.statusOrderId));
-});
-
-container.querySelectorAll('[data-payment-order-id]').forEach(button=>{
-button.addEventListener('click',()=>openPaymentManager(button.dataset.paymentOrderId));
-});
-
-container.querySelectorAll('[data-note-order-id]').forEach(button=>{
-button.addEventListener('click',()=>editAdminNote(button.dataset.noteOrderId));
-});
+  return true;
+
 }
+
+
+/* ============================================================
+   LOGIN
+============================================================ */
+
+if (adminLoginForm) {
+
+  adminLoginForm.addEventListener(
+    'submit',
+    async function(event) {
+
+      event.preventDefault();
+
+      const email =
+        document.getElementById(
+          'adminEmail'
+        )?.value.trim();
+
+      const password =
+        document.getElementById(
+          'adminPassword'
+        )?.value || '';
+
+
+      if (!email) {
+
+        showLoginMessage(
+          'Veuillez saisir votre adresse email.'
+        );
+
+        return;
+
+      }
+
+
+      if (!password) {
+
+        showLoginMessage(
+          'Veuillez saisir votre mot de passe.'
+        );
+
+        return;
+
+      }
+
+
+      showLoginMessage(
+        'Connexion en cours...',
+        'info'
+      );
+
+
+      const {
+        data,
+        error
+      } =
+        await supabaseClient
+          .auth
+          .signInWithPassword({
+            email,
+            password
+          });
+
+
+      if (error) {
+
+        console.error(
+          'Erreur connexion:',
+          error
+        );
+
+        showLoginMessage(
+          'Email ou mot de passe incorrect.'
+        );
+
+        return;
+
+      }
+
+
+      if (!data?.user) {
+
+        showLoginMessage(
+          'Connexion impossible.'
+        );
+
+        return;
 
-async function updateOrder(orderId,values,successMessage){
-showAdminMessage('Mise à jour de la commande...','info');
-
-const{error}=await supabaseClient
-.from('orders')
-.update({...values,updated_at:new Date().toISOString()})
-.eq('id',orderId);
-
-if(error){
-console.error('Erreur modification commande:',error);
-showAdminMessage('Impossible de modifier la commande : '+error.message,'error');
-return false;
+      }
+
+
+      currentAdmin = data.user;
+
+      showLoginMessage(
+        'Connexion réussie. Vérification des droits...',
+        'success'
+      );
+
+
+      await verifyAdmin();
+
+    }
+  );
+
 }
+
+
+/* ============================================================
+   LOGOUT
+============================================================ */
+
+if (logoutAdminBtn) {
+
+  logoutAdminBtn.addEventListener(
+    'click',
+    async function() {
+
+      const {
+        error
+      } =
+        await supabaseClient
+          .auth
+          .signOut();
+
+
+      if (error) {
+
+        console.error(
+          'Erreur déconnexion:',
+          error
+        );
+
+        showAdminMessage(
+          'Erreur lors de la déconnexion.',
+          'error'
+        );
 
-await loadOrders();
-updateDashboard();
-showAdminMessage(successMessage,'success');
-return true;
+        return;
+
+      }
+
+
+      resetAdminData();
+      showLogin();
+      hideLoginMessage();
+
+    }
+  );
+
 }
+
+
+/* ============================================================
+   NAVIGATION
+============================================================ */
+
+document
+  .querySelectorAll('.admin-nav-btn')
+  .forEach(
+    function(button) {
+
+      button.addEventListener(
+        'click',
+        function() {
+
+          switchAdminPage(
+            button.dataset.page
+          );
+
+        }
+      );
+
+    }
+  );
+
+
+document
+  .querySelectorAll('[data-go-page]')
+  .forEach(
+    function(button) {
+
+      button.addEventListener(
+        'click',
+        function() {
+
+          switchAdminPage(
+            button.dataset.goPage
+          );
 
-async function openOrderStatus(orderId){
-const order=allOrders.find(item=>String(item.id)===String(orderId));
-if(!order){
-showAdminMessage('Commande introuvable.','error');
-return;
+        }
+      );
+
+    }
+  );
+
+
+function switchAdminPage(pageId) {
+
+  if (!pageId) return;
+
+
+  document
+    .querySelectorAll('.admin-page')
+    .forEach(
+      function(page) {
+
+        page.classList.remove('active');
+
+      }
+    );
+
+
+  const target =
+    document.getElementById(pageId);
+
+
+  if (target) {
+    target.classList.add('active');
+  }
+
+
+  document
+    .querySelectorAll('.admin-nav-btn')
+    .forEach(
+      function(button) {
+
+        button.classList.toggle(
+          'active',
+          button.dataset.page === pageId
+        );
+
+      }
+    );
+
+
+  if (pageId === 'ordersAdminPage') {
+    renderOrders();
+  }
+
+  if (pageId === 'usersAdminPage') {
+    renderUsers();
+  }
+
+  if (pageId === 'disputesAdminPage') {
+    renderDisputes();
+  }
+
 }
+
+
+/* ============================================================
+   CHARGEMENT GLOBAL
+============================================================ */
+
+async function loadEverything() {
+
+  showAdminMessage(
+    'Chargement des données...',
+    'info'
+  );
+
+
+  const results =
+    await Promise.allSettled([
+
+      loadSettings(),
+      loadOrders(),
+      loadUsers(),
+      loadDisputes()
+
+    ]);
+
+
+  results.forEach(
+    function(result,index) {
+
+      if (result.status === 'rejected') {
+
+        console.error(
+          'Erreur chargement #' + index,
+          result.reason
+        );
+
+      }
+
+    }
+  );
+
+
+  updateDashboard();
+
+}
+
+
+/* ============================================================
+   CHARGEMENT APP_SETTINGS
+============================================================ */
+
+async function loadSettings() {
+
+  const {
+    data,
+    error
+  } =
+    await supabaseClient
+      .from('app_settings')
+      .select(
+        'id,country,buy_rate,sell_rate,min_order_cfa,max_order_cfa,trc20_fee_usdt,bp20_fee_usdt,orange_money_number,updated_at'
+      )
+      .eq(
+        'id',
+        1
+      )
+      .maybeSingle();
+
+
+  if (error) {
+
+    console.error(
+      'Erreur paramètres:',
+      error
+    );
+
+    settings = null;
+
+    updateSettingsDisplay(null);
+
+    showAdminMessage(
+      'Impossible de charger les paramètres commerciaux : ' +
+      error.message,
+      'error'
+    );
+
+    return;
+
+  }
+
+
+  if (!data) {
+
+    settings = null;
+
+    updateSettingsDisplay(null);
+
+    showAdminMessage(
+      'La configuration app_settings avec id = 1 est introuvable.',
+      'error'
+    );
+
+    return;
+
+  }
+
+
+  settings = data;
+
+  updateSettingsDisplay(data);
+
+}
+
+
+/* ============================================================
+   AFFICHAGE PARAMETRES
+============================================================ */
+
+function updateSettingsDisplay(data) {
+
+  const buyRate =
+    document.getElementById('buyRate');
+
+  const sellRate =
+    document.getElementById('sellRate');
+
+  const trc20Fee =
+    document.getElementById('trc20FeeInput');
+
+  const bp20Fee =
+    document.getElementById('bp20FeeInput');
+
+  const minOrder =
+    document.getElementById('minOrderInput');
+
+  const maxOrder =
+    document.getElementById('maxOrderInput');
+
+
+  if (!data) {
+
+    if (buyRate) buyRate.value = '';
+    if (sellRate) sellRate.value = '';
+    if (trc20Fee) trc20Fee.value = '';
+    if (bp20Fee) bp20Fee.value = '';
+    if (minOrder) minOrder.value = '';
+    if (maxOrder) maxOrder.value = '';
+
+  } else {
+
+    /*
+     * IMPORTANT :
+     * vrais noms des colonnes Supabase
+     */
+
+    if (buyRate) {
+      buyRate.value =
+        data.buy_rate ?? '';
+    }
+
+    if (sellRate) {
+      sellRate.value =
+        data.sell_rate ?? '';
+    }
+
+    if (trc20Fee) {
+      trc20Fee.value =
+        data.trc20_fee_usdt ?? '';
+    }
+
+    if (bp20Fee) {
+      bp20Fee.value =
+        data.bp20_fee_usdt ?? '';
+    }
+
+    if (minOrder) {
+      minOrder.value =
+        data.min_order_cfa ?? '';
+    }
+
+    if (maxOrder) {
+      maxOrder.value =
+        data.max_order_cfa ?? '';
+    }
+
+  }
+
+
+  const dashboardBuyRate =
+    document.getElementById(
+      'dashboardBuyRate'
+    );
+
+  const dashboardSellRate =
+    document.getElementById(
+      'dashboardSellRate'
+    );
+
+  const dashboardTrc20Fee =
+    document.getElementById(
+      'dashboardTrc20Fee'
+    );
+
+  const dashboardBp20Fee =
+    document.getElementById(
+      'dashboardBp20Fee'
+    );
+
+
+  if (dashboardBuyRate) {
+
+    dashboardBuyRate.textContent =
+      data
+        ? formatNumber(data.buy_rate)
+        : '—';
+
+  }
+
+
+  if (dashboardSellRate) {
+
+    dashboardSellRate.textContent =
+      data
+        ? formatNumber(data.sell_rate)
+        : '—';
+
+  }
+
+
+  if (dashboardTrc20Fee) {
+
+    dashboardTrc20Fee.textContent =
+      data
+        ? formatUsdt(data.trc20_fee_usdt)
+        : '—';
+
+  }
+
+
+  if (dashboardBp20Fee) {
+
+    dashboardBp20Fee.textContent =
+      data
+        ? formatUsdt(data.bp20_fee_usdt)
+        : '—';
+
+  }
+
+}
+
+
+/* ============================================================
+   SAUVEGARDE PARAMETRES
+   CORRECTION PRINCIPALE
+============================================================ */
+
+const settingsForm =
+  document.getElementById(
+    'settingsForm'
+  );
+
+
+if (settingsForm) {
+
+  settingsForm.addEventListener(
+    'submit',
+    async function(event) {
+
+      event.preventDefault();
+
+
+      /* ------------------------------------------------------
+         Vérification configuration
+      ------------------------------------------------------ */
+
+      if (
+        !settings ||
+        settings.id === undefined ||
+        settings.id === null
+      ) {
+
+        showAdminMessage(
+          'La configuration app_settings (id = 1) est introuvable.',
+          'error'
+        );
+
+        return;
+
+      }
+
+
+      /* ------------------------------------------------------
+         Lecture des champs
+      ------------------------------------------------------ */
+
+      const buyRate =
+        Number(
+          document.getElementById(
+            'buyRate'
+          )?.value
+        );
+
+
+      const sellRate =
+        Number(
+          document.getElementById(
+            'sellRate'
+          )?.value
+        );
+
+
+      const trc20Fee =
+        Number(
+          document.getElementById(
+            'trc20FeeInput'
+          )?.value
+        );
+
+
+      const bp20Fee =
+        Number(
+          document.getElementById(
+            'bp20FeeInput'
+          )?.value
+        );
+
+
+      const minOrder =
+        Number(
+          document.getElementById(
+            'minOrderInput'
+          )?.value
+        );
+
+
+      const maxOrder =
+        Number(
+          document.getElementById(
+            'maxOrderInput'
+          )?.value
+        );
+
+
+      /* ------------------------------------------------------
+         Validation
+      ------------------------------------------------------ */
+
+      const values = [
+        buyRate,
+        sellRate,
+        trc20Fee,
+        bp20Fee,
+        minOrder,
+        maxOrder
+      ];
+
+
+      if (
+        values.some(
+          value =>
+            !Number.isFinite(value)
+        )
+      ) {
+
+        showAdminMessage(
+          'Veuillez remplir correctement tous les paramètres.',
+          'error'
+        );
+
+        return;
+
+      }
+
+
+      if (
+        buyRate <= 0 ||
+        sellRate <= 0
+      ) {
+
+        showAdminMessage(
+          'Les taux d’achat et de vente doivent être supérieurs à zéro.',
+          'error'
+        );
+
+        return;
+
+      }
+
+
+      if (
+        trc20Fee < 0 ||
+        bp20Fee < 0
+      ) {
+
+        showAdminMessage(
+          'Les frais réseau ne peuvent pas être négatifs.',
+          'error'
+        );
+
+        return;
+
+      }
+
+
+      if (
+        minOrder < 0 ||
+        maxOrder < 0
+      ) {
+
+        showAdminMessage(
+          'Les limites de commande ne peuvent pas être négatives.',
+          'error'
+        );
+
+        return;
+
+      }
+
+
+      if (
+        minOrder > maxOrder
+      ) {
+
+        showAdminMessage(
+          'Le montant minimum ne peut pas être supérieur au maximum.',
+          'error'
+        );
+
+        return;
+
+      }
+
+
+      /* ------------------------------------------------------
+         BOUTON
+      ------------------------------------------------------ */
+
+      const saveButton =
+        document.getElementById(
+          'saveSettingsBtn'
+        );
+
+
+      if (saveButton) {
+
+        saveButton.disabled = true;
+        saveButton.textContent =
+          '⏳ Enregistrement...';
+
+      }
+
+
+      showAdminMessage(
+        'Enregistrement des paramètres...',
+        'info'
+      );
+
+
+      try {
+
+        /* ----------------------------------------------------
+           UPDATE AVEC LES VRAIS NOMS DE COLONNES
+        ---------------------------------------------------- */
+
+        const updateValues = {
+
+          buy_rate:
+            buyRate,
+
+          sell_rate:
+            sellRate,
+
+          min_order_cfa:
+            minOrder,
+
+          max_order_cfa:
+            maxOrder,
+
+          trc20_fee_usdt:
+            trc20Fee,
+
+          bp20_fee_usdt:
+            bp20Fee,
+
+          updated_at:
+            new Date().toISOString()
+
+        };
+
+
+        console.log(
+          'Valeurs envoyées à app_settings:',
+          updateValues
+        );
+
+
+        const {
+          error
+        } =
+          await supabaseClient
+            .from('app_settings')
+            .update(
+              updateValues
+            )
+            .eq(
+              'id',
+              settings.id
+            );
+
+
+        /* ----------------------------------------------------
+           ERREUR SUPABASE
+        ---------------------------------------------------- */
+
+        if (error) {
+
+          console.error(
+            'ERREUR SUPABASE SAUVEGARDE:',
+            error
+          );
+
+          showAdminMessage(
+            '❌ Erreur Supabase : ' +
+            (
+              error.message ||
+              'erreur inconnue'
+            ),
+            'error'
+          );
+
+          return;
+
+        }
+
+
+        /* ----------------------------------------------------
+           RELECTURE DIRECTE DE LA BASE
+        ---------------------------------------------------- */
+
+        const {
+          data: verifyData,
+          error: verifyError
+        } =
+          await supabaseClient
+            .from('app_settings')
+            .select(
+              'id,buy_rate,sell_rate,min_order_cfa,max_order_cfa,trc20_fee_usdt,bp20_fee_usdt,updated_at'
+            )
+            .eq(
+              'id',
+              settings.id
+            )
+            .maybeSingle();
+
+
+        if (verifyError) {
+
+          console.error(
+            'Erreur vérification:',
+            verifyError
+          );
+
+          showAdminMessage(
+            'Les données ont été envoyées, mais leur vérification a échoué : ' +
+            verifyError.message,
+            'error'
+          );
+
+          return;
+
+        }
+
+
+        if (!verifyData) {
+
+          showAdminMessage(
+            'La sauvegarde a été envoyée mais aucune configuration n’a pu être relue.',
+            'error'
+          );
+
+          return;
+
+        }
+
+
+        /* ----------------------------------------------------
+           VERIFICATION VALEURS
+        ---------------------------------------------------- */
+
+        const savedBuy =
+          Number(
+            verifyData.buy_rate
+          );
+
+        const savedSell =
+          Number(
+            verifyData.sell_rate
+          );
+
+        const savedMin =
+          Number(
+            verifyData.min_order_cfa
+          );
+
+        const savedMax =
+          Number(
+            verifyData.max_order_cfa
+          );
+
+        const savedTrc =
+          Number(
+            verifyData.trc20_fee_usdt
+          );
+
+        const savedBp =
+          Number(
+            verifyData.bp20_fee_usdt
+          );
+
+
+        const success =
+          savedBuy === buyRate &&
+          savedSell === sellRate &&
+          savedMin === minOrder &&
+          savedMax === maxOrder &&
+          savedTrc === trc20Fee &&
+          savedBp === bp20Fee;
+
+
+        if (!success) {
+
+          console.error(
+            'Valeurs demandées:',
+            {
+              buyRate,
+              sellRate,
+              minOrder,
+              maxOrder,
+              trc20Fee,
+              bp20Fee
+            }
+          );
+
+          console.error(
+            'Valeurs relues:',
+            verifyData
+          );
+
+
+          showAdminMessage(
+            '❌ La base a répondu, mais les valeurs enregistrées ne correspondent pas aux valeurs demandées.',
+            'error'
+          );
+
+          return;
+
+        }
+
+
+        /* ----------------------------------------------------
+           ACTUALISATION LOCALE
+        ---------------------------------------------------- */
+
+        settings = {
+          ...settings,
+          ...verifyData
+        };
+
+
+        updateSettingsDisplay(
+          settings
+        );
+
+
+        updateDashboard();
+
+
+        showAdminMessage(
+          '✅ Les paramètres ont été enregistrés avec succès.',
+          'success'
+        );
+
+
+        console.log(
+          'SAUVEGARDE PARAMETRES REUSSIE:',
+          settings
+        );
+
+      } catch (error) {
+
+        console.error(
+          'Erreur inattendue:',
+          error
+        );
+
+        showAdminMessage(
+          '❌ Une erreur inattendue est survenue : ' +
+          (
+            error.message ||
+            error
+          ),
+          'error'
+        );
+
+      } finally {
+
+        if (saveButton) {
+
+          saveButton.disabled = false;
+
+          saveButton.textContent =
+            '💾 Enregistrer les paramètres';
+
+        }
+
+      }
+
+    }
+  );
+
+}
+
+
+/* ============================================================
+   COMMANDES
+============================================================ */
+
+async function loadOrders() {
+
+  const {
+    data,
+    error
+  } =
+    await supabaseClient
+      .from('orders')
+      .select('*')
+      .order(
+        'created_at',
+        {
+          ascending: false
+        }
+      );
+
+
+  if (error) {
+
+    console.error(
+      'Erreur commandes:',
+      error
+    );
+
+    allOrders = [];
+
+    renderOrders();
+    renderRecentOrders();
+
+    return;
+
+  }
+
+
+  allOrders =
+    Array.isArray(data)
+      ? data
+      : [];
+
+
+  renderOrders();
+  renderRecentOrders();
+
+}
+
+
+function renderOrders() {
+
+  const tbody =
+    document.getElementById(
+      'ordersTableBody'
+    );
+
+
+  if (!tbody) return;
+
+
+  const statusFilter =
+    document.getElementById(
+      'orderStatusFilter'
+    )?.value || '';
+
+
+  const typeFilter =
+    document.getElementById(
+      'orderTypeFilter'
+    )?.value || '';
+
+
+  let orders =
+    [...allOrders];
+
+
+  if (statusFilter) {
+
+    orders =
+      orders.filter(
+        order =>
+          normalizeStatus(
+            order.status
+          ) === statusFilter
+      );
+
+  }
+
+
+  if (typeFilter) {
+
+    orders =
+      orders.filter(
+        order =>
+          String(
+            order.order_type || ''
+          ).toLowerCase() ===
+          typeFilter
+      );
+
+  }
+
+
+  if (!orders.length) {
+
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="8">
+          <div class="empty">
+            Aucune commande trouvée.
+          </div>
+        </td>
+      </tr>
+    `;
+
+    return;
+
+  }
+
+
+  tbody.innerHTML =
+    orders.map(
+      function(order) {
+
+        const status =
+          normalizeStatus(
+            order.status
+          );
+
+        const orderId =
+          escapeHtml(
+            order.id
+          );
+
+        return `
+          <tr>
+
+            <td>
+              <strong>
+                ${orderId}
+              </strong>
+            </td>
+
+            <td>
+              ${escapeHtml(
+                order.user_id || '—'
+              )}
+            </td>
+
+            <td>
+              ${escapeHtml(
+                orderTypeLabel(
+                  order.order_type
+                )
+              )}
+            </td>
+
+            <td>
+              ${formatNumber(
+                order.amount_cfa
+              )}
+              FCFA
+            </td>
+
+            <td>
+              ${networkLabel(
+                order.network
+              )}
+            </td>
+
+            <td>
+              <span
+                class="status ${escapeHtml(
+                  statusClass(status)
+                )}"
+              >
+                ${escapeHtml(
+                  statusLabel(status)
+                )}
+              </span>
+            </td>
+
+            <td>
+              ${formatDate(
+                order.created_at
+              )}
+            </td>
+
+            <td>
+
+              <button
+                type="button"
+                class="btn btn-primary btn-small"
+                data-order-id="${orderId}"
+              >
+                Modifier
+              </button>
+
+            </td>
+
+          </tr>
+        `;
+
+      }
+    ).join('');
+
+
+  tbody
+    .querySelectorAll(
+      '[data-order-id]'
+    )
+    .forEach(
+      function(button) {
+
+        button.addEventListener(
+          'click',
+          function() {
+
+            openOrderStatus(
+              button.dataset.orderId
+            );
+
+          }
+        );
+
+      }
+    );
+
+}
+
+
+async function openOrderStatus(orderId) {
+
+  const order =
+    allOrders.find(
+      item =>
+        String(item.id) ===
+        String(orderId)
+    );
+
+
+  if (!order) {
+
+    showAdminMessage(
+      'Commande introuvable.',
+      'error'
+    );
+
+    return;
+
+  }
+
+
+  const currentStatus =
+    normalizeStatus(
+      order.status
+    );
+
 
-const currentStatus=normalizeStatus(order.status);
-const newStatus=window.prompt(
-`Commande ${order.id}
+  const newStatus =
+    window.prompt(
+      `Commande ${order.id}
 
 Statut actuel : ${statusLabel(currentStatus)}
 
@@ -1116,280 +3293,764 @@ Entrez :
 pending
 processing
 completed
-cancelled
-disputed`,
-currentStatus
+cancelled`,
+      currentStatus
+    );
+
+
+  if (newStatus === null) {
+    return;
+  }
+
+
+  const normalized =
+    newStatus
+      .trim()
+      .toLowerCase();
+
+
+  const allowed = [
+    'pending',
+    'processing',
+    'completed',
+    'cancelled'
+  ];
+
+
+  if (!allowed.includes(normalized)) {
+
+    showAdminMessage(
+      'Statut invalide.',
+      'error'
+    );
+
+    return;
+
+  }
+
+
+  if (normalized === currentStatus) {
+
+    showAdminMessage(
+      'Le statut est déjà identique.',
+      'info'
+    );
+
+    return;
+
+  }
+
+
+  showAdminMessage(
+    'Mise à jour de la commande...',
+    'info'
+  );
+
+
+  const {
+    data,
+    error
+  } =
+    await supabaseClient
+      .from('orders')
+      .update({
+        status: normalized,
+        updated_at:
+          new Date().toISOString()
+      })
+      .eq(
+        'id',
+        order.id
+      )
+      .select()
+      .maybeSingle();
+
+
+  if (error) {
+
+    console.error(
+      'Erreur modification commande:',
+      error
+    );
+
+    showAdminMessage(
+      'Impossible de modifier le statut : ' +
+      error.message,
+      'error'
+    );
+
+    return;
+
+  }
+
+
+  if (data) {
+
+    const index =
+      allOrders.findIndex(
+        item =>
+          String(item.id) ===
+          String(order.id)
+      );
+
+
+    if (index !== -1) {
+      allOrders[index] = data;
+    }
+
+  }
+
+
+  renderOrders();
+  renderRecentOrders();
+  updateDashboard();
+
+
+  showAdminMessage(
+    'Statut de la commande mis à jour.',
+    'success'
+  );
+
+}
+
+
+function renderRecentOrders() {
+
+  const container =
+    document.getElementById(
+      'recentOrders'
+    );
+
+
+  if (!container) return;
+
+
+  const recent =
+    allOrders.slice(0,5);
+
+
+  if (!recent.length) {
+
+    container.innerHTML = `
+      <div class="empty">
+        Aucune commande.
+      </div>
+    `;
+
+    return;
+
+  }
+
+
+  container.innerHTML =
+    recent.map(
+      function(order) {
+
+        const status =
+          normalizeStatus(
+            order.status
+          );
+
+
+        return `
+          <div
+            class="order-detail"
+            style="margin-bottom:10px;"
+          >
+
+            <strong>
+              ${escapeHtml(order.id)}
+            </strong>
+
+            —
+            ${escapeHtml(
+              orderTypeLabel(
+                order.order_type
+              )
+            )}
+
+            —
+            ${formatNumber(
+              order.amount_cfa
+            )}
+            FCFA
+
+            <br>
+
+            ${
+              order.amount_usdt !== null &&
+              order.amount_usdt !== undefined
+                ? `
+                  ${formatUsdt(
+                    order.amount_usdt
+                  )}
+                  USDT
+                  <br>
+                `
+                : ''
+            }
+
+            <span
+              class="status ${escapeHtml(
+                statusClass(status)
+              )}"
+            >
+              ${escapeHtml(
+                statusLabel(status)
+              )}
+            </span>
+
+          </div>
+        `;
+
+      }
+    ).join('');
+
+}
+
+
+/* ============================================================
+   FILTRES COMMANDES
+============================================================ */
+
+document
+  .getElementById('orderStatusFilter')
+  ?.addEventListener(
+    'change',
+    renderOrders
+  );
+
+
+document
+  .getElementById('orderTypeFilter')
+  ?.addEventListener(
+    'change',
+    renderOrders
+  );
+
+
+/* ============================================================
+   ACTUALISER COMMANDES
+============================================================ */
+
+document
+  .getElementById('refreshOrdersBtn')
+  ?.addEventListener(
+    'click',
+    async function() {
+
+      const button = this;
+
+      button.disabled = true;
+
+      try {
+
+        await loadOrders();
+        updateDashboard();
+
+        showAdminMessage(
+          'Commandes actualisées.',
+          'success'
+        );
+
+      } finally {
+
+        button.disabled = false;
+
+      }
+
+    }
+  );
+
+
+/* ============================================================
+   UTILISATEURS
+============================================================ */
+
+async function loadUsers() {
+
+  const {
+    data,
+    error
+  } =
+    await supabaseClient
+      .from('profiles')
+      .select(
+        'id, full_name, phone, country, role, created_at'
+      )
+      .order(
+        'created_at',
+        {
+          ascending: false
+        }
+      );
+
+
+  if (error) {
+
+    console.error(
+      'Erreur utilisateurs:',
+      error
+    );
+
+    allUsers = [];
+
+    renderUsers();
+
+    return;
+
+  }
+
+
+  allUsers =
+    Array.isArray(data)
+      ? data
+      : [];
+
+
+  renderUsers();
+
+}
+
+
+function renderUsers() {
+
+  const tbody =
+    document.getElementById(
+      'usersTableBody'
+    );
+
+
+  if (!tbody) return;
+
+
+  if (!allUsers.length) {
+
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="5">
+          <div class="empty">
+            Aucun utilisateur trouvé.
+          </div>
+        </td>
+      </tr>
+    `;
+
+    return;
+
+  }
+
+
+  tbody.innerHTML =
+    allUsers.map(
+      function(user) {
+
+        return `
+          <tr>
+
+            <td>
+              <strong>
+                ${escapeHtml(
+                  user.full_name || '—'
+                )}
+              </strong>
+            </td>
+
+            <td>
+              ${escapeHtml(
+                user.phone || '—'
+              )}
+            </td>
+
+            <td>
+              —
+            </td>
+
+            <td>
+              ${escapeHtml(
+                user.country ||
+                'Burkina Faso'
+              )}
+            </td>
+
+            <td>
+              ${formatDate(
+                user.created_at
+              )}
+            </td>
+
+          </tr>
+        `;
+
+      }
+    ).join('');
+
+}
+
+
+document
+  .getElementById('refreshUsersBtn')
+  ?.addEventListener(
+    'click',
+    async function() {
+
+      const button = this;
+
+      button.disabled = true;
+
+      try {
+
+        await loadUsers();
+        updateDashboard();
+
+        showAdminMessage(
+          'Utilisateurs actualisés.',
+          'success'
+        );
+
+      } finally {
+
+        button.disabled = false;
+
+      }
+
+    }
+  );
+
+
+/* ============================================================
+   LITIGES
+============================================================ */
+
+async function loadDisputes() {
+
+  const {
+    data,
+    error
+  } =
+    await supabaseClient
+      .from('disputes')
+      .select('*')
+      .order(
+        'created_at',
+        {
+          ascending: false
+        }
+      );
+
+
+  if (error) {
+
+    console.error(
+      'Erreur litiges:',
+      error
+    );
+
+    allDisputes = [];
+
+    renderDisputes();
+
+    return;
+
+  }
+
+
+  allDisputes =
+    Array.isArray(data)
+      ? data
+      : [];
+
+
+  renderDisputes();
+
+}
+
+
+function renderDisputes() {
+
+  const container =
+    document.getElementById(
+      'disputesList'
+    );
+
+
+  if (!container) return;
+
+
+  if (!allDisputes.length) {
+
+    container.innerHTML = `
+      <div class="empty">
+        Aucun litige.
+      </div>
+    `;
+
+    return;
+
+  }
+
+
+  container.innerHTML =
+    allDisputes.map(
+      function(dispute) {
+
+        const closed =
+          String(
+            dispute.status || ''
+          ).toLowerCase() === 'closed';
+
+
+        return `
+          <div
+            class="order-detail"
+            style="margin-bottom:12px;"
+          >
+
+            <strong>
+              ${escapeHtml(
+                dispute.subject ||
+                'Litige'
+              )}
+            </strong>
+
+            <br>
+
+            Commande :
+            ${escapeHtml(
+              dispute.order_id || '—'
+            )}
+
+            <br>
+
+            Client :
+            ${escapeHtml(
+              dispute.user_id || '—'
+            )}
+
+            <br><br>
+
+            ${escapeHtml(
+              dispute.message ||
+              'Aucun message.'
+            )}
+
+            <br><br>
+
+            <span
+              class="status ${
+                closed
+                  ? 'completed'
+                  : 'dispute'
+              }"
+            >
+              ${
+                closed
+                  ? 'Fermé'
+                  : 'Ouvert'
+              }
+            </span>
+
+            ${
+              dispute.created_at
+                ? `
+                  <br><br>
+                  <small>
+                    ${formatDate(
+                      dispute.created_at
+                    )}
+                  </small>
+                `
+                : ''
+            }
+
+          </div>
+        `;
+
+      }
+    ).join('');
+
+}
+
+
+document
+  .getElementById('refreshDisputesBtn')
+  ?.addEventListener(
+    'click',
+    async function() {
+
+      const button = this;
+
+      button.disabled = true;
+
+      try {
+
+        await loadDisputes();
+
+        showAdminMessage(
+          'Litiges actualisés.',
+          'success'
+        );
+
+      } finally {
+
+        button.disabled = false;
+
+      }
+
+    }
+  );
+
+
+/* ============================================================
+   DASHBOARD
+============================================================ */
+
+function updateDashboard() {
+
+  const total =
+    allOrders.length;
+
+
+  const pending =
+    allOrders.filter(
+      order =>
+        normalizeStatus(
+          order.status
+        ) === 'pending'
+    ).length;
+
+
+  const processing =
+    allOrders.filter(
+      order =>
+        normalizeStatus(
+          order.status
+        ) === 'processing'
+    ).length;
+
+
+  const statOrders =
+    document.getElementById(
+      'statOrders'
+    );
+
+  const statPending =
+    document.getElementById(
+      'statPending'
+    );
+
+  const statProcessing =
+    document.getElementById(
+      'statProcessing'
+    );
+
+  const statUsers =
+    document.getElementById(
+      'statUsers'
+    );
+
+
+  if (statOrders) {
+    statOrders.textContent =
+      formatNumber(total);
+  }
+
+  if (statPending) {
+    statPending.textContent =
+      formatNumber(pending);
+  }
+
+  if (statProcessing) {
+    statProcessing.textContent =
+      formatNumber(processing);
+  }
+
+  if (statUsers) {
+    statUsers.textContent =
+      formatNumber(
+        allUsers.length
+      );
+  }
+
+
+  renderRecentOrders();
+
+}
+
+
+/* ============================================================
+   AUTH STATE
+============================================================ */
+
+supabaseClient
+  .auth
+  .onAuthStateChange(
+    function(event, session) {
+
+      if (event === 'SIGNED_OUT') {
+
+        resetAdminData();
+        showLogin();
+
+        return;
+
+      }
+
+
+      if (
+        event === 'SIGNED_IN' &&
+        session?.user
+      ) {
+
+        setTimeout(
+          async function() {
+
+            currentAdmin =
+              session.user;
+
+            await verifyAdmin();
+
+          },
+          0
+        );
+
+      }
+
+    }
+  );
+
+
+/* ============================================================
+   DEMARRAGE
+============================================================ */
+
+document.addEventListener(
+  'DOMContentLoaded',
+  function() {
+
+    checkSession();
+
+  }
 );
 
-if(newStatus===null)return;
 
-const normalized=newStatus.trim().toLowerCase();
-const allowed=['pending','processing','completed','cancelled','disputed'];
+/* ============================================================
+   ERREURS
+============================================================ */
 
-if(!allowed.includes(normalized)){
-showAdminMessage('Statut invalide.','error');
-return;
-}
-if(normalized===currentStatus){
-showAdminMessage('Le statut est déjà identique.','info');
-return;
-}
+window.addEventListener(
+  'unhandledrejection',
+  function(event) {
 
-await updateOrder(order.id,{status:normalized},'Statut de la commande mis à jour.');
-}
+    console.error(
+      'Erreur JavaScript non gérée:',
+      event.reason
+    );
 
-async function openPaymentManager(orderId){
-const order=allOrders.find(item=>String(item.id)===String(orderId));
-if(!order)return;
-
-const current=String(order.payment_status||'pending').trim().toLowerCase();
-const newStatus=window.prompt(
-`Gestion du paiement de la commande ${order.id}
-
-Statut actuel : ${paymentStatusLabel(current)}
-
-Entrez :
-pending
-uploaded
-confirmed
-rejected
-not_required`,
-current
+  }
 );
 
-if(newStatus===null)return;
-
-const normalized=newStatus.trim().toLowerCase();
-const allowed=['pending','uploaded','confirmed','rejected','not_required'];
-
-if(!allowed.includes(normalized)){
-showAdminMessage('Statut de paiement invalide.','error');
-return;
-}
-
-let rejectionReason=order.payment_rejection_reason||null;
-if(normalized==='rejected'){
-const reason=window.prompt('Motif du rejet du paiement :',rejectionReason||'');
-if(reason===null)return;
-rejectionReason=reason.trim()||'Paiement rejeté par l’administration.';
-}else{
-rejectionReason=null;
-}
-
-const values={
-payment_status:normalized,
-payment_rejection_reason:rejectionReason
-};
-
-if(normalized==='confirmed'){
-values.payment_confirmed_at=new Date().toISOString();
-}else if(normalized==='pending'||normalized==='uploaded'||normalized==='rejected'||normalized==='not_required'){
-values.payment_confirmed_at=null;
-}
-
-await updateOrder(order.id,values,'Statut du paiement mis à jour.');
-}
-
-async function editAdminNote(orderId){
-const order=allOrders.find(item=>String(item.id)===String(orderId));
-if(!order)return;
-
-const note=window.prompt('Note administrateur :',order.admin_note||'');
-if(note===null)return;
-
-await updateOrder(order.id,{admin_note:note.trim()||null},'Note administrateur enregistrée.');
-}
-
-function renderRecentOrders(){
-const container=document.getElementById('recentOrders');
-if(!container)return;
-
-const recent=allOrders.slice(0,5);
-
-if(!recent.length){
-container.innerHTML='<div class="empty">Aucune commande.</div>';
-return;
-}
-
-container.innerHTML=recent.map(order=>{
-const status=normalizeStatus(order.status);
-const side=String(order.side||'').toLowerCase();
-
-return `
-<div class="order-detail" style="margin-bottom:10px">
-<strong>${escapeHtml(order.id)}</strong> — ${escapeHtml(orderTypeLabel(side))}
-<br>
-${side==='buy'
-?`Montant : ${formatNumber(order.amount_cfa)} FCFA<br>À envoyer : ${formatUsdt(order.net_usdt)} USDT`
-:`USDT reçu : ${formatUsdt(order.usdt_amount)} USDT<br>À payer : ${formatNumber(order.receive_cfa)} FCFA`}
-<br>
-Réseau : ${escapeHtml(networkLabel(order.network))}
-<br>
-<span class="status ${escapeHtml(statusClass(status))}">${escapeHtml(statusLabel(status))}</span>
-</div>`;
-}).join('');
-}
-
-document.getElementById('orderStatusFilter')?.addEventListener('change',renderOrders);
-document.getElementById('orderTypeFilter')?.addEventListener('change',renderOrders);
-
-document.getElementById('refreshOrdersBtn')?.addEventListener('click',async function(){
-const button=this;
-button.disabled=true;
-try{
-await loadOrders();
-updateDashboard();
-showAdminMessage('Commandes actualisées.','success');
-}finally{
-button.disabled=false;
-}
-});
-
-/* ==================== UTILISATEURS ==================== */
-
-async function loadUsers(){
-const{data,error}=await supabaseClient
-.from('profiles')
-.select('id,full_name,phone,country,role,created_at')
-.order('created_at',{ascending:false});
-
-if(error){
-console.error('Erreur utilisateurs:',error);
-allUsers=[];
-renderUsers();
-return;
-}
-
-allUsers=Array.isArray(data)?data:[];
-renderUsers();
-}
-
-function renderUsers(){
-const tbody=document.getElementById('usersTableBody');
-if(!tbody)return;
-
-if(!allUsers.length){
-tbody.innerHTML='<tr><td colspan="5"><div class="empty">Aucun utilisateur trouvé.</div></td></tr>';
-return;
-}
-
-tbody.innerHTML=allUsers.map(user=>`
-<tr>
-<td><strong>${escapeHtml(user.full_name||'—')}</strong></td>
-<td>${escapeHtml(user.phone||'—')}</td>
-<td>—</td>
-<td>${escapeHtml(user.country||'Burkina Faso')}</td>
-<td>${escapeHtml(formatDate(user.created_at))}</td>
-</tr>`).join('');
-}
-
-document.getElementById('refreshUsersBtn')?.addEventListener('click',async function(){
-const button=this;
-button.disabled=true;
-try{
-await loadUsers();
-updateDashboard();
-showAdminMessage('Utilisateurs actualisés.','success');
-}finally{
-button.disabled=false;
-}
-});
-
-/* ==================== LITIGES ==================== */
-
-async function loadDisputes(){
-const{data,error}=await supabaseClient
-.from('disputes')
-.select('*')
-.order('created_at',{ascending:false});
-
-if(error){
-console.error('Erreur litiges:',error);
-allDisputes=[];
-renderDisputes();
-return;
-}
-
-allDisputes=Array.isArray(data)?data:[];
-renderDisputes();
-}
-
-function renderDisputes(){
-const container=document.getElementById('disputesList');
-if(!container)return;
-
-if(!allDisputes.length){
-container.innerHTML='<div class="empty">Aucun litige.</div>';
-return;
-}
-
-container.innerHTML=allDisputes.map(dispute=>{
-const closed=String(dispute.status||'').toLowerCase()==='closed';
-
-return `
-<div class="order-detail" style="margin-bottom:12px">
-<strong>${escapeHtml(dispute.subject||'Litige')}</strong>
-<br>Commande : ${escapeHtml(dispute.order_id||'—')}
-<br>Client : ${escapeHtml(dispute.user_id||'—')}
-<br><br>${escapeHtml(dispute.message||'Aucun message.')}
-<br><br>
-<span class="status ${closed?'completed':'dispute'}">${closed?'Fermé':'Ouvert'}</span>
-${dispute.created_at?`<br><br><small>${escapeHtml(formatDate(dispute.created_at))}</small>`:''}
-</div>`;
-}).join('');
-}
-
-document.getElementById('refreshDisputesBtn')?.addEventListener('click',async function(){
-const button=this;
-button.disabled=true;
-try{
-await loadDisputes();
-showAdminMessage('Litiges actualisés.','success');
-}finally{
-button.disabled=false;
-}
-});
-
-/* ==================== TABLEAU DE BORD ==================== */
-
-function updateDashboard(){
-const total=allOrders.length;
-const pending=allOrders.filter(order=>normalizeStatus(order.status)==='pending').length;
-const processing=allOrders.filter(order=>normalizeStatus(order.status)==='processing').length;
-
-document.getElementById('statOrders').textContent=formatNumber(total);
-document.getElementById('statPending').textContent=formatNumber(pending);
-document.getElementById('statProcessing').textContent=formatNumber(processing);
-document.getElementById('statUsers').textContent=formatNumber(allUsers.length);
-
-renderRecentOrders();
-}
-
-/* ==================== AUTH ==================== */
-
-supabaseClient.auth.onAuthStateChange((event,session)=>{
-if(event==='SIGNED_OUT'){
-resetAdminData();
-showLogin();
-return;
-}
-
-if(event==='SIGNED_IN'&&session?.user){
-setTimeout(async()=>{
-if(isCheckingSession)return;
-currentAdmin=session.user;
-await verifyAdmin();
-},0);
-}
-});
-
-document.addEventListener('DOMContentLoaded',()=>{
-checkSession();
-});
-
-window.addEventListener('unhandledrejection',event=>{
-console.error('Erreur JavaScript non gérée:',event.reason);
-});
 </script>
+
 </body>
 </html>
