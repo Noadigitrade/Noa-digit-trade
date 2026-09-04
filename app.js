@@ -1684,15 +1684,35 @@ async function loadAppSettings() {
       );
 
 
+    // Compatibilité avec les différents noms de colonnes utilisés par l'administration.
+    const getNumericSetting = (...values) => {
+      for (const value of values) {
+        if (value === null || value === undefined || value === '') continue;
+        const normalized = typeof value === 'string'
+          ? value.replace(/\s/g, '').replace(/,/g, '.')
+          : value;
+        const number = Number(normalized);
+        if (Number.isFinite(number)) return number;
+      }
+      return NaN;
+    };
+
     const usdtBalance =
-      Number(
-        data.usdt_balance
+      getNumericSetting(
+        data.usdt_balance,
+        data.balance_usdt,
+        data.usdtBalance,
+        data.usdt_stock,
+        data.solde_usdt
       );
 
-
     const fcfaBalance =
-      Number(
-        data.fcfa_balance
+      getNumericSetting(
+        data.fcfa_balance,
+        data.balance_fcfa,
+        data.fcfaBalance,
+        data.fcfa_stock,
+        data.solde_fcfa
       );
 
 
