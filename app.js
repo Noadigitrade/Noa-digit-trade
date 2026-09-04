@@ -734,59 +734,141 @@ async function sendPasswordReset(
 }
 
 
-function initPasswordToggles() {
+function togglePassword(
+  targetId,
+  toggleBtn
+) {
 
-  document
-    .querySelectorAll(
-      '.password-toggle'
-    )
-    .forEach(
-      (toggleBtn) => {
+  let input =
+    targetId &&
+    $(targetId);
 
-        toggleBtn.addEventListener(
-          'click',
-          () => {
+  /*
+   * Compatibilité :
+   * si le bouton n'a pas de cible précise,
+   * on cherche le champ password dans le même conteneur.
+   */
+  if (
+    !input &&
+    toggleBtn
+  ) {
 
-            const targetId =
-              toggleBtn.dataset
-                .passwordTarget;
+    const container =
+      toggleBtn.closest(
+        '.password-field, .password-wrapper, .input-wrapper, .form-group, .field'
+      );
 
-            const input =
-              targetId &&
-              $(targetId);
+    input =
+      container?.querySelector(
+        'input[type="password"], input[data-password]'
+      ) ||
+      toggleBtn.parentElement?.querySelector(
+        'input[type="password"], input[type="text"]'
+      );
+  }
 
-            if (!input) {
 
-              return;
-            }
+  if (!input) {
+
+    return false;
+  }
 
 
-            const isHidden =
-              input.type ===
-              'password';
+  const isHidden =
+    input.type ===
+    'password';
 
-            input.type =
-              isHidden
-                ? 'text'
-                : 'password';
 
-            toggleBtn.textContent =
-              isHidden
-                ? '🙈'
-                : '👁️';
+  input.type =
+    isHidden
+      ? 'text'
+      : 'password';
 
-            toggleBtn.setAttribute(
-              'aria-label',
-              isHidden
-                ? 'Masquer le mot de passe'
-                : 'Afficher le mot de passe'
-            );
-          }
-        );
-      }
+
+  if (toggleBtn) {
+
+    toggleBtn.textContent =
+      isHidden
+        ? '🙈'
+        : '👁️';
+
+    toggleBtn.setAttribute(
+      'aria-label',
+      isHidden
+        ? 'Masquer le mot de passe'
+        : 'Afficher le mot de passe'
     );
+
+    toggleBtn.setAttribute(
+      'aria-pressed',
+      isHidden
+        ? 'true'
+        : 'false'
+    );
+  }
+
+
+  return true;
 }
 
+
+function initPasswordToggles() {
+
+  /*
+   * Délégation d'événement :
+   * cela fonctionne même si les formulaires ou les boutons
+   * sont affichés/masqués ou recréés après le chargement.
+   */
+  if (
+    document.documentElement.dataset
+      .passwordTogglesReady ===
+    'true'
+  ) {
+
+    return;
+  }
+
+
+  document.documentElement.dataset
+    .passwordTogglesReady =
+    'true';
+
+
+  document.addEventListener(
+    'click',
+    event => {
+
+      const toggleBtn =
+        event.target.closest?.(
+          '.password-toggle, [data-password-target], [data-password-toggle], [aria-label*="mot de passe"]'
+        );
+
+      if (!toggleBtn) {
+
+        return;
+      }
+
+
+      event.preventDefault();
+
+
+      const targetId =
+        toggleBtn.dataset
+          ?.passwordTarget ||
+        toggleBtn.dataset
+          ?.passwordToggle ||
+        toggleBtn.getAttribute(
+          'data-target'
+        );
+
+
+      togglePassword(
+        targetId,
+        toggleBtn
+      );
+    }
+  );
+}
 
 function copyToClipboard(
   text,
