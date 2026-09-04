@@ -989,63 +989,6 @@ function initPasswordToggles() {
       subtree: true
     }
   );
-
-
-  /*
-   * Sécurité supplémentaire : capture le clic avant
-   * les autres gestionnaires de la page.
-   */
-  document.addEventListener(
-    'click',
-    event => {
-
-      const path =
-        event.composedPath
-          ? event.composedPath()
-          : [];
-
-      const button =
-        path.find(
-          item =>
-            item?.nodeType === 1 &&
-            item.matches?.(
-              '.password-toggle, [data-password-target]'
-            )
-        ) ||
-        event.target?.closest?.(
-          '.password-toggle, [data-password-target]'
-        );
-
-      if (!button) {
-        return;
-      }
-
-      if (
-        button.dataset.passwordToggleHandled ===
-        'true'
-      ) {
-        return;
-      }
-
-      button.dataset.passwordToggleHandled =
-        'true';
-
-      event.preventDefault();
-
-      toggleFromButton(
-        button
-      );
-
-      setTimeout(
-        () => {
-          button.dataset.passwordToggleHandled =
-            'false';
-        },
-        0
-      );
-    },
-    true
-  );
 }
 
 
