@@ -2360,7 +2360,7 @@ async function loadSettings() {
     await supabaseClient
       .from('app_settings')
       .select(
-        'id,country,buy_rate,sell_rate,min_order_cfa,max_order_cfa,trc20_fee_usdt,bp20_fee_usdt,orange_money_number,updated_at'
+        'id,country,buy_rate,sell_rate,min_order_cfa,max_order_cfa,trc20_fee_usdt,bp20_fee_usdt,usdt_balance,fcfa_balance,orange_money_number,updated_at'
       )
       .eq(
         'id',
@@ -2438,6 +2438,12 @@ function updateSettingsDisplay(data) {
   const maxOrder =
     document.getElementById('maxOrderInput');
 
+  const usdtBalance =
+    document.getElementById('usdtBalanceInput');
+
+  const fcfaBalance =
+    document.getElementById('fcfaBalanceInput');
+
 
   if (!data) {
 
@@ -2447,6 +2453,8 @@ function updateSettingsDisplay(data) {
     if (bp20Fee) bp20Fee.value = '';
     if (minOrder) minOrder.value = '';
     if (maxOrder) maxOrder.value = '';
+    if (usdtBalance) usdtBalance.value = '';
+    if (fcfaBalance) fcfaBalance.value = '';
 
   } else {
 
@@ -2483,6 +2491,16 @@ function updateSettingsDisplay(data) {
     if (maxOrder) {
       maxOrder.value =
         data.max_order_cfa ?? '';
+    }
+
+    if (usdtBalance) {
+      usdtBalance.value =
+        data.usdt_balance ?? '';
+    }
+
+    if (fcfaBalance) {
+      fcfaBalance.value =
+        data.fcfa_balance ?? '';
     }
 
   }
@@ -2642,6 +2660,20 @@ if (settingsForm) {
           )?.value
         );
 
+      const usdtBalance =
+        Number(
+          document.getElementById(
+            'usdtBalanceInput'
+          )?.value
+        );
+
+      const fcfaBalance =
+        Number(
+          document.getElementById(
+            'fcfaBalanceInput'
+          )?.value
+        );
+
 
       /* ------------------------------------------------------
          Validation
@@ -2653,7 +2685,9 @@ if (settingsForm) {
         trc20Fee,
         bp20Fee,
         minOrder,
-        maxOrder
+        maxOrder,
+        usdtBalance,
+        fcfaBalance
       ];
 
 
@@ -2784,6 +2818,12 @@ if (settingsForm) {
           bp20_fee_usdt:
             bp20Fee,
 
+          usdt_balance:
+            usdtBalance,
+
+          fcfa_balance:
+            fcfaBalance,
+
           updated_at:
             new Date().toISOString()
 
@@ -2846,7 +2886,7 @@ if (settingsForm) {
           await supabaseClient
             .from('app_settings')
             .select(
-              'id,buy_rate,sell_rate,min_order_cfa,max_order_cfa,trc20_fee_usdt,bp20_fee_usdt,updated_at'
+              'id,buy_rate,sell_rate,min_order_cfa,max_order_cfa,trc20_fee_usdt,bp20_fee_usdt,usdt_balance,fcfa_balance,updated_at'
             )
             .eq(
               'id',
@@ -2919,6 +2959,16 @@ if (settingsForm) {
             verifyData.bp20_fee_usdt
           );
 
+        const savedUsdtBalance =
+          Number(
+            verifyData.usdt_balance
+          );
+
+        const savedFcfaBalance =
+          Number(
+            verifyData.fcfa_balance
+          );
+
 
         const success =
           savedBuy === buyRate &&
@@ -2926,7 +2976,9 @@ if (settingsForm) {
           savedMin === minOrder &&
           savedMax === maxOrder &&
           savedTrc === trc20Fee &&
-          savedBp === bp20Fee;
+          savedBp === bp20Fee &&
+          savedUsdtBalance === usdtBalance &&
+          savedFcfaBalance === fcfaBalance;
 
 
         if (!success) {
@@ -2939,7 +2991,9 @@ if (settingsForm) {
               minOrder,
               maxOrder,
               trc20Fee,
-              bp20Fee
+              bp20Fee,
+              usdtBalance,
+              fcfaBalance
             }
           );
 
