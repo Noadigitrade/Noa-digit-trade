@@ -3713,7 +3713,7 @@ async function loadUsers() {
     await supabaseClient
       .from('profiles')
       .select(
-        'id, full_name, phone, country, role, created_at'
+        'id, full_name, phone, email, country, role, created_at'
       )
       .order(
         'created_at',
@@ -3800,7 +3800,9 @@ function renderUsers() {
             </td>
 
             <td>
-              —
+              ${escapeHtml(
+                user.email || '—'
+              )}
             </td>
 
             <td>
