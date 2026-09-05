@@ -1257,9 +1257,24 @@ async function loadUserProfile() {
         .maybeSingle();
 
 
+    // Un profil peut déjà exister ici avec seulement
+    // l'email (créé automatiquement par le trigger
+    // Supabase à l'inscription). On complète toujours
+    // les infos (nom, téléphone, pays) via upsert plutôt
+    // que de s'arrêter dès qu'une ligne existe.
+    const needsUpsert =
+      !error &&
+      (
+        !profile ||
+        !profile.full_name ||
+        !profile.phone
+      );
+
+
     if (
       !error &&
-      profile
+      profile &&
+      !needsUpsert
     ) {
 
       currentProfile =
@@ -1271,32 +1286,35 @@ async function loadUserProfile() {
     }
 
 
-    if (
-      !error &&
-      !profile
-    ) {
+    if (needsUpsert) {
 
       const {
-        data: inserted,
-        error: insertError
+        data: upserted,
+        error: upsertError
       } =
         await supabaseClient
           .from('profiles')
-          .insert({
+          .upsert(
+            {
 
-            id:
-              currentUser.id,
+              id:
+                currentUser.id,
 
-            full_name:
-              fallback.full_name,
+              full_name:
+                fallback.full_name,
 
-            phone:
-              fallback.phone,
+              phone:
+                fallback.phone,
 
-            country:
-              fallback.country
+              country:
+                fallback.country
 
-          })
+            },
+            {
+              onConflict:
+                'id'
+            }
+          )
           .select(
             'id,full_name,phone,country'
           )
@@ -1304,24 +1322,24 @@ async function loadUserProfile() {
 
 
       if (
-        !insertError &&
-        inserted
+        !upsertError &&
+        upserted
       ) {
 
         currentProfile =
-          inserted;
+          upserted;
 
         updateUserInterface();
 
-        return inserted;
+        return upserted;
       }
 
 
-      if (insertError) {
+      if (upsertError) {
 
         console.warn(
           'Profil non créé :',
-          insertError
+          upsertError
         );
       }
 
