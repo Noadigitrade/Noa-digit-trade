@@ -2132,6 +2132,150 @@
 
         </div>
 
+
+        <div class="card">
+
+          <div class="card-title">
+            🎁 Mon parrainage
+          </div>
+
+          <div class="field">
+
+            <label>
+              Mon code de parrainage
+            </label>
+
+            <div style="display:flex; gap:8px;">
+
+              <input
+                type="text"
+                id="referralCodeDisplay"
+                readonly
+                style="flex:1;"
+              >
+
+              <button
+                type="button"
+                id="copyReferralCodeBtn"
+                class="btn btn-secondary"
+              >
+                Copier
+              </button>
+
+            </div>
+
+          </div>
+
+          <div class="small">
+            Partagez ce code : chaque filleul qui l'utilise vous
+            rapporte une commission sur ses transactions.
+          </div>
+
+
+          <div class="field">
+
+            <label>
+              Solde de commissions
+            </label>
+
+            <input
+              type="text"
+              id="referralBalanceDisplay"
+              readonly
+            >
+
+          </div>
+
+
+          <button
+            type="button"
+            id="openWithdrawalBtn"
+            class="btn btn-primary"
+          >
+            Demander un retrait
+          </button>
+
+          <div
+            id="withdrawalForm"
+            class="hidden"
+            style="margin-top:16px;"
+          >
+
+            <div class="field">
+
+              <label for="withdrawalAmount">
+                Montant à retirer (FCFA)
+              </label>
+
+              <input
+                type="number"
+                id="withdrawalAmount"
+                min="5000"
+                step="500"
+                placeholder="Minimum 5000 FCFA"
+              >
+
+            </div>
+
+            <div class="field">
+
+              <label for="withdrawalMethod">
+                Méthode de retrait
+              </label>
+
+              <select id="withdrawalMethod">
+                <option value="cash">Cash (Mobile Money)</option>
+                <option value="usdt">USDT</option>
+              </select>
+
+            </div>
+
+            <div
+              class="field"
+              id="withdrawalPhoneField"
+            >
+
+              <label for="withdrawalPhone">
+                Numéro Mobile Money
+              </label>
+
+              <input
+                type="tel"
+                id="withdrawalPhone"
+                placeholder="Ex: 70000000"
+              >
+
+            </div>
+
+            <div
+              class="field hidden"
+              id="withdrawalWalletField"
+            >
+
+              <label for="withdrawalWallet">
+                Adresse wallet USDT
+              </label>
+
+              <input
+                type="text"
+                id="withdrawalWallet"
+                placeholder="Adresse USDT (réseau TRC20/BEP20...)"
+              >
+
+            </div>
+
+            <button
+              type="button"
+              id="submitWithdrawalBtn"
+              class="btn btn-primary"
+            >
+              Confirmer la demande
+            </button>
+
+          </div>
+
+        </div>
+
       </div>
 
     </section>
