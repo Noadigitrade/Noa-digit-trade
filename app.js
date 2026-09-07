@@ -1517,6 +1517,13 @@ async function registerUser(
     'Burkina Faso';
 
 
+  const referralCode =
+    $('registerReferralCode')
+      ?.value
+      .trim()
+      .toUpperCase() || '';
+
+
   const email =
     (
       $('registerEmail')
@@ -1646,7 +1653,10 @@ async function registerUser(
                 phone,
 
               country:
-                country
+                country,
+
+              referral_code_used:
+                referralCode
 
             }
 
