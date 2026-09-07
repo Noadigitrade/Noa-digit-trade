@@ -1,6598 +1,2358 @@
-// ============================================================
-// NOA DIGIT TRADE - APP.JS FINAL
-// Supabase Auth + Profiles + Orders + Paiement + Litiges
-// BUY / SELL + Validation réseaux + Paiement Orange Money
-// Déclaration paiement via RPC sécurisé Supabase
-// ============================================================
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-const SUPABASE_URL =
-  'https://vowafwsvrjpkhkocptih.supabase.co';
+  <title>NOA DIGIT TRADE</title>
 
-const SUPABASE_KEY =
-  'sb_publishable_umIa4749av8722xus6aQHw_1nf8b-PC';
+  <meta
+    name="description"
+    content="NOA DIGIT TRADE - Achat et vente de USDT au Burkina Faso"
+  >
 
+  <meta name="theme-color" content="#0757d9">
 
-if (!window.supabase) {
-  console.error(
-    "Supabase JS n'a pas été chargé."
-  );
-}
+  <!-- PWA -->
 
+  <link rel="manifest" href="manifest.json">
 
-const supabaseClient =
-  window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
-  );
+  <link rel="icon" href="icons/icon-192.png">
 
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 
-// ============================================================
-// CONFIGURATION
-// ============================================================
+  <meta name="mobile-web-app-capable" content="yes">
 
-const CONFIG = {
+  <meta name="apple-mobile-web-app-capable" content="yes">
 
-  buyRate: 600,
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-  sellRate: 570,
+  <meta name="apple-mobile-web-app-title" content="NOA DIGIT">
 
-  minOrder: 2000,
-
-  maxOrder: 50000,
-
-  networks: {
-
-    trc20: {
-      name: 'USDT TRC20',
-      fee: 2
-    },
-
-    bp20: {
-      name: 'USDT BEP20',
-      fee: 0
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
 
-  },
-
-  depositAddresses: {
-
-    trc20:
-      'THmJUvPgBNa7uyDpPKrmer34JtA5w743vA',
-
-    bp20:
-      '0x9a4248E584B1e27f4d37ce7Ae355Ca004e439D72'
-
-  },
-
-  payment: {
-
-    method:
-      'orange_money',
-
-    number:
-      '74602553',
-
-    displayNumber:
-      '74 60 25 53'
-
-  },
-
-  binance: {
-
-    id:
-      '37467149'
-
-  },
-
-  balances: {
-
-    usdt: 0,
-
-    fcfa: 0
-
-  }
-
-};
-
-
-// ============================================================
-// ÉTAT APPLICATION
-// ============================================================
-
-let currentUser = null;
-
-let currentProfile = null;
-
-let currentOrder = null;
-
-let selectedProofFile = null;
-
-let currentExchangeType = 'buy';
-
-let currentNetwork = 'trc20';
-
-let applicationInitializing = false;
-
-let authListenerReady = false;
-
-
-// ============================================================
-// UTILITAIRES
-// ============================================================
-
-const $ = id =>
-  document.getElementById(id);
-
-
-function showMessage(
-  message,
-  type = 'info'
-) {
-
-  const box =
-    $('appMessage');
-
-  if (!box) {
-    return;
-  }
-
-  box.textContent =
-    String(message || '');
-
-  box.className =
-    type;
-
-  box.id =
-    'appMessage';
-}
-
-
-function hideMessage() {
-
-  const box =
-    $('appMessage');
-
-  if (!box) {
-    return;
-  }
-
-  box.textContent =
-    '';
-
-  box.className =
-    '';
-}
-
-
-function formatNumber(
-  value,
-  max = 0
-) {
-
-  const n =
-    Number(value);
-
-  return (
-    Number.isFinite(n)
-      ? n
-      : 0
-  ).toLocaleString(
-    'fr-FR',
-    {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: max
-    }
-  );
-}
-
-
-function formatDate(value) {
-
-  if (!value) {
-    return '-';
-  }
-
-  const d =
-    new Date(value);
-
-  if (
-    Number.isNaN(
-      d.getTime()
-    )
-  ) {
-    return '-';
-  }
-
-  return d.toLocaleString(
-    'fr-FR',
-    {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    }
-  );
-}
-
-
-function normalizePhone(phone) {
-
-  let digits =
-    String(phone || '')
-      .replace(
-        /\D/g,
-        ''
-      );
-
-  if (digits.startsWith('00226')) {
-
-    digits =
-      digits.slice(5);
-
-  } else if (digits.startsWith('226')) {
-
-    digits =
-      digits.slice(3);
-  }
-
-  if (!digits) {
-
-    return '';
-  }
-
-  return `+226${digits}`;
-}
-
-
-function escapeHtml(value) {
-
-  return String(
-    value ?? ''
-  )
-    .replace(
-      /&/g,
-      '&amp;'
-    )
-    .replace(
-      /</g,
-      '&lt;'
-    )
-    .replace(
-      />/g,
-      '&gt;'
-    )
-    .replace(
-      /"/g,
-      '&quot;'
-    )
-    .replace(
-      /'/g,
-      '&#039;'
-    );
-}
-
-
-function getSupabaseErrorMessage(
-  error
-) {
-
-  return (
-    error?.message ||
-    error?.error_description ||
-    error?.details ||
-    error?.hint ||
-    'Erreur inconnue.'
-  );
-}
-
-
-// ============================================================
-// VALIDATION ADRESSES / RÉSEAUX
-// ============================================================
-
-function normalizeWalletAddress(
-  value
-) {
-
-  return String(
-    value || ''
-  )
-    .trim()
-    .replace(
-      /\s+/g,
-      ''
-    );
-}
-
-
-function validateWalletForNetwork(
-  wallet,
-  network
-) {
-
-  const address =
-    normalizeWalletAddress(
-      wallet
-    );
-
-
-  if (!address) {
-
-    return {
-      valid: false,
-      level: 'error',
-      message:
-        'Veuillez saisir une adresse de portefeuille USDT.'
-    };
-  }
-
-
-  if (
-    network ===
-    'trc20'
-  ) {
-
-    const trc20Regex =
-      /^T[1-9A-HJ-NP-Za-km-z]{33}$/;
-
-
-    if (
-      !trc20Regex.test(
-        address
-      )
-    ) {
-
-      return {
-        valid: false,
-        level: 'error',
-        message:
-          'Cette adresse ne correspond pas au format TRC20. Vérifiez que vous avez choisi TRC20 et copié une adresse TRON commençant par T.'
-      };
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f4f7fb;
+      color: #172033;
+      min-height: 100vh;
     }
 
-
-    return {
-      valid: true,
-      level: 'ok',
-      message:
-        'Adresse compatible avec le format TRC20.'
-    };
-  }
-
-
-  if (
-    network ===
-    'bp20'
-  ) {
-
-    const bep20Regex =
-      /^0x[a-fA-F0-9]{40}$/;
-
-
-    if (
-      !bep20Regex.test(
-        address
-      )
-    ) {
-
-      return {
-        valid: false,
-        level: 'error',
-        message:
-          'Cette adresse ne correspond pas au format BEP20. Vérifiez que vous avez choisi BEP20 et copié une adresse commençant par 0x.'
-      };
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
     }
 
-
-    return {
-      valid: true,
-      level: 'warning',
-      message:
-        'Adresse compatible avec le format BEP20. Vérifiez qu’elle est bien destinée au réseau BNB Smart Chain.'
-    };
-  }
-
-
-  return {
-    valid: false,
-    level: 'error',
-    message:
-      'Réseau non reconnu.'
-  };
-}
-
-
-function validateNoaDepositAddress(
-  network
-) {
-
-  const address =
-    String(
-      CONFIG.depositAddresses?.[network] ||
-      ''
-    ).trim();
-
-
-  if (!address) {
-
-    return {
-      valid: false,
-      message:
-        `L'adresse de dépôt NOA DIGIT TRADE n'est pas configurée pour ${CONFIG.networks[network]?.name || network}.`
-    };
-  }
-
-
-  const validation =
-    validateWalletForNetwork(
-      address,
-      network
-    );
-
-
-  if (
-    !validation.valid
-  ) {
-
-    return {
-      valid: false,
-      message:
-        `ERREUR DE CONFIGURATION : l'adresse de dépôt NOA configurée ne correspond pas au format du réseau ${CONFIG.networks[network]?.name || network}. La vente est bloquée pour votre sécurité.`
-    };
-  }
-
-
-  return {
-    valid: true,
-    message:
-      validation.message
-  };
-}
-
-
-// ============================================================
-// NAVIGATION
-// ============================================================
-
-function showAuthPage() {
-
-  $('authPage')?.classList.add(
-    'active'
-  );
-
-  $('appPage')?.classList.remove(
-    'active'
-  );
-
-  $('bottomNav')?.classList.add(
-    'hidden'
-  );
-}
-
-
-function showAppPage() {
-
-  $('authPage')?.classList.remove(
-    'active'
-  );
-
-  $('appPage')?.classList.add(
-    'active'
-  );
-
-  $('bottomNav')?.classList.remove(
-    'hidden'
-  );
-}
-
-
-function showSubPage(
-  pageId
-) {
-
-  document
-    .querySelectorAll(
-      '.sub-page'
-    )
-    .forEach(page => {
-
-      page.classList.add(
-        'hidden'
-      );
-
-      page.classList.remove(
-        'active'
-      );
-
-    });
-
-
-  const target =
-    $(pageId);
-
-
-  if (target) {
-
-    target.classList.remove(
-      'hidden'
-    );
-
-    target.classList.add(
-      'active'
-    );
-  }
-
-
-  document
-    .querySelectorAll(
-      '.nav-btn'
-    )
-    .forEach(button => {
-
-      button.classList.toggle(
-        'active',
-        button.dataset.page ===
-          pageId
-      );
-
-    });
-
-
-  window.scrollTo({
-    top: 0,
-    behavior: 'smooth'
-  });
-
-
-  if (
-    pageId ===
-    'ordersPage'
-  ) {
-
-    loadOrderHistory();
-  }
-
-
-  if (
-    pageId ===
-    'supportPage'
-  ) {
-
-    loadDisputes();
-
-    loadOrdersForDispute();
-  }
-}
-
-
-// ============================================================
-// AUTH FORMULAIRES
-// ============================================================
-
-function showLoginForm() {
-
-  $('loginTab')?.classList.add(
-    'active'
-  );
-
-  $('registerTab')?.classList.remove(
-    'active'
-  );
-
-  $('loginForm')?.classList.add(
-    'active'
-  );
-
-  $('registerForm')?.classList.remove(
-    'active'
-  );
-}
-
-
-function showRegisterForm() {
-
-  $('loginTab')?.classList.remove(
-    'active'
-  );
-
-  $('registerTab')?.classList.add(
-    'active'
-  );
-
-  $('loginForm')?.classList.remove(
-    'active'
-  );
-
-  $('registerForm')?.classList.add(
-    'active'
-  );
-}
-
-
-function showForgotPasswordForm() {
-
-  $('loginForm')?.classList.remove(
-    'active'
-  );
-
-  $('registerForm')?.classList.remove(
-    'active'
-  );
-
-  $('forgotPasswordForm')?.classList.add(
-    'active'
-  );
-}
-
-
-async function sendPasswordReset(
-  event
-) {
-
-  event.preventDefault();
-
-  hideMessage();
-
-
-  const email =
-    (
-      $('forgotPasswordEmail')
-        ?.value
-        .trim() || ''
-    ).toLowerCase();
-
-
-  if (!email) {
-
-    return showMessage(
-      'Veuillez saisir votre adresse email.',
-      'error'
-    );
-  }
-
-
-  const button =
-    event.submitter ||
-    $('forgotPasswordForm')
-      ?.querySelector(
-        'button[type="submit"]'
-      );
-
-  const original =
-    button?.textContent;
-
-  if (button) {
-
-    button.disabled =
-      true;
-
-    button.textContent =
-      'Envoi en cours...';
-  }
-
-
-  try {
-
-    const {
-      error
-    } =
-      await supabaseClient.auth
-        .resetPasswordForEmail(
-          email,
-          {
-
-            redirectTo:
-              window.location.origin +
-              window.location.pathname
-
-          }
-        );
-
-
-    if (error) {
-
-      throw error;
+    button {
+      cursor: pointer;
     }
 
-
-    showMessage(
-      'Un email de réinitialisation a été envoyé si ce compte existe.',
-      'success'
-    );
-
-
-    showLoginForm();
-
-  } catch (error) {
-
-    console.error(
-      'Erreur réinitialisation :',
-      error
-    );
-
-    showMessage(
-      getSupabaseErrorMessage(
-        error
-      ) ||
-      "Impossible d'envoyer l'email de réinitialisation.",
-      'error'
-    );
-
-  } finally {
-
-    if (button) {
-
-      button.disabled =
-        false;
-
-      button.textContent =
-        original ||
-        'Envoyer le lien de réinitialisation';
-    }
-  }
-}
-
-
-function getPasswordInput(
-  toggleBtn,
-  targetId
-) {
-
-  if (targetId) {
-
-    const directInput =
-      $(targetId);
-
-    if (directInput) {
-
-      return directInput;
-    }
-  }
-
-
-  const explicitTarget =
-    toggleBtn?.getAttribute?.(
-      'data-target'
-    ) ||
-    toggleBtn?.dataset?.target;
-
-  if (explicitTarget) {
-
-    const id =
-      explicitTarget.replace(
-        /^#/,
-        ''
-      );
-
-    const explicitInput =
-      $(id);
-
-    if (explicitInput) {
-
-      return explicitInput;
-    }
-  }
-
-
-  const form =
-    toggleBtn?.closest?.(
-      'form'
-    );
-
-  const localInput =
-    toggleBtn?.parentElement?.querySelector?.(
-      'input[type="password"], input[type="text"][data-password]'
-    ) ||
-    toggleBtn?.closest?.(
-      '.password-field, .password-wrapper, .input-wrapper, .form-group, .field'
-    )?.querySelector?.(
-      'input[type="password"], input[type="text"][data-password]'
-    );
-
-  if (localInput) {
-
-    return localInput;
-  }
-
-
-  const formPassword =
-    form?.querySelector?.(
-      'input[type="password"], input[id*="Password"], input[name*="password"]'
-    );
-
-  if (formPassword) {
-
-    return formPassword;
-  }
-
-
-  return null;
-}
-
-
-function togglePassword(
-  targetId,
-  toggleBtn
-) {
-
-  const input =
-    getPasswordInput(
-      toggleBtn,
-      targetId
-    );
-
-  if (!input) {
-
-    console.warn(
-      'Champ mot de passe introuvable.'
-    );
-
-    return false;
-  }
-
-
-  const isHidden =
-    input.type ===
-    'password';
-
-
-  input.type =
-    isHidden
-      ? 'text'
-      : 'password';
-
-
-  if (toggleBtn) {
-
-    toggleBtn.textContent =
-      isHidden
-        ? '🙈'
-        : '👁️';
-
-    toggleBtn.setAttribute(
-      'aria-label',
-      isHidden
-        ? 'Masquer le mot de passe'
-        : 'Afficher le mot de passe'
-    );
-  }
-
-
-  return true;
-}
-
-
-/*
- * Disponible aussi pour les boutons HTML utilisant onclick="togglePassword(...)"
- */
-window.togglePassword =
-  togglePassword;
-
-
-function initPasswordToggles() {
-
-  function toggleFromButton(button) {
-
-    if (!button) {
-      return;
+    .app {
+      width: 100%;
+      max-width: 520px;
+      margin: auto;
+      min-height: 100vh;
+      background: #f4f7fb;
     }
 
-    const targetId =
-      button.getAttribute('data-password-target') ||
-      button.getAttribute('data-target') ||
-      button.dataset?.passwordTarget ||
-      button.dataset?.target;
-
-    let input = null;
-
-    if (targetId) {
-      input = document.getElementById(
-        targetId.replace(/^#/, '')
-      );
+    .header {
+      background: linear-gradient(135deg, #064dcc, #0878e8);
+      color: #fff;
+      padding: 28px 20px 32px;
+      border-radius: 0 0 28px 28px;
     }
 
-    if (!input) {
-      const wrapper =
-        button.closest('.password-wrapper');
-
-      input =
-        wrapper?.querySelector(
-          'input'
-        ) || null;
+    .brand {
+      font-size: 25px;
+      font-weight: 800;
+      letter-spacing: .3px;
     }
 
-    if (!input) {
-      return;
+    .subtitle {
+      margin-top: 7px;
+      opacity: .9;
+      font-size: 14px;
     }
 
-    const showPassword =
-      input.type === 'password';
-
-    input.type =
-      showPassword
-        ? 'text'
-        : 'password';
-
-    button.textContent =
-      showPassword
-        ? '🙈'
-        : '👁️';
-
-    button.setAttribute(
-      'aria-label',
-      showPassword
-        ? 'Masquer le mot de passe'
-        : 'Afficher le mot de passe'
-    );
-  }
-
-
-  function bindPasswordButtons() {
-
-    document
-      .querySelectorAll(
-        '.password-toggle, [data-password-target]'
-      )
-      .forEach(
-        button => {
-
-          if (
-            button.dataset.passwordToggleBound ===
-            'true'
-          ) {
-            return;
-          }
-
-          button.dataset.passwordToggleBound =
-            'true';
-
-          button.addEventListener(
-            'click',
-            event => {
-
-              event.preventDefault();
-              event.stopPropagation();
-
-              toggleFromButton(
-                event.currentTarget
-              );
-            },
-            true
-          );
-        }
-      );
-  }
-
-
-  /*
-   * Liaison immédiate aux boutons déjà présents.
-   */
-  bindPasswordButtons();
-
-
-  /*
-   * Certains éléments peuvent être recréés dynamiquement.
-   * On les relie automatiquement dès qu'ils apparaissent.
-   */
-  const observer =
-    new MutationObserver(
-      () => {
-        bindPasswordButtons();
-      }
-    );
-
-  observer.observe(
-    document.documentElement,
-    {
-      childList: true,
-      subtree: true
+    .country-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      margin-top: 18px;
+      padding: 8px 13px;
+      border-radius: 30px;
+      background: rgba(255,255,255,.16);
+      font-size: 13px;
+      font-weight: 600;
     }
-  );
-}
 
+    .content {
+      padding: 20px 16px 100px;
+    }
 
-function initWhatsAppButton() {
+    .card {
+      background: #fff;
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 7px 25px rgba(18,46,84,.07);
+    }
 
-  /*
-   * Le bouton est créé directement par JavaScript afin
-   * de rester présent sur toutes les pages de l'application.
-   */
-  if (
-    document.getElementById(
-      'floatingWhatsAppButton'
-    )
-  ) {
+    .card-title {
+      font-size: 19px;
+      font-weight: 800;
+      margin-bottom: 5px;
+    }
 
-    return;
-  }
+    .card-description {
+      color: #7a8495;
+      font-size: 13px;
+      line-height: 1.5;
+      margin-bottom: 18px;
+    }
 
+    .auth-tabs,
+    .exchange-tabs {
+      display: flex;
+      background: #edf2f8;
+      border-radius: 14px;
+      padding: 4px;
+      margin-bottom: 20px;
+    }
 
-  const style =
-    document.createElement(
-      'style'
-    );
+    .auth-tab,
+    .exchange-tab {
+      flex: 1;
+      border: none;
+      background: transparent;
+      padding: 11px;
+      border-radius: 11px;
+      font-weight: 700;
+      color: #7b8493;
+    }
 
-  style.textContent =
-    `
-      #floatingWhatsAppButton {
-        position: fixed;
-        right: 18px;
-        bottom: 88px;
-        width: 58px;
-        height: 58px;
-        border: none;
-        border-radius: 50%;
-        background: #25D366;
-        color: #ffffff;
-        font-size: 30px;
-        line-height: 58px;
-        text-align: center;
-        box-shadow: 0 6px 18px rgba(0, 0, 0, .28);
-        z-index: 99999;
-        cursor: pointer;
+    .auth-tab.active,
+    .exchange-tab.active {
+      background: #fff;
+      color: #0757d9;
+      box-shadow: 0 2px 8px rgba(0,0,0,.06);
+    }
+
+    #loginTab.active,
+    #buyTab.active {
+      color: #168447;
+    }
+
+    #registerTab.active,
+    #sellTab.active {
+      color: #c62828;
+    }
+
+    .phone-input-wrapper {
+      display: flex;
+      align-items: stretch;
+      gap: 8px;
+    }
+
+    .phone-prefix {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 14px;
+      border: 1px solid #e0e6ef;
+      border-radius: 12px;
+      background: #f5f7fb;
+      font-weight: 700;
+      color: #344054;
+      white-space: nowrap;
+    }
+
+    .phone-input-wrapper input {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .balance-box {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: 1px solid #e0e6ef;
+      border-radius: 14px;
+      padding: 12px 16px;
+      margin-bottom: 12px;
+      background: #f5f9ff;
+      font-size: 14px;
+    }
+
+    .balance-box strong {
+      color: #0757d9;
+    }
+
+    .balance-box.insufficient {
+      background: #fee9e9;
+      border-color: #f3b9b9;
+    }
+
+    .balance-box.insufficient strong {
+      color: #c62828;
+    }
+
+    .balance-alert {
+      display: none;
+      background: #fee9e9;
+      border: 1px solid #f3b9b9;
+      color: #c62828;
+      border-radius: 14px;
+      padding: 12px 16px;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .balance-alert.visible {
+      display: block;
+    }
+
+    .copy-btn-inline {
+      background: #eaf1fb;
+      color: #0757d9;
+      border: none;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-weight: 700;
+      font-size: 13px;
+      margin-top: 10px;
+      width: 100%;
+    }
+
+    .binance-transfer-box {
+      border: 1px solid #f3e0a8;
+      background: #fffaf0;
+      border-radius: 16px;
+      padding: 14px 16px;
+      margin-top: 4px;
+    }
+
+    .binance-transfer-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .binance-logo {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      background: #F0B90B;
+      color: #1e1e1e;
+      transform: rotate(45deg);
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .binance-logo span {
+      transform: rotate(-45deg);
+    }
+
+    .auth-form {
+      display: none;
+    }
+
+    .forgot-password-link {
+      text-align: right;
+      color: #0757d9;
+      font-weight: 700;
+      margin-top: 8px;
+      cursor: pointer;
+    }
+
+    .auth-form.active {
+      display: block;
+    }
+
+    .field {
+      margin-bottom: 15px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 7px;
+      color: #3c4658;
+    }
+
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      border: 1px solid #dce3ed;
+      background: #fafcff;
+      border-radius: 13px;
+      padding: 13px 14px;
+      outline: none;
+      color: #172033;
+    }
+
+    .field input:focus,
+    .field select:focus,
+    .field textarea:focus {
+      border-color: #0878e8;
+      box-shadow: 0 0 0 3px rgba(8,120,232,.09);
+    }
+
+    .field textarea {
+      resize: vertical;
+      min-height: 90px;
+    }
+
+    .password-wrapper {
+      position: relative;
+      width: 100%;
+    }
+
+    .password-wrapper input {
+      padding-right: 52px;
+    }
+
+    .password-toggle {
+      position: absolute;
+      top: 50%;
+      right: 8px;
+      transform: translateY(-50%);
+      width: 40px;
+      height: 40px;
+      border: none;
+      background: transparent;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 19px;
+      color: #667085;
+    }
+
+    .btn {
+      width: 100%;
+      border: none;
+      border-radius: 14px;
+      padding: 14px 16px;
+      font-weight: 800;
+      transition: .2s;
+    }
+
+    .btn-primary {
+      background: #0757d9;
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: #0649b6;
+    }
+
+    .btn-secondary {
+      background: #eaf1fb;
+      color: #0757d9;
+    }
+
+    .btn-danger {
+      background: #fee9e9;
+      color: #c62828;
+    }
+
+    .btn-success {
+      background: #e8f8ef;
+      color: #168447;
+    }
+
+    .btn+.btn {
+      margin-top: 10px;
+    }
+
+    .amount-box {
+      border: 1px solid #e0e6ef;
+      border-radius: 17px;
+      padding: 16px;
+      margin-bottom: 12px;
+      background: #fbfcfe;
+    }
+
+    .amount-label {
+      color: #778194;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .amount-input {
+      width: 100%;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-size: 29px;
+      font-weight: 800;
+      color: #172033;
+    }
+
+    .amount-unit {
+      color: #0757d9;
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .network-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .network-option {
+      border: 2px solid #e0e6ef;
+      background: #fff;
+      border-radius: 14px;
+      padding: 14px 10px;
+      text-align: center;
+    }
+
+    .network-option.active {
+      border-color: #0757d9;
+      background: #f0f6ff;
+    }
+
+    .network-name {
+      font-weight: 800;
+      font-size: 14px;
+    }
+
+    .network-fee {
+      margin-top: 5px;
+      color: #7d8796;
+      font-size: 12px;
+    }
+
+    .summary {
+      background: #f5f8fd;
+      border-radius: 16px;
+      padding: 16px;
+      margin-top: 15px;
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 15px;
+      padding: 8px 0;
+      font-size: 14px;
+    }
+
+    .summary-row span:first-child {
+      color: #737d8e;
+    }
+
+    .summary-row strong {
+      text-align: right;
+    }
+
+    .summary-total {
+      border-top: 1px solid #dce3ed;
+      margin-top: 7px;
+      padding-top: 13px;
+      font-size: 17px;
+    }
+
+    .summary-total strong {
+      color: #0757d9;
+    }
+
+    .info-box {
+      background: #eef6ff;
+      border-left: 4px solid #0878e8;
+      padding: 13px;
+      border-radius: 10px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: #42536a;
+      margin-bottom: 15px;
+    }
+
+    .warning-box {
+      background: #fff8e7;
+      border-left: 4px solid #f2a900;
+      padding: 13px;
+      border-radius: 10px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: #69531f;
+      margin-bottom: 15px;
+    }
+
+    .error-box {
+      background: #feecec;
+      border-left: 4px solid #c62828;
+      padding: 13px;
+      border-radius: 10px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: #a51f1f;
+      margin-bottom: 15px;
+    }
+
+    .user-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background: #fff;
+      padding: 14px 16px;
+      border-radius: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 5px 18px rgba(18,46,84,.06);
+    }
+
+    .user-name {
+      font-weight: 800;
+    }
+
+    .user-country {
+      color: #7c8695;
+      font-size: 12px;
+      margin-top: 3px;
+    }
+
+    .logout-btn {
+      border: none;
+      background: #f0f3f7;
+      color: #596577;
+      border-radius: 10px;
+      padding: 9px 12px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .order-card {
+      border: 1px solid #e2e7ef;
+      border-radius: 15px;
+      padding: 15px;
+      margin-top: 12px;
+    }
+
+    .order-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .order-type {
+      font-weight: 800;
+    }
+
+    .status {
+      padding: 5px 9px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .status.pending {
+      background: #fff4d7;
+      color: #a16c00;
+    }
+
+    .status.processing {
+      background: #e8f1ff;
+      color: #0757d9;
+    }
+
+    .status.completed {
+      background: #e7f8ee;
+      color: #168447;
+    }
+
+    .status.cancelled {
+      background: #fdeaea;
+      color: #c62828;
+    }
+
+    .order-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 5px 0;
+      font-size: 13px;
+    }
+
+    .order-row span:first-child {
+      color: #7d8795;
+    }
+
+    /* ===============================
+       PAIEMENT
+    ================================ */
+
+    .payment-amount-box {
+      background: #f1f5f9;
+      border-radius: 16px;
+      padding: 18px;
+      text-align: center;
+      margin: 18px 0;
+    }
+
+    .payment-amount-label {
+      font-size: 14px;
+      color: #667085;
+      margin-bottom: 6px;
+    }
+
+    .payment-amount-value {
+      font-size: 28px;
+      font-weight: 900;
+      color: #0757d9;
+    }
+
+    .payment-qr-box {
+      background: #fff;
+      border: 1px solid #e4e7ec;
+      border-radius: 18px;
+      padding: 20px;
+      text-align: center;
+      margin: 18px 0;
+    }
+
+    .payment-qr-text {
+      font-size: 14px;
+      color: #475467;
+      margin-bottom: 15px;
+      line-height: 1.5;
+    }
+
+    #orangeMoneyQr {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 220px;
+    }
+
+    #orangeMoneyQr img {
+      display: block;
+      width: 220px;
+      height: 220px;
+      max-width: 100%;
+      margin: auto;
+    }
+
+    .payment-or,
+    .payment-or-inline {
+      text-align: center;
+      font-weight: 800;
+      color: #667085;
+      margin: 15px 0;
+    }
+
+    .payment-main-button {
+      width: 100%;
+      font-size: 15px;
+      font-weight: 900;
+    }
+
+    .payment-security-box {
+      background: #ecfdf3;
+      color: #027a48;
+      border-radius: 12px;
+      padding: 12px;
+      margin: 15px 0;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.5;
+    }
+
+    .proof-upload-label {
+      font-size: 14px;
+      font-weight: 800;
+      color: #344054;
+      margin: 18px 0 8px;
+    }
+
+    .dropzone {
+      position: relative;
+      border: 2px dashed #c7d5ea;
+      border-radius: 16px;
+      padding: 22px 16px;
+      text-align: center;
+      background: #f9fbfe;
+      transition: .2s;
+    }
+
+    .dropzone.dragover {
+      border-color: #0757d9;
+      background: #eef5ff;
+    }
+
+    .dropzone-icon {
+      font-size: 26px;
+      margin-bottom: 8px;
+    }
+
+    .dropzone-text {
+      font-size: 13px;
+      font-weight: 700;
+      color: #3c4658;
+    }
+
+    .dropzone-link {
+      color: #0757d9;
+      text-decoration: underline;
+    }
+
+    .dropzone-hint {
+      font-size: 11px;
+      color: #98a2b3;
+      margin-top: 5px;
+    }
+
+    .proof-preview-wrap {
+      text-align: center;
+    }
+
+    .proof-preview-img {
+      max-width: 100%;
+      max-height: 220px;
+      border-radius: 12px;
+      display: block;
+      margin: 0 auto;
+    }
+
+    .proof-remove-btn {
+      margin-top: 10px;
+      border: none;
+      background: #fee9e9;
+      color: #c62828;
+      border-radius: 10px;
+      padding: 8px 14px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    #proofUploadStatus {
+      font-size: 12px;
+      margin-top: 8px;
+      color: #7d8795;
+    }
+
+    #proofUploadStatus.success {
+      color: #168447;
+      font-weight: 700;
+    }
+
+    #proofUploadStatus.error {
+      color: #c62828;
+      font-weight: 700;
+    }
+
+    /* ===============================
+       NAVIGATION
+    ================================ */
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 520px;
+      background: rgba(255,255,255,.96);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid #e1e6ed;
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 8px;
+      z-index: 50;
+    }
+
+    .nav-btn {
+      border: none;
+      background: transparent;
+      color: #7d8795;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 7px 13px;
+      border-radius: 10px;
+    }
+
+    .nav-btn.active {
+      color: #0757d9;
+      background: #edf5ff;
+    }
+
+    .page,
+    .sub-page {
+      display: none;
+    }
+
+    .page.active,
+    .sub-page.active {
+      display: block;
+    }
+
+    #appMessage {
+      display: none;
+      padding: 13px 15px;
+      border-radius: 12px;
+      margin-bottom: 15px;
+      font-size: 13px;
+      line-height: 1.4;
+      font-weight: 600;
+    }
+
+    #appMessage.success {
+      display: block;
+      background: #e8f8ef;
+      color: #168447;
+    }
+
+    #appMessage.error {
+      display: block;
+      background: #feecec;
+      color: #c62828;
+    }
+
+    #appMessage.info {
+      display: block;
+      background: #eaf3ff;
+      color: #0757d9;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .center {
+      text-align: center;
+    }
+
+    .small {
+      font-size: 12px;
+      color: #7d8795;
+      line-height: 1.5;
+    }
+
+    .mt {
+      margin-top: 15px;
+    }
+
+    .wallet-help {
+      margin-top: 7px;
+    }
+
+    .wallet-input {
+      font-family: monospace;
+      font-size: 14px;
+    }
+
+    .break-word {
+      word-break: break-word;
+      overflow-wrap: anywhere;
+    }
+
+    @media (min-width: 521px) {
+      body {
+        padding: 20px 0;
       }
 
-      #floatingWhatsAppButton:active {
-        transform: scale(.96);
-      }
-    `;
-
-  document.head.appendChild(
-    style
-  );
-
-
-  const button =
-    document.createElement(
-      'button'
-    );
-
-  button.id =
-    'floatingWhatsAppButton';
-
-  button.type =
-    'button';
-
-  button.setAttribute(
-    'aria-label',
-    'Contacter le support sur WhatsApp'
-  );
-
-  button.title =
-    'Contacter le support sur WhatsApp';
-
-  button.textContent =
-    '💬';
-
-
-  button.addEventListener(
-    'click',
-    () => {
-
-      window.open(
-        'https://wa.me/22662591922',
-        '_blank',
-        'noopener,noreferrer'
-      );
-    }
-  );
-
-
-  document.body.appendChild(
-    button
-  );
-}
-
-function copyToClipboard(
-  text,
-  button
-) {
-
-  if (!text) {
-
-    return;
-  }
-
-
-  const originalLabel =
-    button?.textContent;
-
-
-  const onCopied = () => {
-
-    if (!button) {
-
-      return;
-    }
-
-    button.textContent =
-      '✅ Copié !';
-
-    setTimeout(
-      () => {
-
-        button.textContent =
-          originalLabel ||
-          '📋 Copier';
-
-      },
-      2000
-    );
-  };
-
-
-  if (
-    navigator.clipboard &&
-    window.isSecureContext
-  ) {
-
-    navigator.clipboard
-      .writeText(text)
-      .then(onCopied)
-      .catch(
-        () => {
-
-          fallbackCopy(
-            text
-          );
-
-          onCopied();
-        }
-      );
-
-    return;
-  }
-
-
-  fallbackCopy(text);
-
-  onCopied();
-}
-
-
-function fallbackCopy(text) {
-
-  const textarea =
-    document.createElement(
-      'textarea'
-    );
-
-  textarea.value =
-    text;
-
-  textarea.style.position =
-    'fixed';
-
-  textarea.style.opacity =
-    '0';
-
-  document.body.appendChild(
-    textarea
-  );
-
-  textarea.select();
-
-
-  try {
-
-    document.execCommand(
-      'copy'
-    );
-
-  } catch (error) {
-
-    console.error(
-      'Erreur copie presse-papiers :',
-      error
-    );
-  }
-
-
-  document.body.removeChild(
-    textarea
-  );
-}
-
-
-// ============================================================
-// PROFIL
-// ============================================================
-
-async function loadUserProfile() {
-
-  if (
-    !currentUser?.id
-  ) {
-    return null;
-  }
-
-
-  const metadata =
-    currentUser.user_metadata ||
-    {};
-
-
-  const fallback = {
-
-    id:
-      currentUser.id,
-
-    full_name:
-      metadata.full_name ||
-      metadata.name ||
-      currentUser.email
-        ?.split('@')[0] ||
-      'Utilisateur',
-
-    phone:
-      metadata.phone ||
-      '',
-
-    country:
-      metadata.country ||
-      'Burkina Faso',
-
-    role:
-      'user'
-
-  };
-
-
-  try {
-
-    const {
-      data: profile,
-      error
-    } =
-      await supabaseClient
-        .from('profiles')
-        .select(
-          'id,full_name,phone,country'
-        )
-        .eq(
-          'id',
-          currentUser.id
-        )
-        .maybeSingle();
-
-
-    // Un profil peut déjà exister ici avec seulement
-    // l'email (créé automatiquement par le trigger
-    // Supabase à l'inscription). On complète toujours
-    // les infos (nom, téléphone, pays) via upsert plutôt
-    // que de s'arrêter dès qu'une ligne existe.
-    const needsUpsert =
-      !error &&
-      (
-        !profile ||
-        !profile.full_name ||
-        !profile.phone
-      );
-
-
-    if (
-      !error &&
-      profile &&
-      !needsUpsert
-    ) {
-
-      currentProfile =
-        profile;
-
-      updateUserInterface();
-
-      return profile;
-    }
-
-
-    if (needsUpsert) {
-
-      const {
-        data: upserted,
-        error: upsertError
-      } =
-        await supabaseClient
-          .from('profiles')
-          .upsert(
-            {
-
-              id:
-                currentUser.id,
-
-              full_name:
-                fallback.full_name,
-
-              phone:
-                fallback.phone,
-
-              country:
-                fallback.country
-
-            },
-            {
-              onConflict:
-                'id'
-            }
-          )
-          .select(
-            'id,full_name,phone,country'
-          )
-          .maybeSingle();
-
-
-      if (
-        !upsertError &&
-        upserted
-      ) {
-
-        currentProfile =
-          upserted;
-
-        updateUserInterface();
-
-        return upserted;
+      .app {
+        border-radius: 25px;
+        overflow: hidden;
+        box-shadow: 0 15px 50px rgba(0,0,0,.08);
       }
 
-
-      if (upsertError) {
-
-        console.warn(
-          'Profil non créé :',
-          upsertError
-        );
-      }
-
-    } else if (error) {
-
-      console.warn(
-        'Profil non lisible :',
-        error
-      );
-    }
-
-  } catch (error) {
-
-    console.warn(
-      'Profil non disponible :',
-      error
-    );
-  }
-
-
-  currentProfile =
-    fallback;
-
-  updateUserInterface();
-
-  return currentProfile;
-}
-
-
-function updateUserInterface() {
-
-  if (!currentUser) {
-    return;
-  }
-
-
-  const p =
-    currentProfile || {};
-
-
-  const m =
-    currentUser.user_metadata ||
-    {};
-
-
-  const name =
-    p.full_name ||
-    m.full_name ||
-    m.name ||
-    'Utilisateur';
-
-
-  const phone =
-    p.phone ||
-    m.phone ||
-    '';
-
-
-  const country =
-    p.country ||
-    m.country ||
-    'Burkina Faso';
-
-
-  if ($('userName')) {
-
-    $('userName').textContent =
-      name;
-  }
-
-
-  if ($('userCountry')) {
-
-    $('userCountry').textContent =
-      '🇧🇫 ' + country;
-  }
-
-
-  if ($('profileName')) {
-
-    $('profileName').value =
-      name;
-  }
-
-
-  if ($('profilePhone')) {
-
-    $('profilePhone').value =
-      phone;
-  }
-
-
-  if ($('profileCountry')) {
-
-    $('profileCountry').value =
-      country;
-  }
-}
-
-
-async function initializeApplication() {
-
-  if (
-    applicationInitializing
-  ) {
-    return;
-  }
-
-
-  applicationInitializing =
-    true;
-
-
-  try {
-
-    await loadUserProfile();
-
-    await loadAppSettings();
-
-    showAppPage();
-
-    updateUserInterface();
-
-    updateRatesUI();
-
-    updateCalculator();
-
-  } catch (error) {
-
-    console.error(
-      'Erreur initialisation :',
-      error
-    );
-
-    showAppPage();
-
-  } finally {
-
-    applicationInitializing =
-      false;
-  }
-}
-
-
-// ============================================================
-// INSCRIPTION
-// ============================================================
-
-async function registerUser(
-  event
-) {
-
-  event.preventDefault();
-
-  hideMessage();
-
-
-  const name =
-    $('registerName')
-      ?.value
-      .trim() || '';
-
-
-  const phone =
-    normalizePhone(
-      $('registerPhone')
-        ?.value
-    );
-
-
-  const country =
-    $('registerCountry')
-      ?.value
-      .trim() ||
-    'Burkina Faso';
-
-
-  const referralCode =
-    $('registerReferralCode')
-      ?.value
-      .trim()
-      .toUpperCase() || '';
-
-
-  const email =
-    (
-      $('registerEmail')
-        ?.value
-        .trim() ||
-      ''
-    ).toLowerCase();
-
-
-  const password =
-    $('registerPassword')
-      ?.value || '';
-
-
-  const confirmPassword =
-    $('registerPasswordConfirm')
-      ?.value || '';
-
-
-  if (!name) {
-
-    return showMessage(
-      'Veuillez saisir votre nom et prénom.',
-      'error'
-    );
-  }
-
-
-  if (!phone) {
-
-    return showMessage(
-      'Veuillez saisir votre numéro de téléphone.',
-      'error'
-    );
-  }
-
-
-  if (
-    !/^\+226\d{8}$/.test(
-      phone
-    )
-  ) {
-
-    return showMessage(
-      'Veuillez saisir un numéro du Burkina Faso valide de 8 chiffres.',
-      'error'
-    );
-  }
-
-
-  if (!email) {
-
-    return showMessage(
-      'Veuillez saisir votre adresse email.',
-      'error'
-    );
-  }
-
-
-  if (
-    password.length <
-    6
-  ) {
-
-    return showMessage(
-      'Le mot de passe doit contenir au moins 6 caractères.',
-      'error'
-    );
-  }
-
-
-  if (
-    password !==
-    confirmPassword
-  ) {
-
-    return showMessage(
-      'Les deux mots de passe ne correspondent pas.',
-      'error'
-    );
-  }
-
-
-  const button =
-    event.submitter ||
-    $('registerForm')
-      ?.querySelector(
-        'button[type="submit"]'
-      );
-
-
-  const original =
-    button?.textContent;
-
-
-  if (button) {
-
-    button.disabled =
-      true;
-
-    button.textContent =
-      'Création du compte...';
-  }
-
-
-  try {
-
-    const {
-      data,
-      error
-    } =
-      await supabaseClient.auth
-        .signUp({
-
-          email,
-
-          password,
-
-          options: {
-
-            data: {
-
-              full_name:
-                name,
-
-              phone:
-                phone,
-
-              country:
-                country,
-
-              referral_code_used:
-                referralCode
-
-            }
-
-          }
-
-        });
-
-
-    if (error) {
-      throw error;
-    }
-
-
-    if (!data?.user) {
-
-      throw new Error(
-        "Le compte n'a pas pu être créé."
-      );
-    }
-
-
-    currentUser =
-      data.user;
-
-
-    if (data.session) {
-
-      await initializeApplication();
-
-      showMessage(
-        'Compte créé avec succès. Bienvenue sur NOA DIGIT TRADE !',
-        'success'
-      );
-
-    } else {
-
-      showMessage(
-        'Compte créé avec succès. Vérifiez votre email puis connectez-vous.',
-        'success'
-      );
-
-      showLoginForm();
-
-
-      if ($('loginEmail')) {
-
-        $('loginEmail').value =
-          email;
+      .bottom-nav {
+        border-radius: 20px 20px 0 0;
       }
     }
 
-  } catch (error) {
+    @media (max-width: 520px) {
+      .payment-amount-value {
+        font-size: 25px;
+      }
 
-    console.error(
-      'Erreur inscription :',
-      error
-    );
+      #orangeMoneyQr {
+        min-height: 200px;
+      }
 
-
-    let message =
-      getSupabaseErrorMessage(
-        error
-      );
-
-
-    if (
-      /already registered|user already registered|already exists/i
-        .test(message)
-    ) {
-
-      message =
-        'Cette adresse email est déjà utilisée.';
+      #orangeMoneyQr img {
+        width: 200px;
+        height: 200px;
+      }
     }
+  </style>
+</head>
 
+<body>
 
-    showMessage(
-      message,
-      'error'
-    );
+<div class="app">
 
-  } finally {
-
-    if (button) {
-
-      button.disabled =
-        false;
-
-      button.textContent =
-        original ||
-        'Créer mon compte';
-    }
-  }
-}
-
-
-// ============================================================
-// CONNEXION
-// ============================================================
-
-async function loginUser(
-  event
-) {
-
-  event.preventDefault();
-
-  hideMessage();
-
-
-  const email =
-    (
-      $('loginEmail')
-        ?.value
-        .trim() ||
-      ''
-    ).toLowerCase();
-
-
-  const password =
-    $('loginPassword')
-      ?.value || '';
-
-
-  if (
-    !email ||
-    !password
-  ) {
-
-    return showMessage(
-      'Veuillez remplir tous les champs.',
-      'error'
-    );
-  }
-
-
-  const button =
-    event.submitter ||
-    $('loginForm')
-      ?.querySelector(
-        'button[type="submit"]'
-      );
-
-
-  const original =
-    button?.textContent;
-
-
-  if (button) {
-
-    button.disabled =
-      true;
-
-    button.textContent =
-      'Connexion...';
-  }
-
-
-  try {
-
-    const {
-      data,
-      error
-    } =
-      await supabaseClient.auth
-        .signInWithPassword({
-
-          email,
-
-          password
-
-        });
-
-
-    if (error) {
-      throw error;
-    }
-
-
-    currentUser =
-      data.user;
-
-
-    await initializeApplication();
-
-
-    showMessage(
-      'Connexion réussie.',
-      'success'
-    );
-
-  } catch (error) {
-
-    console.error(
-      'Erreur connexion :',
-      error
-    );
-
-
-    let message =
-      getSupabaseErrorMessage(
-        error
-      );
-
-
-    if (
-      /invalid login credentials/i
-        .test(message)
-    ) {
-
-      message =
-        'Email ou mot de passe incorrect.';
-    }
-
-
-    if (
-      /email not confirmed/i
-        .test(message)
-    ) {
-
-      message =
-        "Votre adresse email n'est pas encore confirmée.";
-    }
-
-
-    showMessage(
-      message,
-      'error'
-    );
-
-  } finally {
-
-    if (button) {
-
-      button.disabled =
-        false;
-
-      button.textContent =
-        original ||
-        'Se connecter';
-    }
-  }
-}
-
-
-// ============================================================
-// DÉCONNEXION
-// ============================================================
-
-async function logoutUser() {
-
-  try {
-
-    await supabaseClient.auth
-      .signOut();
-
-  } catch (error) {
-
-    console.error(
-      'Erreur déconnexion :',
-      error
-    );
-  }
-
-
-  currentUser =
-    null;
-
-  currentProfile =
-    null;
-
-  currentOrder =
-    null;
-
-
-  showAuthPage();
-
-  showLoginForm();
-
-  hideMessage();
-}
-
-
-// ============================================================
-// PARAMÈTRES APPLICATION
-// ============================================================
-
-async function loadAppSettings() {
-
-  try {
-
-    const {
-      data,
-      error
-    } =
-      await supabaseClient
-        .from('app_settings')
-        .select('*')
-        .eq(
-          'id',
-          1
-        )
-        .maybeSingle();
-
-
-    if (error) {
-
-      console.error(
-        'Erreur app_settings :',
-        error
-      );
-
-      return false;
-    }
-
-
-    if (!data) {
-
-      console.warn(
-        'Aucune configuration app_settings trouvée.'
-      );
-
-      return false;
-    }
-
-
-    const buyRate =
-      Number(
-        data.buy_rate
-      );
-
-
-    const sellRate =
-      Number(
-        data.sell_rate
-      );
-
-
-    const minOrder =
-      Number(
-        data.min_order ??
-        data.min_order_cfa
-      );
-
-
-    const maxOrder =
-      Number(
-        data.max_order ??
-        data.max_order_cfa
-      );
-
-
-    const trc20Fee =
-      Number(
-        data.trc20_fee ??
-        data.trc20_fee_usdt
-      );
-
-
-    const bp20Fee =
-      Number(
-        data.bp20_fee ??
-        data.bp20_fee_usdt
-      );
-
-
-    const usdtBalance =
-      Number(
-        data.usdt_balance
-      );
-
-
-    const fcfaBalance =
-      Number(
-        data.fcfa_balance
-      );
-
-
-    if (
-      Number.isFinite(
-        buyRate
-      ) &&
-      buyRate > 0
-    ) {
-
-      CONFIG.buyRate =
-        buyRate;
-    }
-
-
-    if (
-      Number.isFinite(
-        sellRate
-      ) &&
-      sellRate > 0
-    ) {
-
-      CONFIG.sellRate =
-        sellRate;
-    }
-
-
-    if (
-      Number.isFinite(
-        minOrder
-      ) &&
-      minOrder >= 0
-    ) {
-
-      CONFIG.minOrder =
-        minOrder;
-    }
-
-
-    if (
-      Number.isFinite(
-        maxOrder
-      ) &&
-      maxOrder >= 0
-    ) {
-
-      CONFIG.maxOrder =
-        maxOrder;
-    }
-
-
-    if (
-      Number.isFinite(
-        trc20Fee
-      ) &&
-      trc20Fee >= 0
-    ) {
-
-      CONFIG.networks
-        .trc20
-        .fee =
-        trc20Fee;
-    }
-
-
-    if (
-      Number.isFinite(
-        bp20Fee
-      ) &&
-      bp20Fee >= 0
-    ) {
-
-      CONFIG.networks
-        .bp20
-        .fee =
-        bp20Fee;
-    }
-
-
-    if (
-      Number.isFinite(
-        usdtBalance
-      ) &&
-      usdtBalance >= 0
-    ) {
-
-      CONFIG.balances.usdt =
-        usdtBalance;
-    }
-
-
-    if (
-      Number.isFinite(
-        fcfaBalance
-      ) &&
-      fcfaBalance >= 0
-    ) {
-
-      CONFIG.balances.fcfa =
-        fcfaBalance;
-    }
-
-
-    return true;
-
-  } catch (error) {
-
-    console.error(
-      'Erreur lecture paramètres :',
-      error
-    );
-
-    return false;
-  }
-}
-
-
-// ============================================================
-// TARIFS
-// ============================================================
-
-function updateRatesUI() {
-
-  if ($('homeBuyRate')) {
-
-    $('homeBuyRate').textContent =
-      formatNumber(
-        CONFIG.buyRate
-      );
-  }
-
-
-  if ($('homeSellRate')) {
-
-    $('homeSellRate').textContent =
-      formatNumber(
-        CONFIG.sellRate
-      );
-  }
-
-
-  if ($('homeMinOrder')) {
-
-    $('homeMinOrder').textContent =
-      formatNumber(
-        CONFIG.minOrder
-      );
-  }
-
-
-  if ($('homeMaxOrder')) {
-
-    $('homeMaxOrder').textContent =
-      formatNumber(
-        CONFIG.maxOrder
-      );
-  }
-
-
-  if ($('homeTrc20Fee')) {
-
-    $('homeTrc20Fee').textContent =
-      CONFIG.networks.trc20.fee;
-  }
-
-
-  if ($('homeBp20Fee')) {
-
-    $('homeBp20Fee').textContent =
-      CONFIG.networks.bp20.fee;
-  }
-
-
-  if ($('trc20Fee')) {
-
-    $('trc20Fee').textContent =
-      CONFIG.networks.trc20.fee;
-  }
-
-
-  if ($('bp20Fee')) {
-
-    $('bp20Fee').textContent =
-      CONFIG.networks.bp20.fee;
-  }
-}
-
-
-// ============================================================
-// CHAMP NUMÉRO ORANGE MONEY POUR VENTE
-// ============================================================
-
-function ensureSellPayoutField() {
-
-  const walletInput =
-    $('walletAddress');
-
-
-  if (!walletInput) {
-    return null;
-  }
-
-
-  let field =
-    $('sellPayoutField');
-
-
-  if (!field) {
-
-    field =
-      document.createElement(
-        'div'
-      );
-
-
-    field.id =
-      'sellPayoutField';
-
-
-    field.className =
-      'field';
-
-
-    field.innerHTML = `
-
-      <label for="sellPayoutPhone">
-        Numéro Orange Money pour recevoir vos FCFA
-      </label>
-
-      <input
-        type="tel"
-        id="sellPayoutPhone"
-        inputmode="numeric"
-        autocomplete="tel"
-        maxlength="8"
-        placeholder="Exemple : 70 00 00 00"
-      >
-
-      <div class="small wallet-help">
-        📱 Ce numéro sera utilisé pour vous envoyer le montant en FCFA après réception et vérification de vos USDT.
-      </div>
-
-    `;
-
-
-    const walletField =
-      walletInput.closest('.field') ||
-      walletInput.parentElement;
-
-
-    if (
-      walletField?.parentNode
-    ) {
-
-      walletField.parentNode.insertBefore(
-        field,
-        walletField.nextSibling
-      );
-    }
-  }
-
-
-  return field;
-}
-
-
-// ============================================================
-// ADRESSE DÉPÔT NOA
-// ============================================================
-
-function getDepositAddress() {
-
-  return String(
-    CONFIG.depositAddresses?.[
-      currentNetwork
-    ] || ''
-  ).trim();
-}
-
-
-// ============================================================
-// INTERFACE VENTE
-// ============================================================
-
-function updateSellDepositUI() {
-
-  if (
-    currentExchangeType !==
-    'sell'
-  ) {
-    return;
-  }
-
-
-  const address =
-    getDepositAddress();
-
-
-  const walletInput =
-    $('walletAddress');
-
-
-  if ($('walletLabel')) {
-
-    $('walletLabel').textContent =
-      'Adresse de dépôt NOA DIGIT TRADE';
-  }
-
-
-  if (walletInput) {
-
-    walletInput.readOnly =
-      true;
-
-    walletInput.required =
-      false;
-
-    walletInput.value =
-      address;
-
-    walletInput.placeholder =
-      address
-        ? 'Adresse de dépôt NOA DIGIT TRADE'
-        : 'Adresse de dépôt non configurée';
-  }
-
-
-  const help =
-    walletInput
-      ?.closest('.field')
-      ?.querySelector(
-        '.wallet-help'
-      );
-
-
-  if (help) {
-
-    help.innerHTML =
-      address
-        ? `⚠️ Envoyez vos USDT <strong>uniquement</strong> à cette adresse et utilisez exactement le réseau <strong>${escapeHtml(CONFIG.networks[currentNetwork]?.name || currentNetwork)}</strong>.`
-        : "⚠️ L'adresse de dépôt n'est pas encore configurée par l'administrateur.";
-  }
-
-
-  const payoutField =
-    ensureSellPayoutField();
-
-
-  if (payoutField) {
-
-    payoutField.style.display =
-      '';
-  }
-}
-
-
-// ============================================================
-// MODE ACHAT
-// ============================================================
-
-function setBuyMode() {
-
-  currentExchangeType =
-    'buy';
-
-
-  $('buyTab')?.classList.add(
-    'active'
-  );
-
-  $('sellTab')?.classList.remove(
-    'active'
-  );
-
-
-  if ($('amountLabel')) {
-
-    $('amountLabel').textContent =
-      'Montant à payer';
-  }
-
-
-  if ($('amountUnit')) {
-
-    $('amountUnit').textContent =
-      'FCFA';
-  }
-
-
-  const input =
-    $('amountInput');
-
-
-  if (input) {
-
-    input.placeholder =
-      'Ex. 10 000';
-
-    input.min =
-      String(
-        CONFIG.minOrder
-      );
-
-    input.max =
-      String(
-        CONFIG.maxOrder
-      );
-
-    input.step =
-      '1';
-  }
-
-
-  const walletInput =
-    $('walletAddress');
-
-
-  if ($('walletLabel')) {
-
-    $('walletLabel').textContent =
-      'Adresse de portefeuille USDT';
-  }
-
-
-  if (walletInput) {
-
-    walletInput.value =
-      '';
-
-    walletInput.readOnly =
-      false;
-
-    walletInput.required =
-      true;
-
-    walletInput.placeholder =
-      'Collez votre adresse USDT ici';
-  }
-
-
-  const walletHelp =
-    walletInput
-      ?.closest('.field')
-      ?.querySelector(
-        '.wallet-help'
-      );
-
-
-  if (walletHelp) {
-
-    walletHelp.textContent =
-      "⚠️ Pour un achat, indiquez l'adresse USDT sur laquelle vous souhaitez recevoir vos USDT.";
-  }
-
-
-  if ($('paymentMethodField')) {
-
-    $('paymentMethodField').style.display =
-      '';
-  }
-
-
-  const payoutField =
-    ensureSellPayoutField();
-
-
-  if (payoutField) {
-
-    payoutField.style.display =
-      'none';
-  }
-
-
-  if ($('exchangeInfo')) {
-
-    $('exchangeInfo').innerHTML = `
-
-      💡 Minimum :
-      <strong>
-        ${formatNumber(CONFIG.minOrder)} FCFA
-      </strong>
-
-      <br>
-
-      Maximum :
-      <strong>
-        ${formatNumber(CONFIG.maxOrder)} FCFA
-      </strong>
-
-      <br>
-
-      Le montant exact et les frais sont affichés avant la confirmation.
-
-    `;
-  }
-
-
-  updateCalculator();
-}
-
-
-// ============================================================
-// MODE VENTE
-// ============================================================
-
-function setSellMode() {
-
-  currentExchangeType =
-    'sell';
-
-
-  $('buyTab')?.classList.remove(
-    'active'
-  );
-
-  $('sellTab')?.classList.add(
-    'active'
-  );
-
-
-  if ($('amountLabel')) {
-
-    $('amountLabel').textContent =
-      'Quantité à vendre';
-  }
-
-
-  if ($('amountUnit')) {
-
-    $('amountUnit').textContent =
-      'USDT';
-  }
-
-
-  const input =
-    $('amountInput');
-
-
-  if (input) {
-
-    input.placeholder =
-      'Exemple : 10 USDT';
-
-    input.min =
-      '0';
-
-    input.max =
-      '';
-
-    input.step =
-      'any';
-  }
-
-
-  if ($('paymentMethodField')) {
-
-    $('paymentMethodField').style.display =
-      'none';
-  }
-
-
-  if ($('exchangeInfo')) {
-
-    $('exchangeInfo').innerHTML = `
-
-      💡 Saisissez la
-      <strong>
-        quantité d'USDT
-      </strong>
-      que vous souhaitez vendre.
-
-      <br>
-
-      Nous vous indiquons l'adresse de dépôt NOA selon le réseau choisi.
-
-      <br>
-
-      Après réception et vérification des USDT,
-      nous vous envoyons les FCFA sur votre Orange Money.
-
-    `;
-  }
-
-
-  ensureSellPayoutField();
-
-  updateSellDepositUI();
-
-  updateCalculator();
-}
-
-
-// ============================================================
-// RÉSEAU
-// ============================================================
-
-function selectNetwork(
-  network
-) {
-
-  if (
-    !CONFIG.networks[network]
-  ) {
-    return;
-  }
-
-
-  currentNetwork =
-    network;
-
-
-  $('trc20Option')
-    ?.classList.toggle(
-      'active',
-      network === 'trc20'
-    );
-
-
-  $('bp20Option')
-    ?.classList.toggle(
-      'active',
-      network === 'bp20'
-    );
-
-
-  if (
-    currentExchangeType ===
-    'sell'
-  ) {
-
-    updateSellDepositUI();
-  }
-
-
-  updateCalculator();
-}
-
-
-// ============================================================
-// CALCUL
-// ============================================================
-
-function calculateOrder() {
-
-  const amount =
-    Number(
-      $('amountInput')
-        ?.value
-    ) || 0;
-
-
-  const fee =
-    Number(
-      CONFIG
-        .networks[
-          currentNetwork
-        ]?.fee || 0
-    );
-
-
-  if (
-    currentExchangeType ===
-    'buy'
-  ) {
-
-    const amountCfa =
-      amount;
-
-
-    const grossUsdt =
-      amountCfa /
-      CONFIG.buyRate;
-
-
-    const netUsdt =
-      Math.max(
-        grossUsdt - fee,
-        0
-      );
-
-
-    return {
-
-      side:
-        'buy',
-
-      amountCfa:
-        amountCfa,
-
-      usdtAmount:
-        grossUsdt,
-
-      feeUsdt:
-        fee,
-
-      netUsdt:
-        netUsdt,
-
-      receiveCfa:
-        0,
-
-      rate:
-        CONFIG.buyRate
-
-    };
-  }
-
-
-  const usdtAmount =
-    amount;
-
-
-  /*
-   * VENTE :
-   * Le vendeur envoie toute la quantité d'USDT saisie.
-   * Les frais sont déduits du montant FCFA qu'il reçoit.
-   */
-  const grossCfa =
-    usdtAmount *
-    CONFIG.sellRate;
-
-
-  const feeCfa =
-    fee *
-    CONFIG.sellRate;
-
-
-  const receiveCfa =
-    Math.max(
-      grossCfa - feeCfa,
-      0
-    );
-
-
-  return {
-
-    side:
-      'sell',
-
-    amountCfa:
-      grossCfa,
-
-    usdtAmount:
-      usdtAmount,
-
-    feeUsdt:
-      fee,
-
-    feeCfa:
-      feeCfa,
-
-    netUsdt:
-      usdtAmount,
-
-    receiveCfa:
-      receiveCfa,
-
-    rate:
-      CONFIG.sellRate
-
-  };
-}
-
-
-// ============================================================
-// AFFICHAGE CALCULATEUR
-// ============================================================
-
-function updateCalculator() {
-
-  const c =
-    calculateOrder();
-
-
-  if ($('summaryRate')) {
-
-    $('summaryRate').textContent =
-      `${formatNumber(c.rate)} FCFA / USDT`;
-  }
-
-
-  if (
-    currentExchangeType ===
-    'buy'
-  ) {
-
-    if ($('summaryCfa')) {
-
-      $('summaryCfa').textContent =
-        `${formatNumber(c.amountCfa)} FCFA`;
-    }
-
-
-    if ($('summaryUsdt')) {
-
-      $('summaryUsdt').textContent =
-        `${c.usdtAmount.toFixed(6)} USDT`;
-    }
-
-
-    if ($('summaryFee')) {
-
-      $('summaryFee').textContent =
-        `${c.feeUsdt} USDT`;
-    }
-
-
-    if ($('summaryResultLabel')) {
-
-      $('summaryResultLabel').textContent =
-        'Vous recevez';
-    }
-
-
-    if ($('summaryResult')) {
-
-      $('summaryResult').textContent =
-        `${c.netUsdt.toFixed(6)} USDT`;
-    }
-
-
-    updateBalanceUI(c);
-
-
-    return;
-  }
-
-
-  if ($('summaryCfa')) {
-
-    $('summaryCfa').textContent =
-      `${formatNumber(c.receiveCfa)} FCFA`;
-  }
-
-
-  if ($('summaryUsdt')) {
-
-    $('summaryUsdt').textContent =
-      `${c.usdtAmount.toFixed(6)} USDT`;
-  }
-
-
-  if ($('summaryFee')) {
-
-    const sellFeeCfa =
-      Number(c.feeCfa) ||
-      (
-        Number(c.feeUsdt) *
-        Number(c.rate)
-      );
-
-    $('summaryFee').textContent =
-      `${formatNumber(sellFeeCfa)} FCFA`;
-  }
-
-
-  if ($('summaryResultLabel')) {
-
-    $('summaryResultLabel').textContent =
-      'Vous recevez';
-  }
-
-
-  if ($('summaryResult')) {
-
-    $('summaryResult').textContent =
-      `${formatNumber(c.receiveCfa)} FCFA`;
-  }
-
-
-  updateBalanceUI(c);
-}
-
-
-// ============================================================
-// SOLDE DISPONIBLE
-// ============================================================
-
-function updateBalanceUI(c) {
-
-  const box =
-    $('availableBalanceBox');
-
-  const valueEl =
-    $('availableBalanceValue');
-
-  const alertEl =
-    $('insufficientBalanceAlert');
-
-  const reviewBtn =
-    $('reviewOrderBtn');
-
-
-  if (!box || !valueEl) {
-
-    return;
-  }
-
-
-  let available = 0;
-
-  let needed = 0;
-
-  let unit = '';
-
-
-  if (
-    currentExchangeType ===
-    'buy'
-  ) {
-
-    available =
-      Number(
-        CONFIG.balances.usdt
-      ) || 0;
-
-    needed =
-      c.usdtAmount;
-
-    unit =
-      'USDT';
-
-    valueEl.textContent =
-      `${available.toFixed(2)} USDT`;
-
-  } else {
-
-    available =
-      Number(
-        CONFIG.balances.fcfa
-      ) || 0;
-
-    needed =
-      c.receiveCfa;
-
-    unit =
-      'FCFA';
-
-    valueEl.textContent =
-      `${formatNumber(available)} FCFA`;
-  }
-
-
-  const insufficient =
-    needed > 0 &&
-    needed > available;
-
-
-  box.classList.toggle(
-    'insufficient',
-    insufficient
-  );
-
-
-  if (alertEl) {
-
-    alertEl.classList.toggle(
-      'visible',
-      insufficient
-    );
-  }
-
-
-  if (reviewBtn) {
-
-    reviewBtn.disabled =
-      insufficient;
-  }
-}
-
-
-// ============================================================
-// RÉCUPÉRER WALLET CLIENT
-// ============================================================
-
-function getWalletAddress() {
-
-  const ids = [
-
-    'walletAddress',
-
-    'wallet',
-
-    'walletInput',
-
-    'userWallet',
-
-    'wallet_address'
-
-  ];
-
-
-  for (
-    const id of ids
-  ) {
-
-    const el =
-      $(id);
-
-
-    if (
-      el?.value?.trim()
-    ) {
-
-      return normalizeWalletAddress(
-        el.value
-      );
-    }
-  }
-
-
-  return '';
-}
-
-
-// ============================================================
-// VÉRIFICATION COMMANDE
-// ============================================================
-
-function reviewOrder() {
-
-  hideMessage();
-
-
-  if (!currentUser) {
-
-    showMessage(
-      'Vous devez être connecté pour passer une commande.',
-      'error'
-    );
-
-    showAuthPage();
-
-    showLoginForm();
-
-    return;
-  }
-
-
-  const c =
-    calculateOrder();
-
-
-  if (
-    !c.usdtAmount ||
-    c.usdtAmount <= 0
-  ) {
-
-    return showMessage(
-
-      currentExchangeType ===
-      'buy'
-
-        ? 'Veuillez saisir un montant en FCFA.'
-
-        : "Veuillez saisir la quantité d'USDT à vendre.",
-
-      'error'
-    );
-  }
-
-
-  if (
-    currentExchangeType ===
-    'buy'
-  ) {
-
-    if (
-      c.amountCfa <
-      CONFIG.minOrder
-    ) {
-
-      return showMessage(
-        `Le montant minimum est de ${formatNumber(CONFIG.minOrder)} FCFA.`,
-        'error'
-      );
-    }
-
-
-    if (
-      c.amountCfa >
-      CONFIG.maxOrder
-    ) {
-
-      return showMessage(
-        `Le montant maximum est de ${formatNumber(CONFIG.maxOrder)} FCFA.`,
-        'error'
-      );
-    }
-
-
-    if (
-      c.netUsdt <= 0
-    ) {
-
-      return showMessage(
-        'Le montant USDT après frais est insuffisant.',
-        'error'
-      );
-    }
-  }
-
-
-  let wallet = '';
-
-  let payoutPhone = '';
-
-
-  // ==========================================================
-  // VENTE
-  // ==========================================================
-
-  if (
-    currentExchangeType ===
-    'sell'
-  ) {
-
-    const minimumUsdt =
-      CONFIG.minOrder /
-      CONFIG.sellRate;
-
-
-    const maximumUsdt =
-      CONFIG.maxOrder /
-      CONFIG.sellRate;
-
-
-    if (
-      c.usdtAmount <
-      minimumUsdt
-    ) {
-
-      return showMessage(
-        `La quantité minimum est de ${minimumUsdt.toFixed(2)} USDT.`,
-        'error'
-      );
-    }
-
-
-    if (
-      c.usdtAmount >
-      maximumUsdt
-    ) {
-
-      return showMessage(
-        `La quantité maximum est de ${maximumUsdt.toFixed(2)} USDT.`,
-        'error'
-      );
-    }
-
-
-    if (
-      c.receiveCfa <= 0
-    ) {
-
-      return showMessage(
-        "Le montant à recevoir après frais est insuffisant.",
-        'error'
-      );
-    }
-
-
-    wallet =
-      getDepositAddress();
-
-
-    const noaValidation =
-      validateNoaDepositAddress(
-        currentNetwork
-      );
-
-
-    if (
-      !noaValidation.valid
-    ) {
-
-      return showMessage(
-        noaValidation.message,
-        'error'
-      );
-    }
-
-
-    payoutPhone =
-      normalizePhone(
-        $('sellPayoutPhone')
-          ?.value
-      );
-
-
-    if (!payoutPhone) {
-
-      return showMessage(
-        'Veuillez saisir le numéro Orange Money sur lequel vous souhaitez recevoir vos FCFA.',
-        'error'
-      );
-    }
-
-
-    if (
-      !/^\+226\d{8}$/.test(
-        payoutPhone
-      )
-    ) {
-
-      return showMessage(
-        'Veuillez saisir un numéro Orange Money valide de 8 chiffres.',
-        'error'
-      );
-    }
-
-  }
-
-  // ==========================================================
-  // ACHAT
-  // ==========================================================
-
-  else {
-
-    wallet =
-      getWalletAddress();
-
-
-    if (!wallet) {
-
-      return showMessage(
-        'Veuillez saisir votre adresse de portefeuille USDT.',
-        'error'
-      );
-    }
-
-
-    const walletValidation =
-      validateWalletForNetwork(
-        wallet,
-        currentNetwork
-      );
-
-
-    if (
-      !walletValidation.valid
-    ) {
-
-      return showMessage(
-        walletValidation.message,
-        'error'
-      );
-    }
-
-
-    if (
-      currentNetwork ===
-      'bp20'
-    ) {
-
-      showMessage(
-        '⚠️ Adresse compatible BEP20. Vérifiez une dernière fois que cette adresse est bien destinée au réseau BNB Smart Chain avant de continuer.',
-        'info'
-      );
-    }
-  }
-
-
-  currentOrder = {
-
-    side:
-      currentExchangeType,
-
-    network:
-      currentNetwork,
-
-    amountCfa:
-      c.amountCfa,
-
-    usdtAmount:
-      c.usdtAmount,
-
-    feeUsdt:
-      c.feeUsdt,
-
-    feeCfa:
-      c.feeCfa || 0,
-
-    netUsdt:
-      c.netUsdt,
-
-    receiveCfa:
-      c.receiveCfa,
-
-    rate:
-      c.rate,
-
-    walletAddress:
-      wallet,
-
-    payoutPhone:
-      payoutPhone,
-
-    paymentMethod:
-      'orange_money'
-
-  };
-
-
-  renderConfirmation();
-
-
-  showSubPage(
-    'confirmationPage'
-  );
-}
-
-
-// ============================================================
-// CONFIRMATION
-// ============================================================
-
-function renderConfirmation() {
-
-  const box =
-    $('confirmationSummary');
-
-
-  if (
-    !box ||
-    !currentOrder
-  ) {
-    return;
-  }
-
-
-  const networkName =
-    CONFIG.networks[
-      currentOrder.network
-    ]?.name ||
-    currentOrder.network ||
-    '-';
-
-
-  if (
-    currentOrder.side ===
-    'buy'
-  ) {
-
-    box.innerHTML = `
-
-      <div class="summary-row">
-        <span>Type</span>
-        <strong>Achat USDT</strong>
-      </div>
-
-      <div class="summary-row">
-        <span>Montant à payer</span>
-        <strong>
-          ${formatNumber(currentOrder.amountCfa)} FCFA
-        </strong>
-      </div>
-
-      <div class="summary-row">
-        <span>Taux</span>
-        <strong>
-          ${formatNumber(currentOrder.rate)} FCFA / USDT
-        </strong>
-      </div>
-
-      <div class="summary-row">
-        <span>USDT acheté</span>
-        <strong>
-          ${Number(currentOrder.usdtAmount).toFixed(6)} USDT
-        </strong>
-      </div>
-
-      <div class="summary-row">
-        <span>Frais réseau</span>
-        <strong>
-          ${Number(currentOrder.feeUsdt)} USDT
-        </strong>
-      </div>
-
-      <div class="summary-row">
-        <span>USDT net reçu</span>
-        <strong>
-          ${Number(currentOrder.netUsdt).toFixed(6)} USDT
-        </strong>
-      </div>
-
-      <div class="summary-row">
-        <span>Réseau</span>
-        <strong>
-          ${escapeHtml(networkName)}
-        </strong>
-      </div>
-
-      <div class="summary-row">
-        <span>Portefeuille de réception</span>
-        <strong class="break-word">
-          ${escapeHtml(currentOrder.walletAddress)}
-        </strong>
-      </div>
-
-      <div class="summary-row">
-        <span>Paiement</span>
-        <strong>
-          Orange Money
-        </strong>
-      </div>
-
-      <div class="summary-row summary-total">
-        <span>Vous recevez</span>
-        <strong>
-          ${Number(currentOrder.netUsdt).toFixed(6)} USDT
-        </strong>
-      </div>
-
-      <div class="warning-box">
-        ⚠️ Vérifiez attentivement le réseau
-        <strong>${escapeHtml(networkName)}</strong>
-        et votre adresse avant de confirmer.
-      </div>
-
-    `;
-
-    return;
-  }
-
-
-  box.innerHTML = `
-
-    <div class="summary-row">
-      <span>Type</span>
-      <strong>Vente USDT</strong>
+  <header class="header">
+    <div class="brand">NOA DIGIT TRADE</div>
+    <div class="subtitle">Achat & vente de USDT</div>
+    <div class="country-badge">
+      🇧🇫 Burkina Faso uniquement
     </div>
+  </header>
 
-    <div class="summary-row">
-      <span>Quantité vendue</span>
-      <strong>
-        ${Number(currentOrder.usdtAmount).toFixed(6)} USDT
-      </strong>
-    </div>
+  <main class="content">
 
-    <div class="summary-row">
-      <span>Taux de vente</span>
-      <strong>
-        ${formatNumber(currentOrder.rate)} FCFA / USDT
-      </strong>
-    </div>
+    <div id="appMessage"></div>
 
-    <div class="summary-row">
-      <span>Frais réseau déduits</span>
-      <strong>
-        ${formatNumber(
-          Number(currentOrder.feeCfa) ||
-          (
-            Number(currentOrder.feeUsdt) *
-            Number(currentOrder.rate)
-          )
-        )} FCFA
-      </strong>
-    </div>
+    <!-- ================= AUTH ================= -->
 
-    <div class="summary-row">
-      <span>Montant brut</span>
-      <strong>
-        ${formatNumber(currentOrder.amountCfa)} FCFA
-      </strong>
-    </div>
+    <section id="authPage" class="page active">
 
-    <div class="summary-row">
-      <span>Réseau</span>
-      <strong>
-        ${escapeHtml(networkName)}
-      </strong>
-    </div>
+      <div class="card">
 
-    <div class="summary-row">
-      <span>Adresse de dépôt NOA</span>
-      <strong class="break-word">
-        ${escapeHtml(currentOrder.walletAddress)}
-      </strong>
-    </div>
-
-    <div class="summary-row">
-      <span>Orange Money</span>
-      <strong>
-        ${escapeHtml(currentOrder.payoutPhone || '-')}
-      </strong>
-    </div>
-
-    <div class="summary-row summary-total">
-      <span>Vous recevrez</span>
-      <strong>
-        ${formatNumber(currentOrder.receiveCfa)} FCFA
-      </strong>
-    </div>
-
-    <div class="warning-box">
-      ⚠️ <strong>Vérifiez le réseau avant d'envoyer.</strong>
-      <br><br>
-      Vous devez envoyer vos USDT uniquement sur
-      <strong>${escapeHtml(networkName)}</strong>
-      à l'adresse NOA indiquée ci-dessus.
-      Une erreur de réseau peut entraîner une perte des fonds.
-    </div>
-
-  `;
-}
-
-
-// ============================================================
-// ANNULER CONFIRMATION
-// ============================================================
-
-function cancelReview() {
-
-  currentOrder =
-    null;
-
-
-  showSubPage(
-    'exchangePage'
-  );
-}
-
-
-// ============================================================
-// CRÉER COMMANDE
-// ============================================================
-
-async function placeOrder() {
-
-  hideMessage();
-
-
-  if (!currentUser) {
-
-    showMessage(
-      "Votre session a expiré. Veuillez vous reconnecter.",
-      'error'
-    );
-
-    showAuthPage();
-
-    showLoginForm();
-
-    return;
-  }
-
-
-  if (!currentOrder) {
-
-    return showMessage(
-      'Aucune commande à enregistrer.',
-      'error'
-    );
-  }
-
-
-  if (
-    currentOrder.side ===
-    'buy'
-  ) {
-
-    const validation =
-      validateWalletForNetwork(
-        currentOrder.walletAddress,
-        currentOrder.network
-      );
-
-
-    if (
-      !validation.valid
-    ) {
-
-      return showMessage(
-        'Commande bloquée : ' +
-        validation.message,
-        'error'
-      );
-    }
-
-  } else {
-
-    const validation =
-      validateNoaDepositAddress(
-        currentOrder.network
-      );
-
-
-    if (
-      !validation.valid
-    ) {
-
-      return showMessage(
-        validation.message,
-        'error'
-      );
-    }
-  }
-
-
-  const button =
-    $('placeOrderBtn');
-
-
-  const originalText =
-    button?.textContent;
-
-
-  if (button) {
-
-    button.disabled =
-      true;
-
-    button.textContent =
-      'Enregistrement...';
-  }
-
-
-  try {
-
-    const {
-      data: sessionData,
-      error: sessionError
-    } =
-      await supabaseClient.auth
-        .getSession();
-
-
-    if (sessionError) {
-      throw sessionError;
-    }
-
-
-    if (
-      !sessionData?.session?.user
-    ) {
-
-      throw new Error(
-        "Votre session n'est plus active."
-      );
-    }
-
-
-    currentUser =
-      sessionData.session.user;
-
-
-    let customerNote =
-      null;
-
-
-    if (
-      currentOrder.side ===
-      'buy'
-    ) {
-
-      customerNote =
-        currentOrder.walletAddress
-          ? `Adresse de réception USDT : ${currentOrder.walletAddress}`
-          : null;
-
-    } else {
-
-      customerNote =
-        `Adresse de dépôt NOA : ${currentOrder.walletAddress} | Numéro Orange Money : ${currentOrder.payoutPhone}`;
-    }
-
-
-    const receiveCfa =
-      currentOrder.side ===
-      'sell'
-
-        ? Number(
-            currentOrder.receiveCfa ||
-            0
-          )
-
-        : 0;
-
-
-    const payload = {
-
-      user_id:
-        currentUser.id,
-
-      side:
-        currentOrder.side,
-
-      network:
-        currentOrder.network,
-
-      payment_method:
-        currentOrder.paymentMethod ||
-        'orange_money',
-
-      amount_cfa:
-        Number(
-          currentOrder.amountCfa
-        ),
-
-      usdt_amount:
-        Number(
-          currentOrder.usdtAmount
-        ),
-
-      fee_usdt:
-        Number(
-          currentOrder.feeUsdt
-        ),
-
-      net_usdt:
-        Number(
-          currentOrder.netUsdt
-        ),
-
-      receive_cfa:
-        receiveCfa,
-
-      status:
-        'pending',
-
-      customer_note:
-        customerNote,
-
-      wallet_address:
-        currentOrder.side ===
-        'buy'
-
-          ? currentOrder.walletAddress
-
-          : null,
-
-      payout_phone:
-        currentOrder.side ===
-        'sell'
-
-          ? currentOrder.payoutPhone
-
-          : null
-
-    };
-
-
-    const {
-      data,
-      error
-    } =
-      await supabaseClient
-        .from('orders')
-        .insert(
-          payload
-        )
-        .select('*')
-        .single();
-
-
-    if (error) {
-      throw error;
-    }
-
-
-    if (!data) {
-
-      throw new Error(
-        "Supabase n'a retourné aucune commande."
-      );
-    }
-
-
-    currentOrder.id =
-      data.id;
-
-
-    currentOrder.createdAt =
-      data.created_at;
-
-
-    currentOrder.status =
-      data.status ||
-      'pending';
-
-
-    if (
-      currentOrder.side ===
-      'buy'
-    ) {
-
-      renderPaymentPage();
-
-      showSubPage(
-        'paymentPage'
-      );
-
-
-      showMessage(
-        'Commande enregistrée. Effectuez maintenant le paiement Orange Money.',
-        'success'
-      );
-
-    } else {
-
-      renderSellPaymentPage();
-
-      showSubPage(
-        'paymentPage'
-      );
-
-
-      showMessage(
-        "Commande de vente enregistrée. Envoyez maintenant les USDT à l'adresse indiquée.",
-        'success'
-      );
-    }
-
-
-    await loadOrderHistory();
-
-  } catch (error) {
-
-    console.error(
-      'ERREUR CRÉATION COMMANDE :',
-      error
-    );
-
-
-    showMessage(
-      'Impossible d’enregistrer la commande : ' +
-      getSupabaseErrorMessage(error),
-      'error'
-    );
-
-  } finally {
-
-    if (button) {
-
-      button.disabled =
-        false;
-
-      button.textContent =
-        originalText ||
-        'Placer la commande';
-    }
-  }
-}
-
-
-// ============================================================
-// PAGE PAIEMENT ACHAT
-// NOUVELLE VERSION COMPATIBLE AVEC INDEX.HTML
-// ============================================================
-
-function renderPaymentPage() {
-
-  if (
-    !currentOrder ||
-    currentOrder.side !== 'buy'
-  ) {
-    return;
-  }
-
-
-  const amount =
-    Math.round(
-      Number(
-        currentOrder.amountCfa
-      ) || 0
-    );
-
-
-  if (
-    !amount ||
-    amount <= 0
-  ) {
-
-    showMessage(
-      'Montant de paiement invalide.',
-      'error'
-    );
-
-    return;
-  }
-
-
-  // ----------------------------------------------------------
-  // DESCRIPTION
-  // ----------------------------------------------------------
-
-  if ($('paymentDescription')) {
-
-    $('paymentDescription').textContent =
-      'Votre commande a été enregistrée. Effectuez maintenant le paiement Orange Money.';
-  }
-
-
-  if ($('qrInstructionText')) {
-
-    $('qrInstructionText').style.display =
-      '';
-  }
-
-
-  // ----------------------------------------------------------
-  // MONTANT
-  // ----------------------------------------------------------
-
-  if ($('paymentAmountValue')) {
-
-    $('paymentAmountValue').textContent =
-      `${formatNumber(amount)} FCFA`;
-  }
-
-
-  // ----------------------------------------------------------
-  // NUMÉRO ORANGE MONEY
-  // IMPORTANT :
-  // Le numéro n'est PAS affiché en clair dans l'interface.
-  // ----------------------------------------------------------
-
-  const paymentNumber =
-    String(
-      CONFIG.payment.number ||
-      ''
-    ).replace(
-      /\D/g,
-      ''
-    );
-
-
-  if (!paymentNumber) {
-
-    showMessage(
-      'Le moyen de paiement n’est pas correctement configuré.',
-      'error'
-    );
-
-    return;
-  }
-
-
-  // ----------------------------------------------------------
-  // CODE USSD
-  // ----------------------------------------------------------
-
-  const ussdCode =
-    `*144*10*${paymentNumber}*${amount}#`;
-
-
-  // ----------------------------------------------------------
-  // QR CODE
-  // ----------------------------------------------------------
-
-  const qrContainer =
-    $('orangeMoneyQr');
-
-
-  if (qrContainer) {
-
-    qrContainer.innerHTML =
-      '';
-
-
-    if (
-      typeof QRCode ===
-      'undefined'
-    ) {
-
-      qrContainer.innerHTML = `
-
-        <div class="small center">
-          QR code indisponible.
-          <br>
-          Utilisez le bouton de paiement ci-dessous.
+        <div class="card-title">
+          Bienvenue
         </div>
 
-      `;
+        <div class="card-description">
+          Connectez-vous ou créez votre compte pour acheter ou vendre des USDT.
+        </div>
 
-    } else {
+        <div class="auth-tabs">
 
-      try {
+          <button
+            type="button"
+            class="auth-tab active"
+            id="loginTab"
+          >
+            Connexion
+          </button>
 
-        new QRCode(
-          qrContainer,
-          {
+          <button
+            type="button"
+            class="auth-tab"
+            id="registerTab"
+          >
+            Inscription
+          </button>
 
-            text:
-              `tel:${ussdCode}`,
+        </div>
 
-            width:
-              220,
+        <!-- CONNEXION -->
 
-            height:
-              220,
+        <form
+          id="loginForm"
+          class="auth-form active"
+        >
 
-            correctLevel:
-              QRCode.CorrectLevel.M
+          <div class="field">
 
-          }
-        );
+            <label for="loginEmail">
+              Adresse email
+            </label>
 
-      } catch (error) {
+            <input
+              type="email"
+              id="loginEmail"
+              placeholder="exemple@email.com"
+              autocomplete="email"
+              required
+            >
 
-        console.error(
-          'Erreur génération QR :',
-          error
-        );
-
-
-        qrContainer.innerHTML = `
-
-          <div class="small center">
-            QR code indisponible.
-            <br>
-            Utilisez le bouton de paiement ci-dessous.
           </div>
 
-        `;
-      }
-    }
-  }
+          <div class="field">
+
+            <label for="loginPassword">
+              Mot de passe
+            </label>
+
+            <div class="password-wrapper">
+
+              <input
+                type="password"
+                id="loginPassword"
+                placeholder="Votre mot de passe"
+                autocomplete="current-password"
+                required
+              >
+
+              <button
+                type="button"
+                class="password-toggle"
+                data-password-target="loginPassword"
+                aria-label="Afficher le mot de passe"
+              >
+                👁️
+              </button>
+
+            </div>
+
+            <div
+              class="small forgot-password-link"
+              id="forgotPasswordLink"
+            >
+              Mot de passe oublié ?
+            </div>
+
+          </div>
+
+          <button
+            type="submit"
+            class="btn btn-primary"
+          >
+            Se connecter
+          </button>
+
+        </form>
+
+        <!-- MOT DE PASSE OUBLIÉ -->
+
+        <form
+          id="forgotPasswordForm"
+          class="auth-form"
+        >
+
+          <div class="card-description">
+            Saisissez l'adresse email de votre compte, nous vous enverrons
+            un lien pour réinitialiser votre mot de passe.
+          </div>
+
+          <div class="field">
+
+            <label for="forgotPasswordEmail">
+              Adresse email
+            </label>
+
+            <input
+              type="email"
+              id="forgotPasswordEmail"
+              placeholder="exemple@email.com"
+              autocomplete="email"
+              required
+            >
+
+          </div>
+
+          <button
+            type="submit"
+            class="btn btn-primary"
+          >
+            Envoyer le lien de réinitialisation
+          </button>
 
+          <button
+            type="button"
+            class="btn btn-secondary"
+            id="backToLoginBtn"
+          >
+            Retour à la connexion
+          </button>
+
+        </form>
+
+        <!-- INSCRIPTION -->
+
+        <form
+          id="registerForm"
+          class="auth-form"
+        >
 
-  // ----------------------------------------------------------
-  // BOUTON PAIEMENT
-  // ----------------------------------------------------------
+          <div class="info-box">
+            🇧🇫 NOA DIGIT TRADE est réservé aux clients situés au Burkina Faso.
+          </div>
 
-  const payButton =
-    $('orangeMoneyPayBtn');
+          <div class="field">
 
+            <label for="registerName">
+              Nom et prénom
+            </label>
 
-  if (payButton) {
+            <input
+              type="text"
+              id="registerName"
+              placeholder="Votre nom complet"
+              autocomplete="name"
+              required
+            >
 
-    payButton.style.display =
-      '';
+          </div>
 
+          <div class="field">
 
-    payButton.textContent =
-      'CLIQUEZ ICI POUR EFFECTUER LE PAIEMENT';
+            <label for="registerPhone">
+              Numéro de téléphone
+            </label>
 
+            <div class="phone-input-wrapper">
 
-    // Éviter plusieurs listeners
-    payButton.onclick =
-      null;
+              <div class="phone-prefix">
+                🇧🇫 +226
+              </div>
 
+              <input
+                type="tel"
+                id="registerPhone"
+                placeholder="70 00 00 00"
+                autocomplete="tel"
+                inputmode="numeric"
+                maxlength="17"
+                required
+              >
 
-    payButton.onclick =
-      () => {
+            </div>
 
-        try {
+          </div>
 
-          /*
-           * Encodage du # pour éviter qu'il soit interprété
-           * comme un fragment de l'URL.
-           */
-          const encodedCode =
-            ussdCode.replace(
-              '#',
-              '%23'
-            );
+          <div class="field">
 
+            <label for="registerCountry">
+              Pays
+            </label>
 
-          window.location.href =
-            `tel:${encodedCode}`;
+            <select
+              id="registerCountry"
+              required
+            >
 
-        } catch (error) {
+              <option value="Burkina Faso">
+                🇧🇫 Burkina Faso
+              </option>
 
-          console.error(
-            'Erreur lancement paiement :',
-            error
-          );
+            </select>
 
+          </div>
 
-          showMessage(
-            'Impossible de lancer automatiquement le paiement. Utilisez le QR code.',
-            'error'
-          );
-        }
-      };
-  }
+          <div class="field">
 
+            <label for="registerReferralCode">
+              Code de parrainage (optionnel)
+            </label>
 
-  // ----------------------------------------------------------
-  // BOUTON "J'AI EFFECTUÉ LE PAIEMENT"
-  // ----------------------------------------------------------
+            <input
+              type="text"
+              id="registerReferralCode"
+              placeholder="Ex: NOAINOU123"
+              style="text-transform: uppercase;"
+            >
 
-  const paymentDoneButton =
-    $('paymentDoneBtn');
+          </div>
 
+          <div class="field">
 
-  if (paymentDoneButton) {
+            <label for="registerEmail">
+              Adresse email
+            </label>
 
-    paymentDoneButton.style.display =
-      '';
+            <input
+              type="email"
+              id="registerEmail"
+              placeholder="exemple@email.com"
+              autocomplete="email"
+              required
+            >
 
-    paymentDoneButton.disabled =
-      false;
+          </div>
 
-    paymentDoneButton.textContent =
-      "J'AI EFFECTUÉ LE PAIEMENT";
-  }
+          <div class="field">
 
+            <label for="registerPassword">
+              Mot de passe
+            </label>
 
-  // ----------------------------------------------------------
-  // BOUTON HISTORIQUE
-  // ----------------------------------------------------------
+            <div class="password-wrapper">
 
-  if ($('viewOrderBtn')) {
+              <input
+                type="password"
+                id="registerPassword"
+                placeholder="Minimum 6 caractères"
+                minlength="6"
+                autocomplete="new-password"
+                required
+              >
 
-    $('viewOrderBtn').style.display =
-      '';
+              <button
+                type="button"
+                class="password-toggle"
+                data-password-target="registerPassword"
+                aria-label="Afficher le mot de passe"
+              >
+                👁️
+              </button>
 
-    $('viewOrderBtn').textContent =
-      'Voir ma commande';
-  }
+            </div>
 
+          </div>
 
-  // ----------------------------------------------------------
-  // PREUVE DE PAIEMENT (réinitialisation)
-  // ----------------------------------------------------------
+          <div class="field">
 
-  const proofLabelReset =
-    $('paymentPage')
-      ?.querySelector(
-        '.proof-upload-label'
-      );
+            <label for="registerPasswordConfirm">
+              Confirmer le mot de passe
+            </label>
 
-  if (proofLabelReset) {
+            <div class="password-wrapper">
 
-    proofLabelReset.textContent =
-      'Preuve de paiement (capture d\'écran)';
-  }
+              <input
+                type="password"
+                id="registerPasswordConfirm"
+                placeholder="Répétez le mot de passe"
+                minlength="6"
+                autocomplete="new-password"
+                required
+              >
 
+              <button
+                type="button"
+                class="password-toggle"
+                data-password-target="registerPasswordConfirm"
+                aria-label="Afficher la confirmation du mot de passe"
+              >
+                👁️
+              </button>
 
-  resetProofUpload();
+            </div>
 
-  const dropzoneReset =
-    $('proofDropzone');
+          </div>
 
-  if (dropzoneReset) {
+          <div class="warning-box">
 
-    dropzoneReset.style.pointerEvents =
-      '';
+            ⚠️ Utilisez obligatoirement vos informations personnelles
+            réelles pour créer votre compte et effectuer/valider vos paiements.
 
-    dropzoneReset.style.opacity =
-      '';
-  }
-}
+          </div>
 
-function renderSellPaymentPage() {
+          <button
+            type="submit"
+            class="btn btn-primary"
+          >
+            Créer mon compte
+          </button>
 
-  if (
-    !currentOrder ||
-    currentOrder.side !== 'sell'
-  ) {
-    return;
-  }
-
-
-  const networkName =
-    CONFIG.networks[
-      currentOrder.network
-    ]?.name ||
-    currentOrder.network ||
-    '-';
-
-
-  // ----------------------------------------------------------
-  // DESCRIPTION
-  // ----------------------------------------------------------
-
-  if ($('paymentDescription')) {
-
-    $('paymentDescription').textContent =
-      "Votre demande de vente est enregistrée. Envoyez vos USDT à l'adresse de dépôt indiquée.";
-  }
-
-
-  // ----------------------------------------------------------
-  // MONTANT
-  // ----------------------------------------------------------
-
-  if ($('paymentAmountValue')) {
-
-    $('paymentAmountValue').innerHTML =
-      `Vous recevrez : <strong>${formatNumber(currentOrder.receiveCfa)} FCFA</strong>`;
-  }
-
-
-  // ----------------------------------------------------------
-  // TEXTE "SCANNEZ LE QR CODE" (masqué en vente)
-  // ----------------------------------------------------------
-
-  if ($('qrInstructionText')) {
-
-    $('qrInstructionText').style.display =
-      'none';
-  }
-
-
-  // ----------------------------------------------------------
-  // QR BOX
-  // Pour SELL, on n'utilise pas le QR Orange Money.
-  // On affiche l'adresse NOA + l'option Binance.
-  // ----------------------------------------------------------
-
-  const qrContainer =
-    $('orangeMoneyQr');
-
-
-  if (qrContainer) {
-
-    qrContainer.innerHTML = `
-
-      <div class="payment-qr-text">
-
-        Envoyez exactement
-
-        <strong>
-          ${Number(currentOrder.netUsdt).toFixed(6)} USDT
-        </strong>
-
-        sur le réseau
-
-        <strong>
-          ${escapeHtml(networkName)}
-        </strong>.
+        </form>
 
       </div>
 
-      <div
-        class="small break-word"
-        style="margin-top:12px;"
-      >
+      <div class="card center">
 
-        <strong>
-          Adresse de dépôt NOA :
-        </strong>
+        <div class="small">
 
-        <br>
-
-        ${escapeHtml(
-          currentOrder.walletAddress
-        )}
-
-      </div>
-
-      <button
-        type="button"
-        id="copyDepositAddressBtn"
-        class="copy-btn-inline"
-      >
-        📋 Copier l'adresse
-      </button>
-
-      <div class="payment-or-inline">
-        OU
-      </div>
-
-      <div class="binance-transfer-box">
-
-        <div class="binance-transfer-header">
-
-          <span class="binance-logo">
-            <span>B</span>
-          </span>
-
-          Transférer via Binance
+          En utilisant NOA DIGIT TRADE, vous acceptez de fournir
+          des informations exactes afin de sécuriser vos transactions.
 
         </div>
 
-        <div class="small">
-          ID Binance :
-          <strong id="binanceIdText">
-            ${escapeHtml(CONFIG.binance.id)}
-          </strong>
+      </div>
+
+    </section>
+
+
+    <!-- ================= APPLICATION ================= -->
+
+    <section
+      id="appPage"
+      class="page"
+    >
+
+      <div class="user-bar">
+
+        <div>
+
+          <div
+            id="userName"
+            class="user-name"
+          >
+            Utilisateur
+          </div>
+
+          <div
+            id="userCountry"
+            class="user-country"
+          >
+            🇧🇫 Burkina Faso
+          </div>
+
         </div>
 
         <button
           type="button"
-          id="copyBinanceIdBtn"
-          class="copy-btn-inline"
+          id="logoutBtn"
+          class="logout-btn"
         >
-          📋 Copier l'ID Binance
+          Déconnexion
         </button>
 
       </div>
 
-    `;
 
-
-    $('copyDepositAddressBtn')
-      ?.addEventListener(
-        'click',
-        (event) => {
-
-          copyToClipboard(
-            currentOrder.walletAddress,
-            event.currentTarget
-          );
-        }
-      );
-
-
-    $('copyBinanceIdBtn')
-      ?.addEventListener(
-        'click',
-        (event) => {
-
-          copyToClipboard(
-            CONFIG.binance.id,
-            event.currentTarget
-          );
-        }
-      );
-  }
-
-
-  // ----------------------------------------------------------
-  // BOUTON ORANGE MONEY
-  // ----------------------------------------------------------
-
-  const payButton =
-    $('orangeMoneyPayBtn');
-
-
-  if (payButton) {
-
-    payButton.style.display =
-      'none';
-
-    payButton.onclick =
-      null;
-  }
-
-
-  // ----------------------------------------------------------
-  // "OU" (statique, masqué — on utilise celui généré ci-dessus)
-  // ----------------------------------------------------------
-
-  const paymentOr =
-    $('paymentPage')
-      ?.querySelector(
-        '.payment-or'
-      );
-
-
-  if (paymentOr) {
-
-    paymentOr.style.display =
-      'none';
-  }
-
-
-  // ----------------------------------------------------------
-  // BOUTON "J'AI ENVOYÉ LES USDT"
-  // ----------------------------------------------------------
-
-  if ($('paymentDoneBtn')) {
-
-    $('paymentDoneBtn').style.display =
-      '';
-
-    $('paymentDoneBtn').disabled =
-      false;
-
-    $('paymentDoneBtn').textContent =
-      "J'AI ENVOYÉ LES USDT";
-  }
-
-
-  // ----------------------------------------------------------
-  // LIBELLÉ PREUVE
-  // ----------------------------------------------------------
-
-  const proofLabel =
-    $('paymentPage')
-      ?.querySelector(
-        '.proof-upload-label'
-      );
-
-  if (proofLabel) {
-
-    proofLabel.textContent =
-      "Preuve d'envoi des USDT (capture d'écran)";
-  }
-
-
-  resetProofUpload();
-
-  const dropzoneReset =
-    $('proofDropzone');
-
-  if (dropzoneReset) {
-
-    dropzoneReset.style.pointerEvents =
-      '';
-
-    dropzoneReset.style.opacity =
-      '';
-  }
-
-
-  // ----------------------------------------------------------
-  // SÉCURITÉ
-  // ----------------------------------------------------------
-
-  const securityBox =
-    $('paymentPage')
-      ?.querySelector(
-        '.payment-security-box'
-      );
-
-
-  if (securityBox) {
-
-    securityBox.innerHTML = `
-
-      🔒 Vérifiez attentivement le réseau
-      <strong>
-        ${escapeHtml(networkName)}
-      </strong>
-      avant d'envoyer vos USDT.
-
-    `;
-  }
-
-
-  // ----------------------------------------------------------
-  // AVERTISSEMENT
-  // ----------------------------------------------------------
-
-  const warning =
-    $('paymentPage')
-      ?.querySelector(
-        '.warning-box'
-      );
-
-
-  if (warning) {
-
-    warning.innerHTML = `
-
-      ⚠️ <strong>IMPORTANT :</strong>
-
-      <br><br>
-
-      Envoyez exactement
-
-      <strong>
-        ${Number(currentOrder.netUsdt).toFixed(6)} USDT
-      </strong>
-
-      sur le réseau
-
-      <strong>
-        ${escapeHtml(networkName)}
-      </strong>.
-
-      <br><br>
-
-      Adresse de dépôt NOA :
+      <!-- ================= ACCUEIL ================= -->
 
       <div
-        class="break-word"
-        style="margin-top:8px;"
+        id="homePage"
+        class="sub-page active"
       >
 
-        <strong>
-          ${escapeHtml(
-            currentOrder.walletAddress
-          )}
-        </strong>
+        <div class="card">
 
-      </div>
-
-      <br>
-
-      Une erreur de réseau ou d'adresse peut entraîner
-      une perte des fonds.
-
-      <br><br>
-
-      Après réception et vérification de vos USDT,
-      nous vous enverrons
-
-      <strong>
-        ${formatNumber(currentOrder.receiveCfa)} FCFA
-      </strong>
-
-      sur votre Orange Money.
-
-    `;
-  }
-
-
-  // ----------------------------------------------------------
-  // BOUTON HISTORIQUE
-  // ----------------------------------------------------------
-
-  if ($('viewOrderBtn')) {
-
-    $('viewOrderBtn').style.display =
-      '';
-
-    $('viewOrderBtn').textContent =
-      'Voir ma commande';
-  }
-}
-
-
-// ============================================================
-// DÉCLARER PAIEMENT
-// RPC SUPABASE SÉCURISÉ
-// ============================================================
-
-// ============================================================
-// PREUVE DE PAIEMENT (upload)
-// ============================================================
-
-const PROOF_MAX_SIZE_BYTES =
-  5 * 1024 * 1024;
-
-
-const PROOF_ALLOWED_TYPES = [
-
-  'image/jpeg',
-
-  'image/png',
-
-  'image/webp'
-
-];
-
-
-function resetProofUpload() {
-
-  selectedProofFile =
-    null;
-
-
-  const fileInput =
-    $('proofFileInput');
-
-  if (fileInput) {
-    fileInput.value =
-      '';
-  }
-
-
-  const content =
-    $('proofDropzoneContent');
-
-  if (content) {
-    content.classList.remove(
-      'hidden'
-    );
-  }
-
-
-  const previewWrap =
-    $('proofPreviewWrap');
-
-  if (previewWrap) {
-    previewWrap.classList.add(
-      'hidden'
-    );
-  }
-
-
-  const previewImg =
-    $('proofPreviewImg');
-
-  if (previewImg) {
-    previewImg.src =
-      '';
-  }
-
-
-  const status =
-    $('proofUploadStatus');
-
-  if (status) {
-    status.textContent =
-      '';
-    status.className =
-      '';
-  }
-
-
-  const dropzone =
-    $('proofDropzone');
-
-  if (dropzone) {
-    dropzone.classList.remove(
-      'dragover'
-    );
-  }
-}
-
-
-function handleProofFile(
-  file
-) {
-
-  const status =
-    $('proofUploadStatus');
-
-
-  if (!file) {
-    return;
-  }
-
-
-  if (
-    !PROOF_ALLOWED_TYPES.includes(
-      file.type
-    )
-  ) {
-
-    if (status) {
-      status.textContent =
-        'Format non supporté. Utilisez une image JPG, PNG ou WEBP.';
-      status.className =
-        'error';
-    }
-
-    return;
-  }
-
-
-  if (
-    file.size >
-    PROOF_MAX_SIZE_BYTES
-  ) {
-
-    if (status) {
-      status.textContent =
-        'Fichier trop volumineux (5 Mo maximum).';
-      status.className =
-        'error';
-    }
-
-    return;
-  }
-
-
-  selectedProofFile =
-    file;
-
-
-  if (status) {
-    status.textContent =
-      '';
-    status.className =
-      '';
-  }
-
-
-  const reader =
-    new FileReader();
-
-
-  reader.onload =
-    () => {
-
-      const previewImg =
-        $('proofPreviewImg');
-
-      if (previewImg) {
-        previewImg.src =
-          reader.result;
-      }
-
-
-      const content =
-        $('proofDropzoneContent');
-
-      if (content) {
-        content.classList.add(
-          'hidden'
-        );
-      }
-
-
-      const previewWrap =
-        $('proofPreviewWrap');
-
-      if (previewWrap) {
-        previewWrap.classList.remove(
-          'hidden'
-        );
-      }
-    };
-
-
-  reader.readAsDataURL(
-    file
-  );
-}
-
-
-function initProofUploadEvents() {
-
-  const dropzone =
-    $('proofDropzone');
-
-  const fileInput =
-    $('proofFileInput');
-
-  const removeBtn =
-    $('proofRemoveBtn');
-
-
-  if (dropzone) {
-
-    dropzone.addEventListener(
-      'click',
-      event => {
-
-        if (
-          event.target.closest(
-            '#proofRemoveBtn'
-          )
-        ) {
-          return;
-        }
-
-        fileInput?.click();
-      }
-    );
-
-
-    dropzone.addEventListener(
-      'dragover',
-      event => {
-
-        event.preventDefault();
-
-        dropzone.classList.add(
-          'dragover'
-        );
-      }
-    );
-
-
-    dropzone.addEventListener(
-      'dragleave',
-      () => {
-
-        dropzone.classList.remove(
-          'dragover'
-        );
-      }
-    );
-
-
-    dropzone.addEventListener(
-      'drop',
-      event => {
-
-        event.preventDefault();
-
-        dropzone.classList.remove(
-          'dragover'
-        );
-
-
-        const file =
-          event.dataTransfer
-            ?.files?.[0];
-
-        if (file) {
-          handleProofFile(
-            file
-          );
-        }
-      }
-    );
-  }
-
-
-  fileInput?.addEventListener(
-    'change',
-    event => {
-
-      const file =
-        event.target
-          .files?.[0];
-
-      if (file) {
-        handleProofFile(
-          file
-        );
-      }
-    }
-  );
-
-
-  removeBtn?.addEventListener(
-    'click',
-    event => {
-
-      event.stopPropagation();
-
-      resetProofUpload();
-    }
-  );
-}
-
-
-async function uploadProofFile(
-  file,
-  orderId
-) {
-
-  const extension =
-    (
-      file.name
-        .split('.')
-        .pop() ||
-      'jpg'
-    )
-    .toLowerCase();
-
-
-  const path =
-    `${currentUser.id}/${orderId}-${Date.now()}.${extension}`;
-
-
-  const {
-    error: uploadError
-  } =
-    await supabaseClient
-      .storage
-      .from('payment-proofs')
-      .upload(
-        path,
-        file,
-        {
-          contentType:
-            file.type,
-
-          upsert:
-            false
-        }
-      );
-
-
-  if (uploadError) {
-    throw uploadError;
-  }
-
-
-  return path;
-}
-
-
-async function declarePayment() {
-
-  hideMessage();
-
-
-  if (
-    !currentUser
-  ) {
-
-    return showMessage(
-      'Votre session a expiré. Veuillez vous reconnecter.',
-      'error'
-    );
-  }
-
-
-  if (
-    !currentOrder?.id
-  ) {
-
-    return showMessage(
-      'Commande introuvable.',
-      'error'
-    );
-  }
-
-
-  const isSell =
-    currentOrder.side ===
-    'sell';
-
-
-  if (!selectedProofFile) {
-
-    return showMessage(
-      isSell
-        ? "Veuillez joindre une capture d'écran de votre envoi de USDT avant de continuer."
-        : "Veuillez joindre une capture d'écran de votre paiement avant de continuer.",
-      'error'
-    );
-  }
-
-
-  const button =
-    $('paymentDoneBtn');
-
-
-  const originalText =
-    button?.textContent;
-
-
-  if (button) {
-
-    button.disabled =
-      true;
-
-    button.textContent =
-      'Confirmation...';
-  }
-
-
-  const status =
-    $('proofUploadStatus');
-
-
-  try {
-
-    // --------------------------------------------------------
-    // Vérifier que la session est toujours active
-    // --------------------------------------------------------
-
-    const {
-      data: sessionData,
-      error: sessionError
-    } =
-      await supabaseClient.auth
-        .getSession();
-
-
-    if (sessionError) {
-      throw sessionError;
-    }
-
-
-    if (
-      !sessionData?.session?.user
-    ) {
-
-      throw new Error(
-        "Votre session n'est plus active."
-      );
-    }
-
-
-    currentUser =
-      sessionData.session.user;
-
-
-    // --------------------------------------------------------
-    // ENVOI DE LA PREUVE DE PAIEMENT (bucket privé)
-    // --------------------------------------------------------
-
-    if (status) {
-      status.textContent =
-        'Envoi de la preuve de paiement...';
-      status.className =
-        '';
-    }
-
-
-    const proofPath =
-      await uploadProofFile(
-        selectedProofFile,
-        currentOrder.id
-      );
-
-
-    if (status) {
-      status.textContent =
-        'Preuve envoyée ✓';
-      status.className =
-        'success';
-    }
-
-
-    // --------------------------------------------------------
-    // APPEL DE LA FONCTION SQL SÉCURISÉE
-    // Aucun UPDATE direct depuis le navigateur.
-    // --------------------------------------------------------
-
-    const {
-      data,
-      error
-    } =
-      await supabaseClient.rpc(
-        'declare_order_payment',
-        {
-          p_order_id:
-            currentOrder.id,
-
-          p_payment_proof_url:
-            proofPath
-        }
-      );
-
-
-    if (error) {
-      throw error;
-    }
-
-
-    if (!data) {
-
-      throw new Error(
-        "La commande n'a pas pu être mise à jour."
-      );
-    }
-
-
-    // --------------------------------------------------------
-    // Supabase peut retourner un objet ou un tableau selon
-    // le contexte de la fonction RPC.
-    // --------------------------------------------------------
-
-    const updatedOrder =
-      Array.isArray(data)
-        ? data[0]
-        : data;
-
-
-    if (!updatedOrder) {
-
-      throw new Error(
-        "La commande mise à jour n'a pas été retournée."
-      );
-    }
-
-
-    currentOrder.status =
-      updatedOrder.status ||
-      'payment_declared';
-
-
-    currentOrder.paymentStatus =
-      updatedOrder.payment_status ||
-      'declared';
-
-
-    showMessage(
-      isSell
-        ? 'Envoi déclaré. Votre commande est maintenant en attente de vérification.'
-        : 'Paiement déclaré. Votre commande est maintenant en attente de vérification.',
-      'success'
-    );
-
-
-    // Le bouton ne doit plus être recliqué inutilement.
-    if (button) {
-
-      button.disabled =
-        true;
-
-      button.textContent =
-        isSell
-          ? 'ENVOI DÉCLARÉ ✓'
-          : 'PAIEMENT DÉCLARÉ ✓';
-    }
-
-
-    const dropzoneAfterSuccess =
-      $('proofDropzone');
-
-    if (dropzoneAfterSuccess) {
-
-      dropzoneAfterSuccess.style.pointerEvents =
-        'none';
-
-      dropzoneAfterSuccess.style.opacity =
-        '0.6';
-    }
-
-
-    await loadOrderHistory();
-
-
-  } catch (error) {
-
-    console.error(
-      'ERREUR DÉCLARATION PAIEMENT :',
-      error
-    );
-
-
-    showMessage(
-      'Impossible de confirmer le paiement : ' +
-      getSupabaseErrorMessage(error),
-      'error'
-    );
-
-
-    if (status) {
-
-      status.textContent =
-        "Échec de l'envoi. Réessayez.";
-
-      status.className =
-        'error';
-    }
-
-
-    if (button) {
-
-      button.disabled =
-        false;
-
-      button.textContent =
-        originalText ||
-        (isSell
-          ? "J'AI ENVOYÉ LES USDT"
-          : "J'AI EFFECTUÉ LE PAIEMENT");
-    }
-  }
-}
-
-
-// ============================================================
-// HISTORIQUE
-// ============================================================
-
-async function loadOrderHistory() {
-
-  const list =
-    $('ordersList');
-
-
-  if (!list) {
-    return;
-  }
-
-
-  if (!currentUser) {
-
-    list.innerHTML =
-      '<div class="small center">Connectez-vous pour voir vos commandes.</div>';
-
-    return;
-  }
-
-
-  list.innerHTML =
-    '<div class="small center">Chargement des commandes...</div>';
-
-
-  try {
-
-    const {
-      data,
-      error
-    } =
-      await supabaseClient
-        .from('orders')
-        .select('*')
-        .eq(
-          'user_id',
-          currentUser.id
-        )
-        .order(
-          'created_at',
-          {
-            ascending: false
-          }
-        );
-
-
-    if (error) {
-      throw error;
-    }
-
-
-    if (
-      !data ||
-      data.length === 0
-    ) {
-
-      list.innerHTML =
-        '<div class="small center">Vous n\'avez encore aucune commande.</div>';
-
-      return;
-    }
-
-
-    list.innerHTML =
-      data
-        .map(
-          renderOrderCard
-        )
-        .join('');
-
-
-  } catch (error) {
-
-    console.error(
-      'ERREUR HISTORIQUE :',
-      error
-    );
-
-
-    list.innerHTML = `
-
-      <div class="small center">
-
-        Impossible de charger vos commandes.
-
-        <br>
-
-        ${escapeHtml(
-          getSupabaseErrorMessage(error)
-        )}
-
-      </div>
-
-    `;
-  }
-}
-
-
-// ============================================================
-// CARTE COMMANDE
-// ============================================================
-
-function renderOrderCard(
-  order
-) {
-
-  const side =
-    order.side;
-
-
-  const type =
-    side === 'buy'
-      ? 'Achat USDT'
-      : 'Vente USDT';
-
-
-  const status =
-    order.status ||
-    'pending';
-
-
-  const statusLabel =
-    getStatusLabel(
-      status
-    );
-
-
-  const networkName =
-    CONFIG.networks[
-      order.network
-    ]?.name ||
-    order.network ||
-    '-';
-
-
-  if (
-    side === 'buy'
-  ) {
-
-    return `
-
-      <div class="order-card">
-
-        <div class="order-header">
-
-          <div class="order-type">
-            ${escapeHtml(type)}
+          <div class="card-title">
+            NOA DIGIT TRADE
           </div>
 
-          <span class="status ${escapeHtml(status)}">
-            ${escapeHtml(statusLabel)}
-          </span>
+          <div class="card-description">
+            Achetez ou vendez vos USDT simplement et en toute sécurité
+            au Burkina Faso.
+          </div>
+
+          <button
+            type="button"
+            id="goBuyBtn"
+            class="btn btn-primary"
+          >
+            Acheter des USDT
+          </button>
+
+          <button
+            type="button"
+            id="goSellBtn"
+            class="btn btn-secondary"
+          >
+            Vendre des USDT
+          </button>
 
         </div>
 
-        <div class="order-row">
-          <span>Montant payé</span>
-          <strong>
-            ${formatNumber(order.amount_cfa)} FCFA
-          </strong>
+
+        <div class="card">
+
+          <div class="card-title">
+            Tarifs actuels
+          </div>
+
+          <div class="summary">
+
+            <div class="summary-row">
+              <span>Taux achat</span>
+              <strong>
+                <span id="homeBuyRate">600</span> FCFA
+              </strong>
+            </div>
+
+            <div class="summary-row">
+              <span>Taux vente</span>
+              <strong>
+                <span id="homeSellRate">570</span> FCFA
+              </strong>
+            </div>
+
+            <div class="summary-row">
+              <span>Commande minimum</span>
+              <strong>
+                <span id="homeMinOrder">2 000</span> FCFA
+              </strong>
+            </div>
+
+            <div class="summary-row">
+              <span>Commande maximum</span>
+              <strong>
+                <span id="homeMaxOrder">50 000</span> FCFA
+              </strong>
+            </div>
+
+          </div>
+
         </div>
 
-        <div class="order-row">
-          <span>USDT acheté</span>
-          <strong>
-            ${Number(order.usdt_amount || 0).toFixed(6)} USDT
-          </strong>
+
+        <div class="card">
+
+          <div class="card-title">
+            Réseaux disponibles
+          </div>
+
+          <div class="summary">
+
+            <div class="summary-row">
+
+              <span>USDT TRC20</span>
+
+              <strong>
+                Frais :
+                <span id="homeTrc20Fee">2</span> USDT
+              </strong>
+
+            </div>
+
+            <div class="summary-row">
+
+              <span>USDT BEP20</span>
+
+              <strong>
+                Frais :
+                <span id="homeBp20Fee">0</span> USDT
+              </strong>
+
+            </div>
+
+          </div>
+
         </div>
 
-        <div class="order-row">
-          <span>Frais</span>
-          <strong>
-            ${Number(order.fee_usdt || 0)} USDT
-          </strong>
+      </div>
+
+
+      <!-- ================= ECHANGE ================= -->
+
+      <div
+        id="exchangePage"
+        class="sub-page hidden"
+      >
+
+        <div class="card">
+
+          <div class="card-title">
+            Nouvelle commande
+          </div>
+
+          <div class="card-description">
+            Vérifiez attentivement le montant, le taux et les frais
+            avant de placer votre ordre.
+          </div>
+
+
+          <div class="exchange-tabs">
+
+            <button
+              type="button"
+              id="buyTab"
+              class="exchange-tab active"
+            >
+              Acheter
+            </button>
+
+            <button
+              type="button"
+              id="sellTab"
+              class="exchange-tab"
+            >
+              Vendre
+            </button>
+
+          </div>
+
+
+          <div
+            class="balance-box"
+            id="availableBalanceBox"
+          >
+
+            <span>Solde disponible</span>
+
+            <strong id="availableBalanceValue">
+              -
+            </strong>
+
+          </div>
+
+          <div
+            class="balance-alert"
+            id="insufficientBalanceAlert"
+          >
+            ⚠️ Le solde disponible est insuffisant pour ce montant.
+            Merci de réduire le montant ou de réessayer plus tard.
+          </div>
+
+
+          <div class="amount-box">
+
+            <div
+              class="amount-label"
+              id="amountLabel"
+            >
+              Montant à payer
+            </div>
+
+            <input
+              type="number"
+              id="amountInput"
+              class="amount-input"
+              min="2000"
+              max="50000"
+              step="any"
+              placeholder="0"
+              inputmode="decimal"
+              autocomplete="off"
+            >
+
+            <div
+              class="amount-unit"
+              id="amountUnit"
+            >
+              FCFA
+            </div>
+
+          </div>
+
+
+          <div class="field">
+
+            <label>
+              Réseau USDT
+            </label>
+
+            <div class="network-grid">
+
+              <button
+                type="button"
+                class="network-option active"
+                id="trc20Option"
+                data-network="trc20"
+              >
+
+                <div class="network-name">
+                  USDT TRC20
+                </div>
+
+                <div class="network-fee">
+                  Frais :
+                  <span id="trc20Fee">2</span> USDT
+                </div>
+
+              </button>
+
+
+              <button
+                type="button"
+                class="network-option"
+                id="bp20Option"
+                data-network="bp20"
+              >
+
+                <div class="network-name">
+                  USDT BEP20
+                </div>
+
+                <div class="network-fee">
+                  Frais :
+                  <span id="bp20Fee">0</span> USDT
+                </div>
+
+              </button>
+
+            </div>
+
+          </div>
+
+
+          <div
+            class="field"
+            id="paymentMethodField"
+          >
+
+            <label for="paymentMethod">
+              Moyen de paiement
+            </label>
+
+            <select id="paymentMethod">
+
+              <option value="orange_money">
+                Orange Money
+              </option>
+
+            </select>
+
+          </div>
+
+
+          <!-- ADRESSE PORTEFEUILLE -->
+
+          <div class="field">
+
+            <label
+              for="walletAddress"
+              id="walletLabel"
+            >
+              Adresse de portefeuille USDT
+            </label>
+
+            <input
+              type="text"
+              id="walletAddress"
+              class="wallet-input"
+              placeholder="Collez votre adresse USDT ici"
+              autocomplete="off"
+              autocapitalize="none"
+              spellcheck="false"
+              required
+            >
+
+            <div class="small wallet-help">
+
+              ⚠️ Saisissez l'adresse du portefeuille USDT utilisée
+              pour cette transaction.
+
+              Vérifiez qu'elle correspond exactement au réseau sélectionné.
+
+            </div>
+
+          </div>
+
+
+          <div class="summary">
+
+            <div class="summary-row">
+
+              <span>Taux</span>
+
+              <strong id="summaryRate">
+                600 FCFA / USDT
+              </strong>
+
+            </div>
+
+            <div class="summary-row">
+
+              <span id="summaryCfaLabel">
+                Montant FCFA
+              </span>
+
+              <strong id="summaryCfa">
+                0 FCFA
+              </strong>
+
+            </div>
+
+            <div class="summary-row">
+
+              <span id="summaryUsdtLabel">
+                Montant USDT
+              </span>
+
+              <strong id="summaryUsdt">
+                0 USDT
+              </strong>
+
+            </div>
+
+            <div class="summary-row">
+
+              <span>
+                Frais réseau
+              </span>
+
+              <strong id="summaryFee">
+                0 USDT
+              </strong>
+
+            </div>
+
+            <div class="summary-row summary-total">
+
+              <span id="summaryResultLabel">
+                Vous recevrez
+              </span>
+
+              <strong id="summaryResult">
+                0 USDT
+              </strong>
+
+            </div>
+
+          </div>
+
+
+          <div
+            class="info-box mt"
+            id="exchangeInfo"
+          >
+
+            💡 Minimum :
+            <strong>2 000 FCFA</strong>
+
+            <br>
+
+            Maximum :
+            <strong>50 000 FCFA</strong>
+
+            <br>
+
+            Le montant exact et les frais sont affichés
+            avant la confirmation.
+
+          </div>
+
+
+          <button
+            type="button"
+            id="reviewOrderBtn"
+            class="btn btn-primary"
+          >
+            Vérifier la commande
+          </button>
+
+          <button
+            type="button"
+            id="backHomeBtn"
+            class="btn btn-secondary"
+          >
+            Retour
+          </button>
+
         </div>
 
-        <div class="order-row">
-          <span>USDT net reçu</span>
-          <strong>
-            ${Number(order.net_usdt || 0).toFixed(6)} USDT
-          </strong>
+      </div>
+
+
+      <!-- ================= CONFIRMATION ================= -->
+
+      <div
+        id="confirmationPage"
+        class="sub-page hidden"
+      >
+
+        <div class="card">
+
+          <div class="card-title">
+            Vérification de votre commande
+          </div>
+
+          <div class="card-description">
+            Vérifiez toutes les informations avant de placer
+            définitivement votre ordre.
+          </div>
+
+          <div
+            id="confirmationSummary"
+            class="summary"
+          ></div>
+
+          <div class="warning-box">
+
+            ⚠️ Vérifiez attentivement le montant,
+            le réseau et l'adresse de portefeuille USDT
+            avant de placer la commande.
+
+          </div>
+
+          <button
+            type="button"
+            id="placeOrderBtn"
+            class="btn btn-primary"
+          >
+            Placer la commande
+          </button>
+
+          <button
+            type="button"
+            id="cancelReviewBtn"
+            class="btn btn-secondary"
+          >
+            Modifier
+          </button>
+
         </div>
 
-        <div class="order-row">
-          <span>Réseau</span>
-          <strong>
-            ${escapeHtml(networkName)}
-          </strong>
+      </div>
+
+
+      <!-- ================= PAIEMENT ================= -->
+
+      <div
+        id="paymentPage"
+        class="sub-page hidden"
+      >
+
+        <div class="card">
+
+          <div class="card-title">
+            Effectuez votre paiement
+          </div>
+
+          <div
+            class="card-description"
+            id="paymentDescription"
+          >
+            Votre commande a été enregistrée.
+            Effectuez maintenant votre paiement.
+          </div>
+
+
+          <div class="payment-amount-box">
+
+            <div class="payment-amount-label">
+              Montant à payer
+            </div>
+
+            <div
+              id="paymentAmountValue"
+              class="payment-amount-value"
+            >
+              0 FCFA
+            </div>
+
+          </div>
+
+
+          <!-- QR CODE -->
+
+          <div class="payment-qr-box">
+
+            <div
+              class="payment-qr-text"
+              id="qrInstructionText"
+            >
+
+              Scannez le QR code avec votre téléphone
+              pour effectuer le paiement.
+
+            </div>
+
+            <div id="orangeMoneyQr"></div>
+
+          </div>
+
+
+          <div class="payment-or">
+            OU
+          </div>
+
+
+          <!-- BOUTON ORANGE MONEY -->
+
+          <button
+            type="button"
+            id="orangeMoneyPayBtn"
+            class="btn btn-primary payment-main-button"
+          >
+            CLIQUEZ ICI POUR EFFECTUER LE PAIEMENT
+          </button>
+
+
+          <div class="payment-security-box">
+
+            🔒 Paiement sécurisé — vérifiez toujours
+            le montant avant de valider.
+
+          </div>
+
+
+          <div class="warning-box mt">
+
+            ⚠️ Utilisez obligatoirement votre propre
+            compte Orange Money.
+
+            <br><br>
+
+            Ne partagez jamais votre mot de passe,
+            votre code secret ou votre code de validation.
+
+          </div>
+
+
+          <div class="proof-upload-label">
+            Preuve de paiement (capture d'écran)
+          </div>
+
+          <div id="proofDropzone" class="dropzone">
+
+            <input
+              type="file"
+              id="proofFileInput"
+              accept="image/png,image/jpeg,image/webp"
+              hidden
+            >
+
+            <div id="proofDropzoneContent">
+              <div class="dropzone-icon">📎</div>
+              <div class="dropzone-text">
+                Glissez votre capture ici ou <span class="dropzone-link">parcourir</span>
+              </div>
+              <div class="dropzone-hint">JPG, PNG ou WEBP — 5 Mo maximum</div>
+            </div>
+
+            <div id="proofPreviewWrap" class="proof-preview-wrap hidden">
+              <img id="proofPreviewImg" class="proof-preview-img" alt="Aperçu de la preuve de paiement">
+              <br>
+              <button type="button" id="proofRemoveBtn" class="proof-remove-btn">✕ Retirer</button>
+            </div>
+
+          </div>
+
+          <div id="proofUploadStatus"></div>
+
+
+          <button
+            type="button"
+            id="paymentDoneBtn"
+            class="btn btn-primary"
+          >
+            J'AI EFFECTUÉ LE PAIEMENT
+          </button>
+
+
+          <button
+            type="button"
+            id="viewOrderBtn"
+            class="btn btn-secondary"
+          >
+            Voir ma commande
+          </button>
+
         </div>
 
-        <div class="order-row">
-          <span>Date</span>
-          <strong>
-            ${formatDate(order.created_at)}
-          </strong>
+      </div>
+
+
+      <!-- ================= COMMANDES ================= -->
+
+      <div
+        id="ordersPage"
+        class="sub-page hidden"
+      >
+
+        <div class="card">
+
+          <div class="card-title">
+            Mes commandes
+          </div>
+
+          <div class="card-description">
+            Consultez l'état de vos ordres d'achat et de vente.
+          </div>
+
+          <div id="ordersList">
+
+            <div class="small center">
+              Chargement des commandes...
+            </div>
+
+          </div>
+
         </div>
 
       </div>
 
-    `;
-  }
+
+      <!-- ================= SUPPORT ================= -->
+
+      <div
+        id="supportPage"
+        class="sub-page hidden"
+      >
+
+        <div class="card">
+
+          <div class="card-title">
+            Service client
+          </div>
+
+          <div class="card-description">
+            Un problème avec une transaction ?
+            Vous pouvez ouvrir un litige concernant une commande.
+          </div>
 
 
-  return `
+          <form id="disputeForm">
 
-    <div class="order-card">
+            <div class="field">
 
-      <div class="order-header">
+              <label for="disputeOrder">
+                Commande concernée
+              </label>
 
-        <div class="order-type">
-          ${escapeHtml(type)}
+              <select
+                id="disputeOrder"
+                required
+              >
+
+                <option value="">
+                  Sélectionner une commande
+                </option>
+
+              </select>
+
+            </div>
+
+
+            <div class="field">
+
+              <label for="disputeSubject">
+                Sujet
+              </label>
+
+              <input
+                type="text"
+                id="disputeSubject"
+                placeholder="Ex : paiement non confirmé"
+                required
+              >
+
+            </div>
+
+
+            <div class="field">
+
+              <label for="disputeMessage">
+                Décrivez votre problème
+              </label>
+
+              <textarea
+                id="disputeMessage"
+                placeholder="Expliquez votre problème..."
+                required
+              ></textarea>
+
+            </div>
+
+
+            <button
+              type="submit"
+              class="btn btn-primary"
+            >
+              Envoyer au service client
+            </button>
+
+          </form>
+
         </div>
 
-        <span class="status ${escapeHtml(status)}">
-          ${escapeHtml(statusLabel)}
-        </span>
+
+        <div class="card">
+
+          <div class="card-title">
+            Mes litiges
+          </div>
+
+          <div id="disputesList">
+
+            <div class="small center">
+              Aucun litige chargé.
+            </div>
+
+          </div>
+
+        </div>
 
       </div>
 
-      <div class="order-row">
-        <span>USDT vendu</span>
-        <strong>
-          ${Number(order.usdt_amount || 0).toFixed(6)} USDT
-        </strong>
-      </div>
 
-      <div class="order-row">
-        <span>Frais réseau</span>
-        <strong>
-          ${Number(order.fee_usdt || 0).toFixed(6)} USDT
-        </strong>
-      </div>
+      <!-- ================= PROFIL ================= -->
 
-      <div class="order-row">
-        <span>USDT net</span>
-        <strong>
-          ${Number(order.net_usdt || 0).toFixed(6)} USDT
-        </strong>
-      </div>
-
-      <div class="order-row">
-        <span>Montant reçu</span>
-        <strong>
-          ${formatNumber(order.receive_cfa || 0)} FCFA
-        </strong>
-      </div>
-
-      <div class="order-row">
-        <span>Réseau</span>
-        <strong>
-          ${escapeHtml(networkName)}
-        </strong>
-      </div>
-
-      <div class="order-row">
-        <span>Date</span>
-        <strong>
-          ${formatDate(order.created_at)}
-        </strong>
-      </div>
+      <div
+        id="profilePage"
+        class="sub-page hidden"
+      >
 
-    </div>
+        <div class="card">
 
-  `;
-}
+          <div class="card-title">
+            Mon profil
+          </div>
 
 
-// ============================================================
-// STATUTS
-// ============================================================
+          <div class="field">
 
-function getStatusLabel(
-  status
-) {
+            <label>
+              Nom et prénom
+            </label>
 
-  const labels = {
+            <input
+              type="text"
+              id="profileName"
+              readonly
+            >
 
-    pending:
-      'En attente',
+          </div>
 
-    payment_declared:
-      'Paiement déclaré',
 
-    processing:
-      'En traitement',
+          <div class="field">
 
-    completed:
-      'Terminée',
+            <label>
+              Téléphone
+            </label>
 
-    cancelled:
-      'Annulée',
+            <input
+              type="tel"
+              id="profilePhone"
+              readonly
+            >
 
-    rejected:
-      'Refusée'
+          </div>
 
-  };
 
+          <div class="field">
 
-  return (
-    labels[status] ||
-    status ||
-    'En attente'
-  );
-}
+            <label>
+              Pays
+            </label>
 
+            <input
+              type="text"
+              id="profileCountry"
+              value="Burkina Faso"
+              readonly
+            >
 
-// ============================================================
-// SUPPORT
-// ============================================================
+          </div>
 
-async function loadOrdersForDispute() {
 
-  const select =
-    $('disputeOrder');
+          <div class="info-box">
 
+            🇧🇫 Votre compte est configuré
+            pour le Burkina Faso uniquement.
 
-  if (
-    !select ||
-    !currentUser
-  ) {
-    return;
-  }
+          </div>
 
+        </div>
 
-  try {
 
-    const {
-      data,
-      error
-    } =
-      await supabaseClient
-        .from('orders')
-        .select(
-          'id,side,created_at,status'
-        )
-        .eq(
-          'user_id',
-          currentUser.id
-        )
-        .order(
-          'created_at',
-          {
-            ascending: false
-          }
-        );
+        <div class="card">
 
+          <div class="card-title">
+            Sécurité
+          </div>
 
-    if (error) {
-      throw error;
-    }
+          <div class="small">
 
+            Pour votre sécurité, ne communiquez jamais
+            votre mot de passe, votre code Orange Money
+            ou vos codes de validation à une autre personne.
 
-    select.innerHTML =
-      '<option value="">Sélectionner une commande</option>';
+          </div>
 
+        </div>
 
-    (data || [])
-      .forEach(
-        order => {
 
-          const type =
-            order.side === 'buy'
-              ? 'Achat'
-              : 'Vente';
+        <div class="card">
 
+          <div class="card-title">
+            🎁 Mon parrainage
+          </div>
 
-          const option =
-            document.createElement(
-              'option'
-            );
+          <div class="field">
 
+            <label>
+              Mon code de parrainage
+            </label>
 
-          option.value =
-            order.id;
+            <div style="display:flex; gap:8px;">
+
+              <input
+                type="text"
+                id="referralCodeDisplay"
+                readonly
+                style="flex:1;"
+              >
 
+              <button
+                type="button"
+                id="copyReferralCodeBtn"
+                class="btn btn-secondary"
+              >
+                Copier
+              </button>
+
+            </div>
+
+          </div>
 
-          option.textContent =
-            `${type} - ${formatDate(order.created_at)} - ${getStatusLabel(order.status)}`;
-
-
-          select.appendChild(
-            option
-          );
-
-        }
-      );
-
-
-  } catch (error) {
-
-    console.error(
-      'Erreur commandes support :',
-      error
-    );
-  }
-}
-
-
-// ============================================================
-// ENVOYER LITIGE
-// ============================================================
-
-async function submitDispute(
-  event
-) {
-
-  event.preventDefault();
-
-  hideMessage();
-
-
-  if (!currentUser) {
-
-    return showMessage(
-      'Vous devez être connecté.',
-      'error'
-    );
-  }
-
-
-  const orderId =
-    $('disputeOrder')
-      ?.value || '';
-
-
-  const subject =
-    $('disputeSubject')
-      ?.value
-      ?.trim() || '';
-
-
-  const message =
-    $('disputeMessage')
-      ?.value
-      ?.trim() || '';
-
-
-  if (!orderId) {
-
-    return showMessage(
-      'Veuillez sélectionner une commande.',
-      'error'
-    );
-  }
-
-
-  if (!subject) {
-
-    return showMessage(
-      'Veuillez indiquer le sujet du problème.',
-      'error'
-    );
-  }
-
-
-  if (!message) {
-
-    return showMessage(
-      'Veuillez expliquer votre problème.',
-      'error'
-    );
-  }
-
-
-  const button =
-    event.submitter ||
-    $('disputeForm')
-      ?.querySelector(
-        'button[type="submit"]'
-      );
-
-
-  const originalText =
-    button?.textContent;
-
-
-  if (button) {
-
-    button.disabled =
-      true;
-
-    button.textContent =
-      'Envoi...';
-  }
-
-
-  try {
-
-    const payload = {
-
-      user_id:
-        currentUser.id,
-
-      order_id:
-        orderId,
-
-      subject:
-        subject,
-
-      message:
-        message,
-
-      status:
-        'open'
-
-    };
-
-
-    const {
-      error
-    } =
-      await supabaseClient
-        .from('disputes')
-        .insert(
-          payload
-        );
-
-
-    if (error) {
-      throw error;
-    }
-
-
-    $('disputeForm')
-      ?.reset();
-
-
-    showMessage(
-      'Votre demande a été envoyée à notre équipe.',
-      'success'
-    );
-
-
-    await loadDisputes();
-
-
-  } catch (error) {
-
-    console.error(
-      'Erreur création litige :',
-      error
-    );
-
-
-    showMessage(
-      "Impossible d'envoyer votre demande : " +
-      getSupabaseErrorMessage(error),
-      'error'
-    );
-
-  } finally {
-
-    if (button) {
-
-      button.disabled =
-        false;
-
-      button.textContent =
-        originalText ||
-        'Envoyer la demande';
-    }
-  }
-}
-
-
-// ============================================================
-// CHARGER LITIGES
-// ============================================================
-
-async function loadDisputes() {
-
-  const list =
-    $('disputesList');
-
-
-  if (
-    !list ||
-    !currentUser
-  ) {
-    return;
-  }
-
-
-  list.innerHTML =
-    '<div class="small center">Chargement...</div>';
-
-
-  try {
-
-    const {
-      data,
-      error
-    } =
-      await supabaseClient
-        .from('disputes')
-        .select('*')
-        .eq(
-          'user_id',
-          currentUser.id
-        )
-        .order(
-          'created_at',
-          {
-            ascending: false
-          }
-        );
-
-
-    if (error) {
-      throw error;
-    }
-
-
-    if (
-      !data ||
-      data.length === 0
-    ) {
-
-      list.innerHTML =
-        '<div class="small center">Aucune demande pour le moment.</div>';
-
-      return;
-    }
-
-
-    list.innerHTML =
-      data
-        .map(
-          renderDisputeCard
-        )
-        .join('');
-
-
-  } catch (error) {
-
-    console.error(
-      'Erreur chargement litiges :',
-      error
-    );
-
-
-    list.innerHTML =
-      '<div class="small center">Impossible de charger les demandes.</div>';
-  }
-}
-
-
-// ============================================================
-// CARTE LITIGE
-// ============================================================
-
-function renderDisputeCard(
-  dispute
-) {
-
-  const status =
-    dispute.status ||
-    'open';
-
-
-  const statusLabel =
-    status === 'open'
-      ? 'Ouvert'
-      : status === 'closed'
-        ? 'Fermé'
-        : status;
-
-
-  return `
-
-    <div class="order-card">
-
-      <div class="order-header">
-
-        <strong>
-          ${escapeHtml(
-            dispute.subject ||
-            'Demande'
-          )}
-        </strong>
-
-        <span class="status ${escapeHtml(status)}">
-          ${escapeHtml(statusLabel)}
-        </span>
+          <div class="small">
+            Partagez ce code : chaque filleul qui l'utilise vous
+            rapporte une commission sur ses transactions.
+          </div>
+
+
+          <div class="field">
+
+            <label>
+              Solde de commissions
+            </label>
+
+            <input
+              type="text"
+              id="referralBalanceDisplay"
+              readonly
+            >
+
+          </div>
+
+
+          <button
+            type="button"
+            id="openWithdrawalBtn"
+            class="btn btn-primary"
+          >
+            Demander un retrait
+          </button>
+
+          <div
+            id="withdrawalForm"
+            class="hidden"
+            style="margin-top:16px;"
+          >
+
+            <div class="field">
+
+              <label for="withdrawalAmount">
+                Montant à retirer (FCFA)
+              </label>
+
+              <input
+                type="number"
+                id="withdrawalAmount"
+                min="5000"
+                step="500"
+                placeholder="Minimum 5000 FCFA"
+              >
+
+            </div>
+
+            <div class="field">
+
+              <label for="withdrawalMethod">
+                Méthode de retrait
+              </label>
+
+              <select id="withdrawalMethod">
+                <option value="cash">Cash (Mobile Money)</option>
+                <option value="usdt">USDT</option>
+              </select>
+
+            </div>
+
+            <div
+              class="field"
+              id="withdrawalPhoneField"
+            >
+
+              <label for="withdrawalPhone">
+                Numéro Mobile Money
+              </label>
+
+              <input
+                type="tel"
+                id="withdrawalPhone"
+                placeholder="Ex: 70000000"
+              >
+
+            </div>
+
+            <div
+              class="field hidden"
+              id="withdrawalWalletField"
+            >
+
+              <label for="withdrawalWallet">
+                Adresse wallet USDT
+              </label>
+
+              <input
+                type="text"
+                id="withdrawalWallet"
+                placeholder="Adresse USDT (réseau TRC20/BEP20...)"
+              >
+
+            </div>
+
+            <button
+              type="button"
+              id="submitWithdrawalBtn"
+              class="btn btn-primary"
+            >
+              Confirmer la demande
+            </button>
+
+          </div>
+
+        </div>
 
       </div>
 
-      <p>
-        ${escapeHtml(
-          dispute.message ||
-          ''
-        )}
-      </p>
+    </section>
 
-      <div class="small">
-        ${formatDate(
-          dispute.created_at
-        )}
-      </div>
+  </main>
 
-    </div>
 
-  `;
-}
+  <!-- ================= NAVIGATION ================= -->
 
+  <nav
+    id="bottomNav"
+    class="bottom-nav hidden"
+  >
 
-// ============================================================
-// PROFIL
-// ============================================================
+    <button
+      type="button"
+      class="nav-btn active"
+      data-page="homePage"
+    >
+      🏠<br>
+      Accueil
+    </button>
 
-async function saveProfile(
-  event
-) {
+    <button
+      type="button"
+      class="nav-btn"
+      data-page="exchangePage"
+    >
+      ⇄<br>
+      Échange
+    </button>
 
-  event?.preventDefault();
+    <button
+      type="button"
+      class="nav-btn"
+      data-page="ordersPage"
+    >
+      📋<br>
+      Commandes
+    </button>
 
-  hideMessage();
+    <button
+      type="button"
+      class="nav-btn"
+      data-page="supportPage"
+    >
+      💬<br>
+      Support
+    </button>
 
+    <button
+      type="button"
+      class="nav-btn"
+      data-page="profilePage"
+    >
+      👤<br>
+      Profil
+    </button>
 
-  if (!currentUser) {
+  </nav>
 
-    return showMessage(
-      'Vous devez être connecté.',
-      'error'
-    );
-  }
+</div>
 
 
-  const name =
-    $('profileName')
-      ?.value
-      ?.trim() || '';
+<!-- SUPABASE -->
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  const phone =
-    normalizePhone(
-      $('profilePhone')
-        ?.value
-    );
 
+<!-- QR CODE -->
 
-  const country =
-    $('profileCountry')
-      ?.value
-      ?.trim() ||
-    'Burkina Faso';
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
 
-  if (!name) {
+<!-- APPLICATION -->
 
-    return showMessage(
-      'Veuillez saisir votre nom.',
-      'error'
-    );
-  }
+<script src="app.js"></script>
 
-
-  if (!phone) {
-
-    return showMessage(
-      'Veuillez saisir votre numéro.',
-      'error'
-    );
-  }
-
-
-  if (
-    !/^\+226\d{8}$/.test(
-      phone
-    )
-  ) {
-
-    return showMessage(
-      'Veuillez saisir un numéro du Burkina Faso valide de 8 chiffres.',
-      'error'
-    );
-  }
-
-
-  try {
-
-    const {
-      data,
-      error
-    } =
-      await supabaseClient
-        .from('profiles')
-        .upsert(
-
-          {
-
-            id:
-              currentUser.id,
-
-            full_name:
-              name,
-
-            phone:
-              phone,
-
-            country:
-              country
-
-          },
-
-          {
-            onConflict:
-              'id'
-          }
-
-        )
-        .select(
-          'id,full_name,phone,country'
-        )
-        .maybeSingle();
-
-
-    if (error) {
-      throw error;
-    }
-
-
-    currentProfile =
-      data || {
-
-        id:
-          currentUser.id,
-
-        full_name:
-          name,
-
-        phone:
-          phone,
-
-        country:
-          country
-
-      };
-
-
-    await supabaseClient.auth
-      .updateUser({
-
-        data: {
-
-          full_name:
-            name,
-
-          phone:
-            phone,
-
-          country:
-            country
-
-        }
-
-      });
-
-
-    updateUserInterface();
-
-
-    showMessage(
-      'Profil mis à jour avec succès.',
-      'success'
-    );
-
-
-  } catch (error) {
-
-    console.error(
-      'Erreur sauvegarde profil :',
-      error
-    );
-
-
-    showMessage(
-      'Impossible de sauvegarder le profil : ' +
-      getSupabaseErrorMessage(error),
-      'error'
-    );
-  }
-}
-
-
-// ============================================================
-// MOT DE PASSE
-// ============================================================
-
-async function changePassword(
-  event
-) {
-
-  event?.preventDefault();
-
-  hideMessage();
-
-
-  const password =
-    $('newPassword')
-      ?.value || '';
-
-
-  const confirmation =
-    $('confirmPassword')
-      ?.value || '';
-
-
-  if (
-    password.length <
-    6
-  ) {
-
-    return showMessage(
-      'Le nouveau mot de passe doit contenir au moins 6 caractères.',
-      'error'
-    );
-  }
-
-
-  if (
-    password !==
-    confirmation
-  ) {
-
-    return showMessage(
-      'Les mots de passe ne correspondent pas.',
-      'error'
-    );
-  }
-
-
-  try {
-
-    const {
-      error
-    } =
-      await supabaseClient.auth
-        .updateUser({
-
-          password
-
-        });
-
-
-    if (error) {
-      throw error;
-    }
-
-
-    $('passwordForm')
-      ?.reset();
-
-
-    showMessage(
-      'Mot de passe modifié avec succès.',
-      'success'
-    );
-
-
-  } catch (error) {
-
-    console.error(
-      'Erreur mot de passe :',
-      error
-    );
-
-
-    showMessage(
-      'Impossible de modifier le mot de passe : ' +
-      getSupabaseErrorMessage(error),
-      'error'
-    );
-  }
-}
-
-
-// ============================================================
-// ÉVÉNEMENTS
-// ============================================================
-
-function setupEvents() {
-
-  $('loginForm')
-    ?.addEventListener(
-      'submit',
-      loginUser
-    );
-
-
-  $('registerForm')
-    ?.addEventListener(
-      'submit',
-      registerUser
-    );
-
-
-  $('forgotPasswordForm')
-    ?.addEventListener(
-      'submit',
-      sendPasswordReset
-    );
-
-
-  $('forgotPasswordLink')
-    ?.addEventListener(
-      'click',
-      showForgotPasswordForm
-    );
-
-
-  $('backToLoginBtn')
-    ?.addEventListener(
-      'click',
-      showLoginForm
-    );
-
-
-  initPasswordToggles();
-
-
-  initWhatsAppButton();
-
-
-  $('logoutBtn')
-    ?.addEventListener(
-      'click',
-      logoutUser
-    );
-
-
-  $('loginTab')
-    ?.addEventListener(
-      'click',
-      showLoginForm
-    );
-
-
-  $('registerTab')
-    ?.addEventListener(
-      'click',
-      showRegisterForm
-    );
-
-
-  $('buyTab')
-    ?.addEventListener(
-      'click',
-      setBuyMode
-    );
-
-
-  $('sellTab')
-    ?.addEventListener(
-      'click',
-      setSellMode
-    );
-
-
-  $('trc20Option')
-    ?.addEventListener(
-      'click',
-      () => {
-
-        selectNetwork(
-          'trc20'
-        );
-
-      }
-    );
-
-
-  $('bp20Option')
-    ?.addEventListener(
-      'click',
-      () => {
-
-        selectNetwork(
-          'bp20'
-        );
-
-      }
-    );
-
-
-  $('amountInput')
-    ?.addEventListener(
-      'input',
-      updateCalculator
-    );
-
-
-  document.addEventListener(
-    'input',
-    event => {
-
-      if (
-        event.target?.id ===
-        'sellPayoutPhone'
-      ) {
-
-        event.target.value =
-          event.target.value
-            .replace(
-              /\D/g,
-              ''
-            )
-            .slice(
-              0,
-              8
-            );
-      }
-
-    }
-  );
-
-
-  $('reviewOrderBtn')
-    ?.addEventListener(
-      'click',
-      reviewOrder
-    );
-
-
-  $('placeOrderBtn')
-    ?.addEventListener(
-      'click',
-      placeOrder
-    );
-
-
-  $('cancelReviewBtn')
-    ?.addEventListener(
-      'click',
-      cancelReview
-    );
-
-
-  $('paymentDoneBtn')
-    ?.addEventListener(
-      'click',
-      declarePayment
-    );
-
-
-  initProofUploadEvents();
-
-
-  $('viewOrderBtn')
-    ?.addEventListener(
-      'click',
-      () => {
-
-        showSubPage(
-          'ordersPage'
-        );
-
-      }
-    );
-
-
-  $('profileForm')
-    ?.addEventListener(
-      'submit',
-      saveProfile
-    );
-
-
-  $('passwordForm')
-    ?.addEventListener(
-      'submit',
-      changePassword
-    );
-
-
-  $('disputeForm')
-    ?.addEventListener(
-      'submit',
-      submitDispute
-    );
-
-
-  document
-    .querySelectorAll(
-      '.nav-btn'
-    )
-    .forEach(
-      button => {
-
-        button.addEventListener(
-          'click',
-          () => {
-
-            const page =
-              button.dataset.page;
-
-
-            if (page) {
-
-              showSubPage(
-                page
-              );
-            }
-
-          }
-        );
-
-      }
-    );
-
-
-  $('startBtn')
-    ?.addEventListener(
-      'click',
-      () => {
-
-        showSubPage(
-          'exchangePage'
-        );
-
-      }
-    );
-
-
-  document
-    .querySelectorAll(
-      '[data-open-exchange]'
-    )
-    .forEach(
-      button => {
-
-        button.addEventListener(
-          'click',
-          () => {
-
-            showSubPage(
-              'exchangePage'
-            );
-
-          }
-        );
-
-      }
-    );
-
-
-  document
-    .querySelectorAll(
-      '[data-home]'
-    )
-    .forEach(
-      button => {
-
-        button.addEventListener(
-          'click',
-          () => {
-
-            showSubPage(
-              'homePage'
-            );
-
-          }
-        );
-
-      }
-    );
-}
-
-
-// ============================================================
-// AUTH LISTENER
-// ============================================================
-
-function setupAuthListener() {
-
-  if (
-    authListenerReady
-  ) {
-    return;
-  }
-
-
-  authListenerReady =
-    true;
-
-
-  supabaseClient.auth
-    .onAuthStateChange(
-      (
-        event,
-        session
-      ) => {
-
-        currentUser =
-          session?.user ||
-          null;
-
-
-        if (
-          event ===
-            'SIGNED_OUT' ||
-          !currentUser
-        ) {
-
-          currentProfile =
-            null;
-
-          currentOrder =
-            null;
-
-          showAuthPage();
-
-          showLoginForm();
-
-          return;
-        }
-
-      }
-    );
-}
-
-
-// ============================================================
-// DÉMARRAGE
-// ============================================================
-
-async function boot() {
-
-  try {
-
-    setupEvents();
-
-    setupAuthListener();
-
-
-    const {
-      data,
-      error
-    } =
-      await supabaseClient.auth
-        .getSession();
-
-
-    if (error) {
-
-      console.warn(
-        'Erreur récupération session :',
-        error
-      );
-    }
-
-
-    currentUser =
-      data?.session?.user ||
-      null;
-
-
-    if (currentUser) {
-
-      await initializeApplication();
-
-    } else {
-
-      showAuthPage();
-
-      showLoginForm();
-    }
-
-
-    setBuyMode();
-
-    selectNetwork(
-      'trc20'
-    );
-
-    updateRatesUI();
-
-    updateCalculator();
-
-
-  } catch (error) {
-
-    console.error(
-      'ERREUR DÉMARRAGE APPLICATION :',
-      error
-    );
-
-
-    showAuthPage();
-
-
-    showMessage(
-      "Impossible de démarrer l'application : " +
-      getSupabaseErrorMessage(error),
-      'error'
-    );
-  }
-}
-
-
-// ============================================================
-// LANCEMENT
-// ============================================================
-
-if (
-  document.readyState ===
-  'loading'
-) {
-
-  document.addEventListener(
-    'DOMContentLoaded',
-    boot
-  );
-
-} else {
-
-  boot();
-}
-
-
-// ============================================================
-// PWA - ENREGISTREMENT DU SERVICE WORKER
-// ============================================================
-
-if ('serviceWorker' in navigator) {
-
-  window.addEventListener(
-    'load',
-    () => {
-
-      navigator.serviceWorker
-        .register('sw.js')
-        .catch((error) => {
-
-          console.error(
-            'Erreur service worker :',
-            error
-          );
-        });
-    }
-  );
-}
+</body>
+</html>
