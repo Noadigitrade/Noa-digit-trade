@@ -1443,7 +1443,7 @@ function updateUserInterface() {
 
     $('referralCodeDisplay').value =
       p.referral_code ||
-      'Génération en cours...';
+      ('DEBUG-VIDE: ' + JSON.stringify(p));
   }
 
 
