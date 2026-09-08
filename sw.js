@@ -4,7 +4,7 @@
 // cache les fichiers statiques pour un chargement plus rapide.
 // ============================================================
 
-const CACHE_NAME = 'noa-digit-trade-v1';
+const CACHE_NAME = 'noa-digit-trade-v2';
 
 const STATIC_ASSETS = [
   './index.html',
@@ -62,7 +62,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   event.respondWith(
-    fetch(event.request)
+    fetch(event.request, { cache: 'no-store' })
       .then((response) => {
 
         const clone = response.clone();
