@@ -2349,6 +2349,42 @@
 <!-- APPLICATION -->
 
 <script src="app.js"></script>
+  <!-- Bannière de détection navigateur in-app (Facebook, Instagram, Messenger) -->
+<div id="inAppBrowserBanner" style="display:none; position:fixed; top:0; left:0; right:0; z-index:9999; background:#fff3cd; color:#664d03; padding:12px 16px; font-family:sans-serif; font-size:14px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.15);">
+  ⚠️ Pour créer votre compte, ouvrez ce lien dans votre navigateur (Chrome/Safari).
+  <br>
+  <button onclick="copyLinkForBrowser()" style="margin-top:8px; padding:8px 16px; background:#0d6efd; color:#fff; border:none; border-radius:6px; font-size:14px;">
+    Copier le lien
+  </button>
+</div>
+
+<script>
+(function() {
+  var ua = navigator.userAgent || navigator.vendor || window.opera;
+
+  // Détecte Facebook, Instagram, Messenger in-app browsers
+  var isInApp = /FBAN|FBAV|Instagram|Messenger|FB_IAB/i.test(ua);
+
+  if (isInApp) {
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('inAppBrowserBanner').style.display = 'block';
+      // Pousse le contenu vers le bas pour ne pas cacher le header
+      document.body.style.paddingTop = '90px';
+    });
+  }
+})();
+
+function copyLinkForBrowser() {
+  var url = window.location.href;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(function() {
+      alert('Lien copié ! Collez-le dans Chrome ou Safari pour continuer.');
+    });
+  } else {
+    prompt('Copiez ce lien et ouvrez-le dans Chrome ou Safari :', url);
+  }
+}
+</script>
 
 </body>
 </html>
