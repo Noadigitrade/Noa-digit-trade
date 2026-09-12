@@ -2218,7 +2218,8 @@ function renderOrders() {
                   `
                   : ""
               }
-<div class="order-card-row">
+
+              <div class="order-card-row">
                 <span>USDT</span>
                 <strong>${formatDecimal(order.usdt_amount)} USDT</strong>
               </div>
@@ -2238,10 +2239,6 @@ function renderOrders() {
                   `
                   : ""
               }
-            
-                
-      
-              </div>
 
               <div class="order-card-row">
                 <span>Réseau</span>
