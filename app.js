@@ -1897,6 +1897,14 @@ async function verifyOtpCode(
 
     await initializeApplication();
 
+    if (typeof fbq === 'function') {
+
+      fbq(
+        'track',
+        'CompleteRegistration'
+      );
+    }
+
     showMessage(
       'Compte activé avec succès. Bienvenue sur NOA DIGIT TRADE !',
       'success'
@@ -2506,7 +2514,6 @@ function ensureSellPayoutField() {
 
       <div class="small wallet-help">
         📱 Ce numéro sera utilisé pour vous envoyer le montant en FCFA après réception et vérification de vos USDT.
-
       </div>
 
     `;
@@ -4688,7 +4695,7 @@ function renderSellPaymentPage() {
         ${escapeHtml(networkName)}
       </strong>
       avant d'envoyer vos USDT.
-      
+
     `;
   }
 
@@ -7108,4 +7115,3 @@ if ('serviceWorker' in navigator) {
     }
   );
 }
-
