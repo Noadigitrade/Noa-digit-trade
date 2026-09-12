@@ -2224,6 +2224,22 @@ function renderOrders() {
                 <strong>${formatDecimal(order.usdt_amount)} USDT</strong>
               </div>
 
+              ${
+                isBuy
+                  ? `
+                    <div class="order-card-row">
+                      <span>Frais</span>
+                      <strong>${formatDecimal(order.fee_usdt ?? 0)} USDT</strong>
+                    </div>
+
+                    <div class="order-card-row">
+                      <span>USDT net à créditer</span>
+                      <strong>${formatDecimal(order.net_usdt ?? order.usdt_amount)} USDT</strong>
+                    </div>
+                  `
+                  : ""
+              }
+
               <div class="order-card-row">
                 <span>Réseau</span>
                 <strong>${escapeHtml(order.network || "-")}</strong>
