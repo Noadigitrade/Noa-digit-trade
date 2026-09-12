@@ -3214,6 +3214,16 @@ function renderOrders() {
             0
           );
 
+        const networkFee =
+          Number(
+            networkLabel(order.network) === 'TRC20'
+              ? (settings?.trc20_fee_usdt ?? 0)
+              : (settings?.bp20_fee_usdt ?? 0)
+          );
+
+        const netUsdt =
+          Math.max(amountUsdt - networkFee, 0);
+
         return `
           <div class="order-detail" style="margin-bottom:12px;">
             <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;">
@@ -3231,6 +3241,14 @@ function renderOrders() {
                   : ''
               }
               <div><strong>USDT :</strong> ${formatUsdt(amountUsdt)} USDT</div>
+              ${
+                side === 'sell'
+                  ? ''
+                  : `
+                    <div><strong>Frais :</strong> ${formatUsdt(networkFee)} USDT</div>
+                    <div><strong>USDT net à créditer :</strong> ${formatUsdt(netUsdt)} USDT</div>
+                  `
+              }
               <div><strong>Réseau :</strong> ${escapeHtml(networkLabel(order.network))}</div>
               <div><strong>Date :</strong> ${escapeHtml(formatDate(order.created_at))}</div>
             </div>
