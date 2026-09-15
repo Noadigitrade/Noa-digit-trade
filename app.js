@@ -128,8 +128,7 @@ function showMessage(
   message,
   type = 'info'
 ) {
-
-  const box =
+const box =
     $('appMessage');
 
   if (!box) {
@@ -216,7 +215,48 @@ function formatDate(value) {
 }
 
 
-function normalizePhone(phone) {
+const COUNTRY_PHONE_CONFIG = {
+
+  'Burkina Faso': {
+    flag: '🇧🇫',
+    code: '226',
+    digits: 8
+  },
+
+  "Côte d'Ivoire": {
+    flag: '🇨🇮',
+    code: '225',
+    digits: 10
+  },
+
+  'Mali': {
+    flag: '🇲🇱',
+    code: '223',
+    digits: 8
+  },
+
+  'Sénégal': {
+    flag: '🇸🇳',
+    code: '221',
+    digits: 9
+  }
+
+};
+
+
+function getCountryConfig(country) {
+
+  return (
+    COUNTRY_PHONE_CONFIG[country] ||
+    COUNTRY_PHONE_CONFIG['Burkina Faso']
+  );
+}
+
+
+function normalizePhone(phone, country) {
+
+  const config =
+    getCountryConfig(country);
 
   let digits =
     String(phone || '')
@@ -225,23 +265,36 @@ function normalizePhone(phone) {
         ''
       );
 
-  if (digits.startsWith('00226')) {
+  if (digits.startsWith('00' + config.code)) {
 
     digits =
-      digits.slice(5);
+      digits.slice(2 + config.code.length);
 
-  } else if (digits.startsWith('226')) {
+  } else if (digits.startsWith(config.code)) {
 
     digits =
-      digits.slice(3);
+      digits.slice(config.code.length);
   }
 
   if (!digits) {
 
     return '';
   }
+return `+${config.code}${digits}`;
+}
 
-  return `+226${digits}`;
+
+function isValidPhoneForCountry(phone, country) {
+
+  const config =
+    getCountryConfig(country);
+
+  const pattern =
+    new RegExp(
+      `^\\+${config.code}\\d{${config.digits}}$`
+    );
+
+  return pattern.test(phone);
 }
 
 
@@ -434,7 +487,6 @@ function validateNoaDepositAddress(
   if (
     !validation.valid
   ) {
-
     return {
       valid: false,
       message:
@@ -800,8 +852,8 @@ function getPasswordInput(
     form?.querySelector?.(
       'input[type="password"], input[id*="Password"], input[name*="password"]'
     );
-
-  if (formPassword) {
+  
+if (formPassword) {
 
     return formPassword;
   }
@@ -1053,7 +1105,6 @@ function initWhatsAppButton() {
 
   button.type =
     'button';
-
   button.setAttribute(
     'aria-label',
     'Contacter le support sur WhatsApp'
@@ -1186,7 +1237,7 @@ function fallbackCopy(text) {
       'Erreur copie presse-papiers :',
       error
     );
-  }
+    }
 
 
   document.body.removeChild(
@@ -1414,7 +1465,9 @@ function updateUserInterface() {
   if ($('userCountry')) {
 
     $('userCountry').textContent =
-      '🇧🇫 ' + country;
+      getCountryConfig(country).flag +
+      ' ' +
+      country;
   }
 
 
@@ -1493,7 +1546,6 @@ async function initializeApplication() {
       'Erreur initialisation :',
       error
     );
-
     showAppPage();
 
   } finally {
@@ -1507,6 +1559,44 @@ async function initializeApplication() {
 // ============================================================
 // INSCRIPTION
 // ============================================================
+
+function updateRegisterPhonePrefix() {
+
+  const country =
+    $('registerCountry')
+      ?.value ||
+    'Burkina Faso';
+
+  const config =
+    getCountryConfig(country);
+
+  const prefixEl =
+    $('registerPhonePrefix');
+
+  if (prefixEl) {
+
+    prefixEl.textContent =
+      `${config.flag} +${config.code}`;
+  }
+
+  const phoneInput =
+    $('registerPhone');
+
+  if (phoneInput) {
+
+    phoneInput.maxLength =
+      config.digits + 9;
+
+    phoneInput.placeholder =
+      '0'.repeat(config.digits)
+        .replace(
+          /(\d{2})(?=\d)/g,
+          '$1 '
+        )
+        .trim();
+  }
+}
+
 
 async function registerUser(
   event
@@ -1523,18 +1613,19 @@ async function registerUser(
       .trim() || '';
 
 
-  const phone =
-    normalizePhone(
-      $('registerPhone')
-        ?.value
-    );
-
-
   const country =
     $('registerCountry')
       ?.value
       .trim() ||
     'Burkina Faso';
+
+
+  const phone =
+    normalizePhone(
+      $('registerPhone')
+        ?.value,
+      country
+    );
 
 
   const referralCode =
@@ -1582,13 +1673,17 @@ async function registerUser(
 
 
   if (
-    !/^\+226\d{8}$/.test(
-      phone
+    !isValidPhoneForCountry(
+      phone,
+      country
     )
   ) {
 
+    const config =
+      getCountryConfig(country);
+
     return showMessage(
-      'Veuillez saisir un numéro du Burkina Faso valide de 8 chiffres.',
+      `Veuillez saisir un numéro valide de ${config.digits} chiffres pour ${country}.`,
       'error'
     );
   }
@@ -1663,7 +1758,6 @@ async function registerUser(
           password,
 
           options: {
-
             data: {
 
               full_name:
@@ -1779,8 +1873,8 @@ function showOtpForm(email) {
   $('loginForm')?.classList.remove(
     'active'
   );
-
-  $('registerForm')?.classList.remove(
+  
+$('registerForm')?.classList.remove(
     'active'
   );
 
@@ -1938,10 +2032,7 @@ async function verifyOtpCode(
         'Vérifier le code';
     }
   }
-}
-
-
-async function resendOtpCode() {
+  async function resendOtpCode() {
 
   hideMessage();
 
@@ -2338,8 +2429,7 @@ async function loadAppSettings() {
         trc20Fee;
     }
 
-
-    if (
+   if (
       Number.isFinite(
         bp20Fee
       ) &&
@@ -2527,8 +2617,7 @@ function ensureSellPayoutField() {
     if (
       walletField?.parentNode
     ) {
-
-      walletField.parentNode.insertBefore(
+walletField.parentNode.insertBefore(
         field,
         walletField.nextSibling
       );
@@ -2735,8 +2824,7 @@ function setBuyMode() {
       '';
   }
 
-
-  const payoutField =
+const payoutField =
     ensureSellPayoutField();
 
 
@@ -2953,8 +3041,6 @@ function calculateOrder() {
         grossUsdt - fee,
         0
       );
-
-
     return {
 
       side:
@@ -3172,8 +3258,7 @@ function updateBalanceUI(c) {
     return;
   }
 
-
-  let available = 0;
+let available = 0;
 
   let needed = 0;
 
@@ -3445,8 +3530,7 @@ function reviewOrder() {
         currentNetwork
       );
 
-
-    if (
+if (
       !noaValidation.valid
     ) {
 
@@ -3457,10 +3541,17 @@ function reviewOrder() {
     }
 
 
+    const payoutCountry =
+      currentProfile?.country ||
+      currentUser?.user_metadata?.country ||
+      'Burkina Faso';
+
+
     payoutPhone =
       normalizePhone(
         $('sellPayoutPhone')
-          ?.value
+          ?.value,
+        payoutCountry
       );
 
 
@@ -3474,13 +3565,17 @@ function reviewOrder() {
 
 
     if (
-      !/^\+226\d{8}$/.test(
-        payoutPhone
+      !isValidPhoneForCountry(
+        payoutPhone,
+        payoutCountry
       )
     ) {
 
+      const config =
+        getCountryConfig(payoutCountry);
+
       return showMessage(
-        'Veuillez saisir un numéro Orange Money valide de 8 chiffres.',
+        `Veuillez saisir un numéro Orange Money valide de ${config.digits} chiffres.`,
         'error'
       );
     }
@@ -3699,8 +3794,7 @@ function renderConfirmation() {
     return;
   }
 
-
-  box.innerHTML = `
+box.innerHTML = `
 
     <div class="summary-row">
       <span>Type</span>
@@ -3860,9 +3954,7 @@ async function placeOrder() {
       validateNoaDepositAddress(
         currentOrder.network
       );
-
-
-    if (
+if (
       !validation.valid
     ) {
 
@@ -4111,8 +4203,7 @@ async function placeOrder() {
 
       button.disabled =
         false;
-
-      button.textContent =
+button.textContent =
         originalText ||
         'Placer la commande';
     }
@@ -4493,7 +4584,6 @@ function renderSellPaymentPage() {
         <strong>
           ${Number(currentOrder.netUsdt).toFixed(6)} USDT
         </strong>
-
         sur le réseau
 
         <strong>
@@ -4791,7 +4881,6 @@ function renderSellPaymentPage() {
 // ============================================================
 // PREUVE DE PAIEMENT (upload)
 // ============================================================
-
 const PROOF_MAX_SIZE_BYTES =
   5 * 1024 * 1024;
 
@@ -5155,8 +5244,6 @@ async function declarePayment() {
       'error'
     );
   }
-
-
   const isSell =
     currentOrder.side ===
     'sell';
@@ -5550,8 +5637,7 @@ function renderOrderCard(
           <span class="status ${escapeHtml(status)}">
             ${escapeHtml(statusLabel)}
           </span>
-
-        </div>
+          </div>
 
         <div class="order-row">
           <span>Montant payé</span>
@@ -6004,9 +6090,7 @@ async function loadDisputes() {
             ascending: false
           }
         );
-
-
-    if (error) {
+if (error) {
       throw error;
     }
 
@@ -6132,18 +6216,19 @@ async function saveProfile(
       ?.trim() || '';
 
 
-  const phone =
-    normalizePhone(
-      $('profilePhone')
-        ?.value
-    );
-
-
   const country =
     $('profileCountry')
       ?.value
       ?.trim() ||
     'Burkina Faso';
+
+
+  const phone =
+    normalizePhone(
+      $('profilePhone')
+        ?.value,
+      country
+    );
 
 
   if (!name) {
@@ -6165,13 +6250,17 @@ async function saveProfile(
 
 
   if (
-    !/^\+226\d{8}$/.test(
-      phone
+    !isValidPhoneForCountry(
+      phone,
+      country
     )
   ) {
 
+    const config =
+      getCountryConfig(country);
+
     return showMessage(
-      'Veuillez saisir un numéro du Burkina Faso valide de 8 chiffres.',
+      `Veuillez saisir un numéro valide de ${config.digits} chiffres pour ${country}.`,
       'error'
     );
   }
@@ -6358,7 +6447,6 @@ async function submitReferralWithdrawal() {
       $('withdrawalAmount')
         ?.value
     );
-
   const method =
     $('withdrawalMethod')
       ?.value ||
@@ -6615,6 +6703,13 @@ function setupEvents() {
     );
 
 
+  $('registerCountry')
+    ?.addEventListener(
+      'change',
+      updateRegisterPhonePrefix
+    );
+
+
   $('forgotPasswordForm')
     ?.addEventListener(
       'submit',
@@ -6786,8 +6881,7 @@ function setupEvents() {
 
   initProofUploadEvents();
 
-
-  $('viewOrderBtn')
+$('viewOrderBtn')
     ?.addEventListener(
       'click',
       () => {
