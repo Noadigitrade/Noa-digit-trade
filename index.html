@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+DOCTYPE html>
 <html lang="fr">
 <head>
   <!-- Meta Pixel Code -->
@@ -144,8 +144,7 @@
       padding: 4px;
       margin-bottom: 20px;
     }
-
-    .auth-tab,
+    auth-tab,
     .exchange-tab {
       flex: 1;
       border: none;
@@ -423,7 +422,6 @@
       font-weight: 800;
       color: #172033;
     }
-
     .amount-unit {
       color: #0757d9;
       font-size: 14px;
@@ -696,7 +694,6 @@
       font-weight: 600;
       line-height: 1.5;
     }
-
     .proof-upload-label {
       font-size: 14px;
       font-weight: 800;
@@ -879,7 +876,6 @@
       font-family: monospace;
       font-size: 14px;
     }
-
     .break-word {
       word-break: break-word;
       overflow-wrap: anywhere;
@@ -926,7 +922,7 @@
     <div class="brand">NOA DIGIT TRADE</div>
     <div class="subtitle">Achat & vente de USDT</div>
     <div class="country-badge">
-      🇧🇫 Burkina Faso uniquement
+      🇧🇫 🇨🇮 🇲🇱 🇸🇳 Burkina Faso, Côte d'Ivoire, Mali, Sénégal
     </div>
   </header>
 
@@ -1024,8 +1020,7 @@
             >
               Mot de passe oublié ?
             </div>
-
-          </div>
+            </div>
 
           <button
             type="submit"
@@ -1089,7 +1084,7 @@
         >
 
           <div class="info-box">
-            🇧🇫 NOA DIGIT TRADE est réservé aux clients situés au Burkina Faso.
+            🇧🇫 🇨🇮 🇲🇱 🇸🇳 NOA DIGIT TRADE est réservé aux clients situés au Burkina Faso, en Côte d'Ivoire, au Mali ou au Sénégal.
           </div>
 
           <div class="field">
@@ -1113,10 +1108,12 @@
             <label for="registerPhone">
               Numéro de téléphone
             </label>
-
             <div class="phone-input-wrapper">
 
-              <div class="phone-prefix">
+              <div
+                class="phone-prefix"
+                id="registerPhonePrefix"
+              >
                 🇧🇫 +226
               </div>
 
@@ -1147,6 +1144,18 @@
 
               <option value="Burkina Faso">
                 🇧🇫 Burkina Faso
+              </option>
+
+              <option value="Côte d'Ivoire">
+                🇨🇮 Côte d'Ivoire
+              </option>
+
+              <option value="Mali">
+                🇲🇱 Mali
+              </option>
+
+              <option value="Sénégal">
+                🇸🇳 Sénégal
               </option>
 
             </select>
@@ -1230,7 +1239,6 @@
                 autocomplete="new-password"
                 required
               >
-
               <button
                 type="button"
                 class="password-toggle"
@@ -1384,7 +1392,7 @@
 
           <div class="card-description">
             Achetez ou vendez vos USDT simplement et en toute sécurité
-            au Burkina Faso.
+            au Burkina Faso, en Côte d'Ivoire, au Mali et au Sénégal.
           </div>
 
           <button
@@ -1420,8 +1428,8 @@
                 <span id="homeBuyRate">600</span> FCFA
               </strong>
             </div>
-
-            <div class="summary-row">
+            
+<div class="summary-row">
               <span>Taux vente</span>
               <strong>
                 <span id="homeSellRate">570</span> FCFA
@@ -1667,7 +1675,7 @@
               autocapitalize="none"
               spellcheck="false"
               required
-            >
+            >  >
 
             <div class="small wallet-help">
 
@@ -1803,7 +1811,6 @@
             Vérifiez toutes les informations avant de placer
             définitivement votre ordre.
           </div>
-
           <div
             id="confirmationSummary"
             class="summary"
@@ -1962,9 +1969,8 @@
           </div>
 
           <div id="proofUploadStatus"></div>
-
-
-          <button
+          
+<button
             type="button"
             id="paymentDoneBtn"
             class="btn btn-primary"
@@ -2181,8 +2187,8 @@
 
           <div class="info-box">
 
-            🇧🇫 Votre compte est configuré
-            pour le Burkina Faso uniquement.
+            🇧🇫 🇨🇮 🇲🇱 🇸🇳 Votre compte est configuré
+            pour le pays choisi à l'inscription.
 
           </div>
 
@@ -2196,8 +2202,8 @@
           </div>
 
           <div class="small">
-
-            Pour votre sécurité, ne communiquez jamais
+            
+Pour votre sécurité, ne communiquez jamais
             votre mot de passe, votre code Orange Money
             ou vos codes de validation à une autre personne.
 
@@ -2353,7 +2359,6 @@
 
 
   <!-- ================= NAVIGATION ================= -->
-
   <nav
     id="bottomNav"
     class="bottom-nav hidden"
@@ -2461,3 +2466,6 @@ function copyLinkForBrowser() {
 
 </body>
 </html>
+
+
+          
