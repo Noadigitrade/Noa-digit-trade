@@ -1,4 +1,4 @@
-DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
   <!-- Meta Pixel Code -->
@@ -144,7 +144,8 @@ DOCTYPE html>
       padding: 4px;
       margin-bottom: 20px;
     }
-    auth-tab,
+
+    .auth-tab,
     .exchange-tab {
       flex: 1;
       border: none;
@@ -243,6 +244,7 @@ DOCTYPE html>
       border: none;
       border-radius: 12px;
       padding: 10px 14px;
+      
       font-weight: 700;
       font-size: 13px;
       margin-top: 10px;
@@ -422,6 +424,7 @@ DOCTYPE html>
       font-weight: 800;
       color: #172033;
     }
+
     .amount-unit {
       color: #0757d9;
       font-size: 14px;
@@ -597,7 +600,6 @@ DOCTYPE html>
       background: #e7f8ee;
       color: #168447;
     }
-
     .status.cancelled {
       background: #fdeaea;
       color: #c62828;
@@ -694,6 +696,7 @@ DOCTYPE html>
       font-weight: 600;
       line-height: 1.5;
     }
+
     .proof-upload-label {
       font-size: 14px;
       font-weight: 800;
@@ -850,7 +853,7 @@ DOCTYPE html>
       color: #0757d9;
     }
 
-    .hidden {
+      .hidden {
       display: none !important;
     }
 
@@ -876,6 +879,7 @@ DOCTYPE html>
       font-family: monospace;
       font-size: 14px;
     }
+
     .break-word {
       word-break: break-word;
       overflow-wrap: anywhere;
@@ -1020,7 +1024,8 @@ DOCTYPE html>
             >
               Mot de passe oublié ?
             </div>
-            </div>
+
+          </div>
 
           <button
             type="submit"
@@ -1108,6 +1113,7 @@ DOCTYPE html>
             <label for="registerPhone">
               Numéro de téléphone
             </label>
+
             <div class="phone-input-wrapper">
 
               <div
@@ -1116,8 +1122,7 @@ DOCTYPE html>
               >
                 🇧🇫 +226
               </div>
-
-              <input
+<input
                 type="tel"
                 id="registerPhone"
                 placeholder="70 00 00 00"
@@ -1239,6 +1244,7 @@ DOCTYPE html>
                 autocomplete="new-password"
                 required
               >
+
               <button
                 type="button"
                 class="password-toggle"
@@ -1286,7 +1292,6 @@ DOCTYPE html>
             <label for="otpCode">
               Code de vérification
             </label>
-
             <input
               type="text"
               id="otpCode"
@@ -1428,8 +1433,8 @@ DOCTYPE html>
                 <span id="homeBuyRate">600</span> FCFA
               </strong>
             </div>
-            
-<div class="summary-row">
+
+            <div class="summary-row">
               <span>Taux vente</span>
               <strong>
                 <span id="homeSellRate">570</span> FCFA
@@ -1520,8 +1525,7 @@ DOCTYPE html>
             >
               Acheter
             </button>
-
-            <button
+<button
               type="button"
               id="sellTab"
               class="exchange-tab"
@@ -1675,7 +1679,7 @@ DOCTYPE html>
               autocapitalize="none"
               spellcheck="false"
               required
-            >  >
+            >
 
             <div class="small wallet-help">
 
@@ -1793,8 +1797,7 @@ DOCTYPE html>
 
       </div>
 
-
-      <!-- ================= CONFIRMATION ================= -->
+   <!-- ================= CONFIRMATION ================= -->
 
       <div
         id="confirmationPage"
@@ -1811,6 +1814,7 @@ DOCTYPE html>
             Vérifiez toutes les informations avant de placer
             définitivement votre ordre.
           </div>
+
           <div
             id="confirmationSummary"
             class="summary"
@@ -1969,8 +1973,9 @@ DOCTYPE html>
           </div>
 
           <div id="proofUploadStatus"></div>
-          
-<button
+
+
+          <button
             type="button"
             id="paymentDoneBtn"
             class="btn btn-primary"
@@ -2202,8 +2207,8 @@ DOCTYPE html>
           </div>
 
           <div class="small">
-            
-Pour votre sécurité, ne communiquez jamais
+
+            Pour votre sécurité, ne communiquez jamais
             votre mot de passe, votre code Orange Money
             ou vos codes de validation à une autre personne.
 
@@ -2304,8 +2309,7 @@ Pour votre sécurité, ne communiquez jamais
               </select>
 
             </div>
-
-            <div
+<div
               class="field"
               id="withdrawalPhoneField"
             >
@@ -2359,6 +2363,7 @@ Pour votre sécurité, ne communiquez jamais
 
 
   <!-- ================= NAVIGATION ================= -->
+
   <nav
     id="bottomNav"
     class="bottom-nav hidden"
@@ -2466,6 +2471,3 @@ function copyLinkForBrowser() {
 
 </body>
 </html>
-
-
-          
