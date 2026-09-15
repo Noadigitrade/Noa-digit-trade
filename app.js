@@ -128,7 +128,8 @@ function showMessage(
   message,
   type = 'info'
 ) {
-const box =
+
+  const box =
     $('appMessage');
 
   if (!box) {
@@ -280,7 +281,8 @@ function normalizePhone(phone, country) {
 
     return '';
   }
-return `+${config.code}${digits}`;
+
+  return `+${config.code}${digits}`;
 }
 
 
@@ -487,6 +489,7 @@ function validateNoaDepositAddress(
   if (
     !validation.valid
   ) {
+
     return {
       valid: false,
       message:
@@ -852,8 +855,8 @@ function getPasswordInput(
     form?.querySelector?.(
       'input[type="password"], input[id*="Password"], input[name*="password"]'
     );
-  
-if (formPassword) {
+
+  if (formPassword) {
 
     return formPassword;
   }
@@ -1105,6 +1108,7 @@ function initWhatsAppButton() {
 
   button.type =
     'button';
+
   button.setAttribute(
     'aria-label',
     'Contacter le support sur WhatsApp'
@@ -1237,7 +1241,7 @@ function fallbackCopy(text) {
       'Erreur copie presse-papiers :',
       error
     );
-    }
+  }
 
 
   document.body.removeChild(
@@ -1546,6 +1550,7 @@ async function initializeApplication() {
       'Erreur initialisation :',
       error
     );
+
     showAppPage();
 
   } finally {
@@ -1758,6 +1763,7 @@ async function registerUser(
           password,
 
           options: {
+
             data: {
 
               full_name:
@@ -1873,8 +1879,8 @@ function showOtpForm(email) {
   $('loginForm')?.classList.remove(
     'active'
   );
-  
-$('registerForm')?.classList.remove(
+
+  $('registerForm')?.classList.remove(
     'active'
   );
 
@@ -2032,7 +2038,10 @@ async function verifyOtpCode(
         'Vérifier le code';
     }
   }
-  async function resendOtpCode() {
+}
+
+
+async function resendOtpCode() {
 
   hideMessage();
 
@@ -2429,7 +2438,8 @@ async function loadAppSettings() {
         trc20Fee;
     }
 
-   if (
+
+    if (
       Number.isFinite(
         bp20Fee
       ) &&
@@ -2617,7 +2627,8 @@ function ensureSellPayoutField() {
     if (
       walletField?.parentNode
     ) {
-walletField.parentNode.insertBefore(
+
+      walletField.parentNode.insertBefore(
         field,
         walletField.nextSibling
       );
@@ -2824,7 +2835,8 @@ function setBuyMode() {
       '';
   }
 
-const payoutField =
+
+  const payoutField =
     ensureSellPayoutField();
 
 
@@ -3041,6 +3053,8 @@ function calculateOrder() {
         grossUsdt - fee,
         0
       );
+
+
     return {
 
       side:
@@ -3258,7 +3272,8 @@ function updateBalanceUI(c) {
     return;
   }
 
-let available = 0;
+
+  let available = 0;
 
   let needed = 0;
 
@@ -3530,7 +3545,8 @@ function reviewOrder() {
         currentNetwork
       );
 
-if (
+
+    if (
       !noaValidation.valid
     ) {
 
@@ -3794,7 +3810,8 @@ function renderConfirmation() {
     return;
   }
 
-box.innerHTML = `
+
+  box.innerHTML = `
 
     <div class="summary-row">
       <span>Type</span>
@@ -3954,7 +3971,9 @@ async function placeOrder() {
       validateNoaDepositAddress(
         currentOrder.network
       );
-if (
+
+
+    if (
       !validation.valid
     ) {
 
@@ -4203,7 +4222,8 @@ if (
 
       button.disabled =
         false;
-button.textContent =
+
+      button.textContent =
         originalText ||
         'Placer la commande';
     }
@@ -4584,6 +4604,7 @@ function renderSellPaymentPage() {
         <strong>
           ${Number(currentOrder.netUsdt).toFixed(6)} USDT
         </strong>
+
         sur le réseau
 
         <strong>
@@ -4881,6 +4902,7 @@ function renderSellPaymentPage() {
 // ============================================================
 // PREUVE DE PAIEMENT (upload)
 // ============================================================
+
 const PROOF_MAX_SIZE_BYTES =
   5 * 1024 * 1024;
 
@@ -5244,6 +5266,8 @@ async function declarePayment() {
       'error'
     );
   }
+
+
   const isSell =
     currentOrder.side ===
     'sell';
@@ -5637,7 +5661,8 @@ function renderOrderCard(
           <span class="status ${escapeHtml(status)}">
             ${escapeHtml(statusLabel)}
           </span>
-          </div>
+
+        </div>
 
         <div class="order-row">
           <span>Montant payé</span>
@@ -6090,7 +6115,9 @@ async function loadDisputes() {
             ascending: false
           }
         );
-if (error) {
+
+
+    if (error) {
       throw error;
     }
 
@@ -6447,6 +6474,7 @@ async function submitReferralWithdrawal() {
       $('withdrawalAmount')
         ?.value
     );
+
   const method =
     $('withdrawalMethod')
       ?.value ||
@@ -6881,7 +6909,8 @@ function setupEvents() {
 
   initProofUploadEvents();
 
-$('viewOrderBtn')
+
+  $('viewOrderBtn')
     ?.addEventListener(
       'click',
       () => {
