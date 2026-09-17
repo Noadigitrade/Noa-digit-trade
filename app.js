@@ -2928,11 +2928,11 @@ function setSellMode() {
   }
 
 
-  if ($('paymentMethodField')) {
+if ($('paymentMethodField')) {
 
     $('paymentMethodField').style.display =
       'none';
-  }
+  }  
 
 
   if ($('exchangeInfo')) {
