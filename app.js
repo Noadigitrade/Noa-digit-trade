@@ -2951,7 +2951,7 @@ if ($('paymentMethodField')) {
       <br>
 
       Après réception et vérification des USDT,
-      nous vous envoyons les FCFA sur votre Orange Money.
+nous vous envoyons les FCFA sur le moyen de paiement choisi.
 
     `;
   }
@@ -3588,11 +3588,21 @@ function reviewOrder() {
 
       const config =
         getCountryConfig(payoutCountry);
+const method =
+  $('paymentMethod')?.value ||
+  'orange_money';
 
-      return showMessage(
-        `Veuillez saisir un numéro Orange Money valide de ${config.digits} chiffres.`,
-        'error'
-      );
+const methodName =
+  method === 'wave'
+    ? 'Wave'
+    : 'Orange Money';
+
+return showMessage(
+  `Veuillez saisir un numéro ${methodName} valide de ${config.digits} chiffres.`,
+  'error'
+);
+      
+      
     }
 
   }
@@ -4048,9 +4058,13 @@ async function placeOrder() {
 
     } else {
 
-      customerNote =
-        `Adresse de dépôt NOA : ${currentOrder.walletAddress} | Numéro Orange Money : ${currentOrder.payoutPhone}`;
-    }
+const paymentName =
+  currentOrder.paymentMethod === 'wave'
+    ? 'Wave'
+    : 'Orange Money';
+
+customerNote =
+  `Adresse de dépôt NOA : ${currentOrder.walletAddress} | Numéro ${paymentName} : ${currentOrder.payoutPhone}`;
 
 
     const receiveCfa =
