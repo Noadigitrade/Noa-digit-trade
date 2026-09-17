@@ -4066,6 +4066,8 @@ const paymentName =
 customerNote =
   `Adresse de dépôt NOA : ${currentOrder.walletAddress} | Numéro ${paymentName} : ${currentOrder.payoutPhone}`;
 
+    }
+
 
     const receiveCfa =
       currentOrder.side ===
