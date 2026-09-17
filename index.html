@@ -1984,6 +1984,27 @@ a:hover{
   color: #ff8a00;
   font-weight: 700;
 }
+ /* ACHAT : vert uniquement sélectionné */
+#buyTab.active {
+  background: linear-gradient(135deg, #00d084, #12e6b0) !important;
+  color: #fff !important;
+  box-shadow: 0 0 20px rgba(0, 255, 170, 0.35) !important;
+}
+
+/* VENTE : rouge uniquement sélectionné */
+#sellTab.active {
+  background: linear-gradient(135deg, #ff2020, #ff4b4b) !important;
+  color: #fff !important;
+  box-shadow: 0 0 20px rgba(255, 40, 40, 0.30) !important;
+}
+
+/* Non sélectionné : bleu */
+#buyTab:not(.active),
+#sellTab:not(.active) {
+  background: linear-gradient(135deg, #0637c9, #086bea) !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}   
   </style>
 </head>
 
