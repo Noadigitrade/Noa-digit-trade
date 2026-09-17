@@ -915,6 +915,1027 @@
         height: 200px;
       }
     }
+   /* ============================================================
+   NOA DIGIT TRADE — PREMIUM ELECTRIC BLUE UI
+   Nouvelle interface visuelle
+   La logique JavaScript reste inchangée
+   ============================================================ */
+
+:root{
+  --noa-blue-1:#0637c9;
+  --noa-blue-2:#086bea;
+  --noa-blue-3:#12a9ff;
+  --noa-deep:#031d72;
+  --noa-deep-2:#02134d;
+  --noa-glass:rgba(7,77,210,.58);
+  --noa-glass-2:rgba(6,57,180,.72);
+  --noa-border:rgba(76,202,255,.62);
+  --noa-white:#f7fbff;
+  --noa-muted:#b9d8ff;
+  --noa-cyan:#19d8ff;
+  --noa-green:#1bdc88;
+  --noa-red:#ff4961;
+}
+
+/* ============================================================
+   FOND GÉNÉRAL
+   ============================================================ */
+
+html{
+  background:#031d72;
+}
+
+body{
+  font-family:
+    Arial,
+    Helvetica,
+    sans-serif;
+
+  background:
+    radial-gradient(
+      circle at 15% 15%,
+      rgba(24,184,255,.28),
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at 90% 30%,
+      rgba(20,89,255,.32),
+      transparent 32%
+    ),
+    radial-gradient(
+      circle at 50% 100%,
+      rgba(0,183,255,.18),
+      transparent 35%
+    ),
+    linear-gradient(
+      145deg,
+      #03145d 0%,
+      #063fc9 48%,
+      #075fe0 72%,
+      #031d72 100%
+    );
+
+  color:var(--noa-white);
+}
+
+/* Effet lumineux discret */
+
+body::before{
+  content:"";
+
+  position:fixed;
+
+  inset:0;
+
+  pointer-events:none;
+
+  opacity:.35;
+
+  background:
+    linear-gradient(
+      135deg,
+      transparent 0 42%,
+      rgba(255,255,255,.08) 42.2% 44%,
+      transparent 44.2% 100%
+    );
+
+  z-index:0;
+}
+
+/* ============================================================
+   APPLICATION
+   ============================================================ */
+
+.app{
+  max-width:520px;
+
+  background:transparent;
+
+  min-height:100vh;
+
+  position:relative;
+
+  z-index:1;
+}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+
+.header{
+  position:relative;
+
+  padding:
+    30px
+    20px
+    20px;
+
+  background:
+    radial-gradient(
+      circle at 50% 0%,
+      rgba(40,214,255,.30),
+      transparent 42%
+    ),
+    linear-gradient(
+      145deg,
+      #0759dc,
+      #0637bd 70%,
+      #052a9b
+    );
+
+  border-radius:
+    0
+    0
+    30px
+    30px;
+
+  border-bottom:
+    1px solid rgba(82,210,255,.48);
+
+  box-shadow:
+    0 14px 40px rgba(0,25,110,.35);
+
+  text-align:center;
+}
+
+/* ============================================================
+   LOGO / NOM NOA
+   ============================================================ */
+
+.brand{
+  font-size:28px;
+
+  font-weight:400;
+
+  letter-spacing:4px;
+
+  color:#f5fbff;
+
+  text-shadow:
+    0 0 18px rgba(69,215,255,.35);
+}
+
+.subtitle{
+  margin-top:5px;
+
+  font-size:12px;
+
+  letter-spacing:3px;
+
+  opacity:.92;
+
+  font-weight:400;
+
+  color:#d8efff;
+}
+
+/* ============================================================
+   PAYS
+   ============================================================ */
+
+.country-badge{
+  margin-top:14px;
+
+  padding:
+    7px
+    12px;
+
+  border:
+    1px solid rgba(108,221,255,.55);
+
+  background:
+    rgba(0,73,185,.30);
+
+  box-shadow:
+    inset 0 0 18px rgba(0,197,255,.12),
+    0 0 16px rgba(0,157,255,.12);
+
+  font-size:11px;
+
+  font-weight:500;
+
+  color:#e9f8ff;
+
+  border-radius:14px;
+}
+
+/* ============================================================
+   CONTENU
+   ============================================================ */
+
+.content{
+  padding:
+    16px
+    14px
+    105px;
+}
+
+/* ============================================================
+   CARTES
+   ============================================================ */
+
+.card{
+  background:
+    linear-gradient(
+      145deg,
+      rgba(10,101,226,.86),
+      rgba(4,54,171,.86)
+    );
+
+  border:
+    1px solid var(--noa-border);
+
+  border-radius:22px;
+
+  padding:17px;
+
+  margin-bottom:13px;
+
+  box-shadow:
+    inset 0 0 22px rgba(35,194,255,.10),
+    0 12px 30px rgba(0,20,100,.28);
+
+  backdrop-filter:blur(10px);
+}
+
+.card-title{
+  color:#fff;
+
+  font-size:18px;
+
+  font-weight:500;
+
+  letter-spacing:.2px;
+}
+
+.card-description,
+.small{
+  color:var(--noa-muted);
+}
+
+/* ============================================================
+   ONGLETS
+   ============================================================ */
+
+.auth-tabs,
+.exchange-tabs{
+  background:
+    rgba(1,37,126,.55);
+
+  border:
+    1px solid rgba(75,199,255,.38);
+
+  border-radius:18px;
+
+  padding:4px;
+
+  box-shadow:
+    inset 0 0 15px rgba(0,185,255,.06);
+}
+
+.auth-tab,
+.exchange-tab{
+  color:#b9d8ff;
+
+  border-radius:14px;
+
+  font-weight:500;
+
+  padding:
+    12px
+    10px;
+
+  transition:
+    .2s ease;
+}
+
+.auth-tab.active,
+.exchange-tab.active{
+  background:
+    linear-gradient(
+      135deg,
+      #18a8ff,
+      #0b6ff0
+    );
+
+  color:#fff !important;
+
+  box-shadow:
+    0 0 18px rgba(17,191,255,.35),
+    inset 0 0 10px rgba(255,255,255,.12);
+}
+
+/* ============================================================
+   CHAMPS
+   ============================================================ */
+
+.field label{
+  color:#e8f5ff;
+
+  font-weight:500;
+}
+
+.field input,
+.field select,
+.field textarea{
+  border:
+    1px solid rgba(75,201,255,.55);
+
+  background:
+    rgba(3,45,145,.56);
+
+  color:#fff;
+
+  border-radius:15px;
+
+  padding:
+    13px
+    14px;
+
+  outline:none;
+
+  box-shadow:
+    inset 0 0 12px rgba(0,160,255,.05);
+
+  transition:
+    .2s ease;
+}
+
+.field input::placeholder,
+.field textarea::placeholder{
+  color:#a9cfff;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus{
+  border-color:#35d9ff;
+
+  box-shadow:
+    0 0 0 3px rgba(25,216,255,.13),
+    0 0 18px rgba(25,216,255,.16);
+}
+
+.phone-prefix{
+  border-color:
+    rgba(75,201,255,.55);
+
+  background:
+    rgba(3,45,145,.56);
+
+  color:#fff;
+}
+
+.password-toggle{
+  color:#d7efff;
+}
+
+/* ============================================================
+   BOUTONS
+   ============================================================ */
+
+.btn{
+  border-radius:16px;
+
+  padding:
+    13px
+    16px;
+
+  font-weight:600;
+
+  border:
+    1px solid transparent;
+
+  box-shadow:
+    0 7px 18px rgba(0,24,105,.22);
+
+  transition:
+    .2s ease;
+}
+
+.btn-primary{
+  background:
+    linear-gradient(
+      135deg,
+      #13aaff,
+      #075de5
+    );
+
+  color:#fff;
+
+  border-color:
+    rgba(87,222,255,.62);
+
+  box-shadow:
+    0 0 20px rgba(0,174,255,.22),
+    0 8px 18px rgba(0,23,105,.25);
+}
+
+.btn-primary:hover{
+  background:
+    linear-gradient(
+      135deg,
+      #27baff,
+      #0868ee
+    );
+}
+
+.btn-secondary{
+  background:
+    rgba(7,72,190,.62);
+
+  color:#eaf8ff;
+
+  border-color:
+    rgba(80,204,255,.48);
+}
+
+.btn-success{
+  background:
+    rgba(0,174,102,.22);
+
+  color:#8dffd0;
+
+  border-color:
+    rgba(43,235,157,.50);
+}
+
+.btn-danger{
+  background:
+    rgba(224,34,70,.20);
+
+  color:#ffb5c0;
+
+  border-color:
+    rgba(255,81,106,.50);
+}
+
+/* ============================================================
+   SOLDE
+   ============================================================ */
+
+.balance-box{
+  background:
+    linear-gradient(
+      145deg,
+      rgba(8,89,205,.70),
+      rgba(3,47,150,.70)
+    );
+
+  border:
+    1px solid rgba(76,202,255,.55);
+
+  color:#fff;
+
+  border-radius:20px;
+
+  box-shadow:
+    inset 0 0 20px rgba(30,201,255,.08),
+    0 8px 25px rgba(0,20,100,.20);
+}
+
+.balance-box strong{
+  color:#28d9ff;
+}
+
+.balance-alert{
+  background:
+    rgba(222,38,61,.18);
+
+  border-color:
+    rgba(255,88,108,.55);
+
+  color:#ffd4db;
+}
+
+/* ============================================================
+   MONTANT
+   ============================================================ */
+
+.amount-box{
+  background:
+    linear-gradient(
+      145deg,
+      rgba(10,101,226,.80),
+      rgba(4,54,171,.80)
+    );
+
+  border:
+    1px solid rgba(76,202,255,.60);
+
+  border-radius:22px;
+
+  padding:16px;
+
+  box-shadow:
+    inset 0 0 22px rgba(35,194,255,.08),
+    0 10px 25px rgba(0,20,100,.22);
+}
+
+.amount-label{
+  color:#b8d8ff;
+
+  font-weight:500;
+}
+
+.amount-input{
+  color:#fff;
+}
+
+.amount-unit{
+  color:#28d9ff;
+}
+
+/* ============================================================
+   RÉSEAUX USDT
+   ============================================================ */
+
+.network-grid{
+  gap:10px;
+}
+
+.network-option{
+  background:
+    linear-gradient(
+      145deg,
+      rgba(8,85,199,.74),
+      rgba(3,45,145,.72)
+    );
+
+  color:#fff;
+
+  border:
+    1.5px solid rgba(73,196,255,.48);
+
+  border-radius:18px;
+
+  padding:
+    14px
+    10px;
+
+  box-shadow:
+    inset 0 0 16px rgba(0,196,255,.07);
+
+  transition:
+    .2s ease;
+}
+
+.network-option:hover{
+  border-color:#3bd9ff;
+
+  transform:translateY(-1px);
+}
+
+.network-option.active{
+  border-color:#5ee5ff;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(14,126,237,.86),
+      rgba(4,64,181,.88)
+    );
+
+  box-shadow:
+    0 0 20px rgba(39,213,255,.25),
+    inset 0 0 18px rgba(72,222,255,.10);
+}
+
+.network-fee{
+  color:#b8d8ff;
+}
+
+/* ============================================================
+   RÉSUMÉ DE COMMANDE
+   ============================================================ */
+
+.summary{
+  background:
+    linear-gradient(
+      145deg,
+      rgba(8,89,205,.70),
+      rgba(3,47,150,.70)
+    );
+
+  border:
+    1px solid rgba(76,202,255,.55);
+
+  border-radius:19px;
+
+  padding:15px;
+
+  color:#fff;
+
+  box-shadow:
+    inset 0 0 20px rgba(30,201,255,.08),
+    0 8px 25px rgba(0,20,100,.18);
+}
+
+.summary-row{
+  color:#eaf6ff;
+}
+
+.summary-row span:first-child{
+  color:#b7d8ff;
+}
+
+.summary-total{
+  border-top-color:
+    rgba(90,208,255,.38);
+}
+
+.summary-total strong{
+  color:#28d9ff;
+}
+
+/* ============================================================
+   INFORMATIONS
+   ============================================================ */
+
+.info-box{
+  background:
+    linear-gradient(
+      145deg,
+      rgba(8,89,205,.70),
+      rgba(3,47,150,.70)
+    );
+
+  border:
+    1px solid rgba(76,202,255,.45);
+
+  border-left:
+    4px solid #28d9ff;
+
+  color:#d9efff;
+
+  border-radius:15px;
+
+  box-shadow:
+    inset 0 0 15px rgba(30,201,255,.05);
+}
+
+.warning-box{
+  background:
+    linear-gradient(
+      145deg,
+      rgba(8,89,205,.70),
+      rgba(3,47,150,.70)
+    );
+
+  border:
+    1px solid rgba(76,202,255,.45);
+
+  border-left:
+    4px solid #ffd23f;
+
+  color:#fff1b4;
+
+  border-radius:15px;
+
+  box-shadow:
+    inset 0 0 15px rgba(255,210,63,.04);
+}
+
+/* ============================================================
+   PAIEMENT
+   ============================================================ */
+
+.binance-transfer-box{
+  background:
+    linear-gradient(
+      145deg,
+      rgba(8,89,205,.70),
+      rgba(3,47,150,.70)
+    );
+
+  border:
+    1px solid rgba(76,202,255,.55);
+
+  color:#fff;
+
+  border-radius:19px;
+
+  box-shadow:
+    inset 0 0 20px rgba(30,201,255,.08);
+}
+
+.payment-amount-value{
+  color:#fff;
+}
+
+/* ============================================================
+   COPIE
+   ============================================================ */
+
+.copy-btn-inline{
+  background:
+    rgba(5,88,208,.72);
+
+  color:#dff8ff;
+
+  border:
+    1px solid rgba(77,202,255,.45);
+
+  border-radius:12px;
+}
+
+.copy-btn-inline:hover{
+  background:
+    rgba(12,117,229,.82);
+}
+
+/* ============================================================
+   MESSAGES
+   ============================================================ */
+
+#appMessage.success{
+  background:
+    rgba(13,180,106,.20);
+
+  color:#a5ffd9;
+
+  border:
+    1px solid rgba(53,239,164,.45);
+
+  border-radius:15px;
+}
+
+#appMessage.error{
+  background:
+    rgba(224,32,62,.20);
+
+  color:#ffc2cb;
+
+  border:
+    1px solid rgba(255,90,111,.45);
+
+  border-radius:15px;
+}
+
+#appMessage.info{
+  background:
+    rgba(9,116,225,.25);
+
+  color:#d4f3ff;
+
+  border:
+    1px solid rgba(76,202,255,.45);
+
+  border-radius:15px;
+}
+
+/* ============================================================
+   BARRE UTILISATEUR
+   ============================================================ */
+
+.user-bar{
+  background:
+    linear-gradient(
+      145deg,
+      rgba(9,93,211,.80),
+      rgba(3,48,154,.80)
+    );
+
+  border:
+    1px solid rgba(76,202,255,.52);
+
+  border-radius:20px;
+
+  padding:14px;
+
+  margin-bottom:13px;
+
+  box-shadow:
+    inset 0 0 18px rgba(25,200,255,.07),
+    0 8px 22px rgba(0,20,100,.20);
+}
+
+.user-name{
+  color:#fff;
+
+  font-weight:600;
+}
+
+.user-country{
+  color:#b9d9ff;
+}
+
+.logout-btn{
+  background:
+    rgba(4,51,160,.55);
+
+  color:#dff7ff;
+
+  border:
+    1px solid rgba(77,201,255,.40);
+
+  border-radius:12px;
+}
+
+/* ============================================================
+   NAVIGATION INFÉRIEURE
+   ============================================================ */
+
+.bottom-nav{
+  max-width:520px;
+
+  background:
+    rgba(3,38,122,.88);
+
+  border-top:
+    1px solid rgba(79,205,255,.55);
+
+  border-radius:
+    24px
+    24px
+    0
+    0;
+
+  box-shadow:
+    0 -8px 30px rgba(0,18,91,.34),
+    inset 0 0 18px rgba(36,194,255,.08);
+
+  backdrop-filter:blur(16px);
+
+  padding:
+    8px
+    7px
+    10px;
+}
+
+.nav-btn{
+  color:#b7d7ff;
+
+  font-weight:500;
+
+  border-radius:16px;
+
+  padding:
+    8px
+    9px;
+
+  transition:
+    .2s ease;
+}
+
+.nav-btn:hover{
+  color:#fff;
+}
+
+.nav-btn.active{
+  color:#fff;
+
+  background:
+    linear-gradient(
+      135deg,
+      #13aaff,
+      #0868ed
+    );
+
+  box-shadow:
+    0 0 18px rgba(22,195,255,.28),
+    inset 0 0 10px rgba(255,255,255,.10);
+}
+
+/* ============================================================
+   ÉLÉMENTS DE FORMULAIRE SUPPLÉMENTAIRES
+   ============================================================ */
+
+input,
+select,
+textarea{
+  color:#fff;
+}
+
+select option{
+  background:#063a9d;
+  color:#fff;
+}
+
+button{
+  -webkit-tap-highlight-color:transparent;
+}
+
+/* ============================================================
+   LIENS
+   ============================================================ */
+
+a{
+  color:#63ddff;
+}
+
+a:hover{
+  color:#a7eeff;
+}
+
+/* ============================================================
+   SCROLLBAR
+   ============================================================ */
+
+::-webkit-scrollbar{
+  width:5px;
+}
+
+::-webkit-scrollbar-track{
+  background:
+    rgba(1,22,87,.45);
+}
+
+::-webkit-scrollbar-thumb{
+  background:
+    linear-gradient(
+      #13aaff,
+      #075de5
+    );
+
+  border-radius:10px;
+}
+
+/* ============================================================
+   EFFETS DE SURVOL
+   ============================================================ */
+
+.card,
+.network-option,
+.amount-box,
+.balance-box,
+.summary{
+  transition:
+    transform .2s ease,
+    box-shadow .2s ease,
+    border-color .2s ease;
+}
+
+.card:hover{
+  border-color:
+    rgba(91,216,255,.72);
+
+  box-shadow:
+    inset 0 0 25px rgba(35,194,255,.12),
+    0 14px 35px rgba(0,20,100,.30);
+}
+
+/* ============================================================
+   MOBILE
+   ============================================================ */
+
+@media (max-width:520px){
+
+  .content{
+    padding-left:12px;
+    padding-right:12px;
+  }
+
+  .header{
+    padding-top:25px;
+  }
+
+  .brand{
+    font-size:25px;
+    letter-spacing:3px;
+  }
+
+  .subtitle{
+    font-size:11px;
+    letter-spacing:2px;
+  }
+
+  .card{
+    border-radius:20px;
+    padding:15px;
+  }
+
+  .network-option{
+    border-radius:16px;
+  }
+
+  .bottom-nav{
+    border-radius:
+      22px
+      22px
+      0
+      0;
+  }
+
+}
+
+/* ============================================================
+   ÉCRANS PLUS LARGES
+   ============================================================ */
+
+@media (min-width:521px){
+
+  body{
+    padding:0;
+  }
+
+  .app{
+    border-radius:0;
+    box-shadow:none;
+  }
+
+}
+    
   </style>
 </head>
 
