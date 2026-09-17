@@ -1935,7 +1935,55 @@ a:hover{
   }
 
 }
-    
+    /* ============================================================
+   NOA DIGIT TRADE — ACHETER VERT / VENDRE ROUGE
+   ============================================================ */
+
+#buyTab {
+  background: linear-gradient(
+    135deg,
+    #00d084,
+    #12e6b0
+  ) !important;
+  color: #fff !important;
+  box-shadow: 0 0 20px rgba(0, 255, 170, 0.35) !important;
+}
+
+#sellTab {
+  background: linear-gradient(
+    135deg,
+    #ff2020,
+    #ff4b4b
+  ) !important;
+  color: #fff !important;
+  box-shadow: 0 0 20px rgba(255, 40, 40, 0.30) !important;
+}
+
+#buyTab,
+#sellTab {
+  border-radius: 16px !important;
+  font-weight: 700 !important;
+  border: none !important;
+  transition: all 0.25s ease;
+}
+
+/* ============================================================
+   MENU MOYEN DE PAIEMENT
+   ============================================================ */
+
+#paymentMethod {
+  font-weight: 600;
+}
+
+#paymentMethod option[value="wave"] {
+  color: #1688ff;
+  font-weight: 700;
+}
+
+#paymentMethod option[value="orange_money"] {
+  color: #ff8a00;
+  font-weight: 700;
+}
   </style>
 </head>
 
