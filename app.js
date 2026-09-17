@@ -2602,14 +2602,21 @@ function ensureSellPayoutField() {
       <label for="sellPayoutPhone">
   Numéro pour recevoir vos FCFA
 </label>
-      <input
-        type="tel"
-        id="sellPayoutPhone"
-        inputmode="numeric"
-        autocomplete="tel"
-        maxlength="8"
-        placeholder="Exemple : 70 00 00 00"
-      >
+      <div class="phone-input-wrapper">
+        <div
+          class="phone-prefix"
+          id="sellPayoutPhonePrefix"
+        >
+          🇧🇫 +226
+        </div>
+        <input
+          type="tel"
+          id="sellPayoutPhone"
+          inputmode="numeric"
+          autocomplete="tel"
+          placeholder="Exemple : 70 00 00 00"
+        >
+      </div>
 
       <div class="small wallet-help">
         📱 Ce numéro sera utilisé pour vous envoyer le montant en FCFA après réception et vérification de vos USDT.
@@ -2632,6 +2639,33 @@ function ensureSellPayoutField() {
         walletField.nextSibling
       );
     }
+  }
+
+
+  const payoutCountry =
+    currentProfile?.country ||
+    currentUser?.user_metadata?.country ||
+    'Burkina Faso';
+
+  const config =
+    getCountryConfig(payoutCountry);
+
+  const prefixEl =
+    $('sellPayoutPhonePrefix');
+
+  if (prefixEl) {
+
+    prefixEl.textContent =
+      `${config.flag} +${config.code}`;
+  }
+
+  const phoneInput =
+    $('sellPayoutPhone');
+
+  if (phoneInput) {
+
+    phoneInput.maxLength =
+      config.digits + 9;
   }
 
 
