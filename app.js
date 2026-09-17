@@ -2600,9 +2600,8 @@ function ensureSellPayoutField() {
     field.innerHTML = `
 
       <label for="sellPayoutPhone">
-        Numéro Orange Money pour recevoir vos FCFA
-      </label>
-
+  Numéro pour recevoir vos FCFA
+</label>
       <input
         type="tel"
         id="sellPayoutPhone"
@@ -3684,7 +3683,8 @@ function reviewOrder() {
       payoutPhone,
 
     paymentMethod:
-      'orange_money'
+  $('paymentMethod')?.value ||
+  'orange_money'
 
   };
 
