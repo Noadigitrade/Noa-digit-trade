@@ -2116,9 +2116,7 @@ async function loginUser(
         .trim() ||
       ''
     ).toLowerCase();
-
-
-  const password =
+ const password =
     $('loginPassword')
       ?.value || '';
 
@@ -3012,8 +3010,7 @@ function selectNetwork(
   ) {
     return;
   }
-
-
+  
   currentNetwork =
     network;
 
@@ -4638,8 +4635,7 @@ function renderSellPaymentPage() {
   // Pour SELL, on n'utilise pas le QR Orange Money.
   // On affiche l'adresse NOA + l'option Binance.
   // ----------------------------------------------------------
-
-  const qrContainer =
+const qrContainer =
     $('orangeMoneyQr');
 
 
@@ -7130,9 +7126,7 @@ function setupAuthListener() {
 
   authListenerReady =
     true;
-
-
-  supabaseClient.auth
+supabaseClient.auth
     .onAuthStateChange(
       (
         event,
@@ -7288,3 +7282,4 @@ if ('serviceWorker' in navigator) {
     }
   );
 }
+
