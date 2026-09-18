@@ -2897,6 +2897,13 @@ function setBuyMode() {
     $('paymentMethodField').style.display =
       '';
   }
+  if ($('waveOption')) {
+  $('waveOption').hidden = true;
+}
+
+if ($('paymentMethod')) {
+  $('paymentMethod').value = 'orange_money';
+}
 
 
   if ($('paymentMethodLabel')) {
@@ -2908,7 +2915,14 @@ function setBuyMode() {
 
   // ACHAT : Orange Money uniquement
 if ($('waveOption')) {
-  $('waveOption').style.display = 'none';
+  $('waveOption').style.display = if ($('paymentMethodField')) {
+
+  $('paymentMethodField').style.display =
+    '';
+}
+  if ($('waveOption')) {
+  $('waveOption').hidden = false;
+}
 }
 
 if ($('paymentMethod')) {
