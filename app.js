@@ -2906,20 +2906,14 @@ function setBuyMode() {
   }
 
 
-  if ($('waveOption')) {
+  // ACHAT : Orange Money uniquement
+if ($('waveOption')) {
+  $('waveOption').style.display = 'none';
+}
 
-    $('waveOption').hidden =
-      true;
-  }
-
-  if (
-    $('paymentMethod')?.value ===
-    'wave'
-  ) {
-
-    $('paymentMethod').value =
-      'orange_money';
-  }
+if ($('paymentMethod')) {
+  $('paymentMethod').value = 'orange_money';
+}
 
 
   const payoutField =
