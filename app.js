@@ -2601,12 +2601,15 @@ function ensureSellPayoutField() {
   Numéro pour recevoir vos FCFA
 </label>
       <div class="phone-input-wrapper">
-        <div
+        <select
           class="phone-prefix"
           id="sellPayoutPhonePrefix"
         >
-          🇧🇫 +226
-        </div>
+          <option value="Burkina Faso">🇧🇫 +226</option>
+          <option value="Côte d'Ivoire">🇨🇮 +225</option>
+          <option value="Mali">🇲🇱 +223</option>
+          <option value="Sénégal">🇸🇳 +221</option>
+        </select>
         <input
           type="tel"
           id="sellPayoutPhone"
@@ -2637,10 +2640,7 @@ function ensureSellPayoutField() {
         walletField.nextSibling
       );
     }
-  }
-
-
-  const payoutCountry =
+    const payoutCountry =
     currentProfile?.country ||
     currentUser?.user_metadata?.country ||
     'Burkina Faso';
@@ -2661,6 +2661,9 @@ function ensureSellPayoutField() {
     $('sellPayoutPhone');
 
   if (phoneInput) {
+
+
+
 
     phoneInput.maxLength =
       config.digits + 9;
