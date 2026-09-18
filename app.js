@@ -3074,14 +3074,113 @@ function selectPaymentMethod(
   method
 ) {
 
-  const select =
+  const row =
+    document.querySelector(
+      `.payment-method-row[data-value="${method}"]`
+    );
+
+  if (!row) {
+    return;
+  }
+
+
+  const hiddenInput =
     $('paymentMethod');
 
-  if (select) {
+  if (hiddenInput) {
 
-    select.value =
+    hiddenInput.value =
       method;
   }
+
+
+  const color =
+    row.dataset.iconColor;
+
+  const label =
+    row.dataset.label;
+
+
+  if ($('paymentMethodIcon')) {
+
+    $('paymentMethodIcon').textContent =
+      method === 'wave' ?
+        '🐧' :
+        row.dataset.icon;
+
+    $('paymentMethodIcon').style.color =
+      color;
+
+    $('paymentMethodIcon').style.background =
+      method === 'wave' ?
+        color :
+        'transparent';
+
+    $('paymentMethodIcon').style.borderRadius =
+      method === 'wave' ?
+        '50%' :
+        '0';
+
+    $('paymentMethodIcon').style.width =
+      method === 'wave' ?
+        '20px' :
+        'auto';
+
+    $('paymentMethodIcon').style.height =
+      method === 'wave' ?
+        '20px' :
+        'auto';
+
+    $('paymentMethodIcon').style.display =
+      method === 'wave' ?
+        'inline-flex' :
+        'inline';
+
+    $('paymentMethodIcon').style.alignItems =
+      'center';
+
+    $('paymentMethodIcon').style.justifyContent =
+      'center';
+
+    $('paymentMethodIcon').style.fontSize =
+      method === 'wave' ?
+        '12px' :
+        '16px';
+  }
+
+  if ($('paymentMethodText')) {
+
+    $('paymentMethodText').textContent =
+      label;
+
+    $('paymentMethodText').style.color =
+      method === 'wave' ?
+        '#ffffff' :
+        color;
+  }
+
+
+  if ($('paymentMethodPanel')) {
+
+    $('paymentMethodPanel').style.display =
+      'none';
+  }
+}
+
+
+function togglePaymentMethodPanel() {
+
+  const panel =
+    $('paymentMethodPanel');
+
+  if (!panel) {
+    return;
+  }
+
+  panel.style.display =
+    panel.style.display === 'none' ?
+      'block' :
+      'none';
 }
 
 
@@ -6587,6 +6686,7 @@ function toggleWithdrawalFields() {
 
   } else {
 
+   
     $('withdrawalPhoneField')
       ?.classList
       .remove('hidden');
@@ -6704,7 +6804,7 @@ async function submitReferralWithdrawal() {
 
       return showMessage(
         data.error ||
-         'Impossible de traiter la demande.',
+        'Impossible de traiter la demande.',
         'error'
       );
     }
@@ -6978,6 +7078,56 @@ function setupEvents() {
 
       }
     );
+
+
+  $('paymentMethodTrigger')
+    ?.addEventListener(
+      'click',
+      togglePaymentMethodPanel
+    );
+
+
+  document
+    .querySelectorAll(
+      '.payment-method-row'
+    )
+    .forEach(row => {
+
+      row.addEventListener(
+        'click',
+        () => {
+
+          selectPaymentMethod(
+            row.dataset.value
+          );
+        }
+      );
+    });
+
+
+  document.addEventListener(
+    'click',
+    event => {
+
+      const panel =
+        $('paymentMethodPanel');
+
+      const trigger =
+        $('paymentMethodTrigger');
+
+      if (
+        panel &&
+        panel.style.display !== 'none' &&
+        !panel.contains(event.target) &&
+        event.target !== trigger &&
+        !trigger?.contains(event.target)
+      ) {
+
+        panel.style.display =
+          'none';
+      }
+    }
+  );
 
 
   $('amountInput')
