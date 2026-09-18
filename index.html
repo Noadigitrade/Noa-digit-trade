@@ -2768,14 +2768,56 @@ a:hover{
     Moyen de paiement
   </label>
 
-  <select id="paymentMethod">
-    <option value="orange_money" id="orangeMoneyOption">
-      🟠 Orange Money
-    </option>
-    <option value="wave" id="waveOption">
-      🔵 Wave
-    </option>
-  </select>
+  <input type="hidden" id="paymentMethod" value="orange_money">
+
+  <div style="position: relative;">
+
+    <button
+      type="button"
+      id="paymentMethodTrigger"
+      style="width: 100%; display: flex; align-items: center; justify-content: space-between; background: #0b1a3a; border: 1px solid #2a4a8a; border-radius: 14px; padding: 12px 16px; cursor: pointer;"
+    >
+      <span style="display: flex; align-items: center; gap: 10px;">
+        <span id="paymentMethodIcon" style="color: #FF7900; font-size: 16px; font-weight: 900;">↗↙</span>
+        <span id="paymentMethodText" style="color: #FF7900; font-weight: 700; font-size: 16px;">Orange Money</span>
+      </span>
+      <span style="color: #8aa8e0; font-size: 14px;">▾</span>
+    </button>
+
+    <div
+      id="paymentMethodPanel"
+      style="display: none; position: absolute; top: calc(100% + 6px); left: 0; right: 0; background: #0b1a3a; border: 1px solid #2a4a8a; border-radius: 14px; overflow: hidden; z-index: 20;"
+    >
+
+      <div
+        class="payment-method-row"
+        id="orangeMoneyOption"
+        data-value="orange_money"
+        data-icon="↗↙"
+        data-icon-color="#FF7900"
+        data-label="Orange Money"
+        style="display: flex; align-items: center; gap: 10px; padding: 12px 16px; cursor: pointer; color: #FF7900; font-weight: 700;"
+      >
+        <span style="color: #FF7900; font-size: 16px; font-weight: 900;">↗↙</span>
+        Orange Money
+      </div>
+
+      <div
+        class="payment-method-row"
+        id="waveOption"
+        data-value="wave"
+        data-icon="🐧"
+        data-icon-color="#1DC1F5"
+        data-label="Wave"
+        style="display: flex; align-items: center; gap: 10px; padding: 12px 16px; cursor: pointer; color: #ffffff; font-weight: 700; border-top: 1px solid #2a4a8a;"
+      >
+        <span style="background: #1DC1F5; border-radius: 50%; width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px;">🐧</span>
+        Wave
+      </div>
+
+    </div>
+
+  </div>
 </div>
           
 
