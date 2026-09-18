@@ -2640,30 +2640,59 @@ function ensureSellPayoutField() {
         walletField.nextSibling
       );
     }
-    const payoutCountry =
+  }
+
+
+  const payoutCountry =
     currentProfile?.country ||
     currentUser?.user_metadata?.country ||
     'Burkina Faso';
 
-  const config =
-    getCountryConfig(payoutCountry);
-
-  const prefixEl =
+  const prefixSelect =
     $('sellPayoutPhonePrefix');
 
-  if (prefixEl) {
+  if (
+    prefixSelect &&
+    !prefixSelect.dataset.initialized
+  ) {
 
-    prefixEl.textContent =
-      `${config.flag} +${config.code}`;
+    prefixSelect.value =
+      payoutCountry;
+
+    prefixSelect.dataset.initialized =
+      'true';
+
+    prefixSelect.addEventListener(
+      'change',
+      () => {
+
+        const config =
+          getCountryConfig(
+            prefixSelect.value
+          );
+
+        const phoneInput =
+          $('sellPayoutPhone');
+
+        if (phoneInput) {
+
+          phoneInput.maxLength =
+            config.digits + 9;
+        }
+      }
+    );
   }
+
+  const config =
+    getCountryConfig(
+      prefixSelect?.value ||
+      payoutCountry
+    );
 
   const phoneInput =
     $('sellPayoutPhone');
 
   if (phoneInput) {
-
-
-
 
     phoneInput.maxLength =
       config.digits + 9;
@@ -3591,6 +3620,8 @@ function reviewOrder() {
 
 
     const payoutCountry =
+      $('sellPayoutPhonePrefix')
+        ?.value ||
       currentProfile?.country ||
       currentUser?.user_metadata?.country ||
       'Burkina Faso';
@@ -6666,6 +6697,7 @@ async function submitReferralWithdrawal() {
     }
   }
 }
+
 
 
 // ============================================================
