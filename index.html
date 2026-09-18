@@ -183,14 +183,13 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 0 10px;
+      padding: 0 14px;
       border: 1px solid #e0e6ef;
       border-radius: 12px;
       background: #f5f7fb;
       font-weight: 700;
       color: #344054;
       white-space: nowrap;
-      cursor: pointer;
     }
 
     .phone-input-wrapper input {
@@ -2732,13 +2731,16 @@ a:hover{
   class="field"
   id="paymentMethodField"
 >
-  <label for="paymentMethod">
+  <label for="paymentMethod" id="paymentMethodLabel">
     Moyen de paiement
   </label>
 
   <select id="paymentMethod">
     <option value="orange_money">
       🟠 Orange Money
+    </option>
+    <option value="wave">
+      🔵 Wave
     </option>
   </select>
 </div>
