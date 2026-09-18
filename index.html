@@ -698,8 +698,9 @@
 
     #orangeMoneyQr {
       display: flex;
+      flex-direction: column;
+      align-items: stretch;
       justify-content: center;
-      align-items: center;
       min-height: 220px;
     }
 
@@ -1209,7 +1210,8 @@ body::before{
 }
 
 .card-description,
-.small{
+.small,
+.payment-qr-text{
   color:var(--noa-muted);
 }
 
@@ -1661,6 +1663,25 @@ body::before{
 
 .payment-amount-value{
   color:#fff;
+}
+
+.payment-qr-box{
+  background:
+    linear-gradient(
+      145deg,
+      rgba(8,89,205,.70),
+      rgba(3,47,150,.70)
+    ) !important;
+
+  border:
+    1px solid rgba(76,202,255,.55) !important;
+
+  color:#fff !important;
+}
+
+.payment-amount-label{
+  color:
+    rgba(255,255,255,.7) !important;
 }
 
 /* ============================================================
