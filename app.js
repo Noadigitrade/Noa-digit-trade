@@ -2906,6 +2906,22 @@ function setBuyMode() {
   }
 
 
+  if ($('waveOption')) {
+
+    $('waveOption').hidden =
+      true;
+  }
+
+  if (
+    $('paymentMethod')?.value ===
+    'wave'
+  ) {
+
+    $('paymentMethod').value =
+      'orange_money';
+  }
+
+
   const payoutField =
     ensureSellPayoutField();
 
@@ -3012,6 +3028,13 @@ if ($('paymentMethodField')) {
   }
 
 
+  if ($('waveOption')) {
+
+    $('waveOption').hidden =
+      false;
+  }
+
+
   if ($('exchangeInfo')) {
 
     $('exchangeInfo').innerHTML = `
@@ -3046,6 +3069,21 @@ nous vous envoyons les FCFA sur le moyen de paiement choisi.
 // ============================================================
 // RÉSEAU
 // ============================================================
+
+function selectPaymentMethod(
+  method
+) {
+
+  const select =
+    $('paymentMethod');
+
+  if (select) {
+
+    select.value =
+      method;
+  }
+}
+
 
 function selectNetwork(
   network
@@ -6666,7 +6704,7 @@ async function submitReferralWithdrawal() {
 
       return showMessage(
         data.error ||
-        'Impossible de traiter la demande.',
+         'Impossible de traiter la demande.',
         'error'
       );
     }
@@ -6695,6 +6733,7 @@ async function submitReferralWithdrawal() {
       'Erreur demande de retrait :',
       error
     );
+
     showMessage(
       'Erreur : ' +
       getSupabaseErrorMessage(error),
