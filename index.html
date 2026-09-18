@@ -183,18 +183,25 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 0 14px;
+      padding: 0 10px;
       border: 1px solid #e0e6ef;
       border-radius: 12px;
       background: #f5f7fb;
       font-weight: 700;
       color: #344054;
       white-space: nowrap;
+      cursor: pointer;
+    }
+
+    select.phone-prefix {
+      width: auto !important;
+      flex: 0 0 auto;
     }
 
     .phone-input-wrapper input {
-      flex: 1;
-      min-width: 0;
+      flex: 1 1 auto;
+      min-width: 100px;
+      width: auto !important;
     }
 
     .balance-box {
