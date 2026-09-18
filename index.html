@@ -2768,39 +2768,14 @@ a:hover{
     Moyen de paiement
   </label>
 
-  <input type="hidden" id="paymentMethod" value="orange_money">
-
-  <div class="payment-grid">
-
-    <button
-      type="button"
-      class="payment-option active"
-      id="orangeMoneyOption"
-      data-payment="orange_money"
-      style="background: #0b1a3a; border-color: #FF7900; border-radius: 999px; padding: 10px 14px; justify-content: space-between;"
-    >
-      <span style="display: flex; align-items: center; gap: 8px;">
-        <span style="color: #FF7900; font-size: 15px; font-weight: 900;">↗↙</span>
-        <span style="color: #FF7900; font-weight: 700;">Orange Money</span>
-      </span>
-      <span class="payment-check" style="color: #ffffff;">✓</span>
-    </button>
-
-    <button
-      type="button"
-      class="payment-option"
-      id="waveOption"
-      data-payment="wave"
-      style="background: #0b1a3a; border-color: #1DC1F5; border-radius: 999px; padding: 10px 14px; justify-content: space-between;"
-    >
-      <span style="display: flex; align-items: center; gap: 8px;">
-        <span style="background: #1DC1F5; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 13px;">🐧</span>
-        <span style="color: #ffffff; font-weight: 700;">Wave</span>
-      </span>
-      <span class="payment-check" style="color: #1DC1F5;">✓</span>
-    </button>
-
-  </div>
+  <select id="paymentMethod">
+    <option value="orange_money" id="orangeMoneyOption">
+      🟠 Orange Money
+    </option>
+    <option value="wave" id="waveOption">
+      🔵 Wave
+    </option>
+  </select>
 </div>
           
 
