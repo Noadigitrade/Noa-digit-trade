@@ -450,6 +450,30 @@
       background: #f0f6ff;
     }
 
+    .payment-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .payment-option {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 14px 10px;
+      border: 2px solid transparent;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: transform 0.1s ease;
+    }
+
+    .payment-option.active {
+      transform: scale(1.03);
+      box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px rgba(7,87,217,0.5);
+    }
+
     .network-name {
       font-weight: 800;
       font-size: 14px;
@@ -2735,14 +2759,39 @@ a:hover{
     Moyen de paiement
   </label>
 
-  <select id="paymentMethod">
-    <option value="orange_money">
-      🟠 Orange Money
-    </option>
-    <option value="wave">
-      🔵 Wave
-    </option>
-  </select>
+  <input type="hidden" id="paymentMethod" value="orange_money">
+
+  <div class="payment-grid">
+
+    <button
+      type="button"
+      class="payment-option active"
+      id="orangeMoneyOption"
+      data-payment="orange_money"
+      style="background: #ffffff; border-color: #FF7900; padding: 10px;"
+    >
+      <img
+        src="assets/orange-money-logo.png"
+        alt="Orange Money"
+        style="height: 28px; width: auto;"
+      >
+    </button>
+
+    <button
+      type="button"
+      class="payment-option"
+      id="waveOption"
+      data-payment="wave"
+      style="background: transparent; border-color: #1DC1F5; padding: 8px;"
+    >
+      <img
+        src="assets/wave-logo.jpg"
+        alt="Wave"
+        style="height: 44px; width: 44px; border-radius: 50%;"
+      >
+    </button>
+
+  </div>
 </div>
           
 
