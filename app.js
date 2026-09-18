@@ -2899,6 +2899,13 @@ function setBuyMode() {
   }
 
 
+  if ($('paymentMethodLabel')) {
+
+    $('paymentMethodLabel').textContent =
+      'Moyen de paiement (pour payer)';
+  }
+
+
   const payoutField =
     ensureSellPayoutField();
 
@@ -2994,8 +3001,15 @@ function setSellMode() {
 if ($('paymentMethodField')) {
 
     $('paymentMethodField').style.display =
-      'none';
+      '';
   }  
+
+
+  if ($('paymentMethodLabel')) {
+
+    $('paymentMethodLabel').textContent =
+      'Moyen de paiement (pour recevoir)';
+  }
 
 
   if ($('exchangeInfo')) {
@@ -6681,7 +6695,6 @@ async function submitReferralWithdrawal() {
       'Erreur demande de retrait :',
       error
     );
-
     showMessage(
       'Erreur : ' +
       getSupabaseErrorMessage(error),
