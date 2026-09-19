@@ -3229,9 +3229,8 @@ function renderOrders() {
             .match(/Num[ée]ro\s+\S+\s*:\s*([^\n|]+)/i);
 
         const payoutPhone =
-          payoutPhoneMatch
-            ? payoutPhoneMatch[1].trim()
-            : '';
+          order.payout_phone ||
+          (payoutPhoneMatch ? payoutPhoneMatch[1].trim() : '');
 
         return `
           <div class="order-detail" style="margin-bottom:12px;">
