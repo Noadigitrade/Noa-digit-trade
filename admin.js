@@ -142,7 +142,7 @@ function extractPayoutPhone(order) {
     String(order.customer_note || "");
 
   const match =
-    note.match(/Num[ée]ro Orange Money\s*:\s*([^\n|]+)/i);
+    note.match(/Num[ée]ro\s+\S+\s*:\s*([^\n|]+)/i);
 
   return match ? match[1].trim() : "";
 }
