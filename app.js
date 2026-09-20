@@ -6337,10 +6337,9 @@ async function loadDisputes() {
       error
     } =
       await supabaseClient
-        .from('disputes')
-        .select('*')
-        .eq(
-          'user_id',
+        .from("disputes")
+.select("*")
+.eq("opened_by", user.id)
           currentUser.id
         )
         .order(
