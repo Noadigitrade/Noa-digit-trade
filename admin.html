@@ -3224,14 +3224,6 @@ function renderOrders() {
         const netUsdt =
           Math.max(amountUsdt - networkFee, 0);
 
-        const payoutPhoneMatch =
-          String(order.customer_note || '')
-            .match(/Num[ée]ro\s+\S+\s*:\s*([^\n|]+)/i);
-
-        const payoutPhone =
-          order.payout_phone ||
-          (payoutPhoneMatch ? payoutPhoneMatch[1].trim() : '');
-
         return `
           <div class="order-detail" style="margin-bottom:12px;">
             <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;">
@@ -3258,21 +3250,18 @@ function renderOrders() {
                   `
               }
               <div><strong>Réseau :</strong> ${escapeHtml(networkLabel(order.network))}</div>
-              <div><strong>Date :</strong> ${escapeHtml(formatDate(order.created_at))}</div>
               ${
                 side === 'sell'
-                  ? `
-                    <div>
-                      <strong>Numéro du vendeur :</strong>
-                      ${
-                        payoutPhone
-                          ? escapeHtml(payoutPhone)
-                          : '<span style="color:#c62828">Non renseigné</span>'
-                      }
-                    </div>
+                  ? ''
+                  : `
+                    <div><strong>Adresse de réception :</strong> ${
+                      order.wallet_address
+                        ? escapeHtml(order.wallet_address)
+                        : '<span style="color:#c0392b;">Non renseignée</span>'
+                    }</div>
                   `
-                  : ''
               }
+              <div><strong>Date :</strong> ${escapeHtml(formatDate(order.created_at))}</div>
             </div>
 
             <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;">
