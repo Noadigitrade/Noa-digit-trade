@@ -1,10 +1,10 @@
 // ============================================================
-// NOA DIGIT TRADE - SERVICE WORKER
+// FASO DIGIT TRADE - SERVICE WORKER
 // Permet l'installation de l'application (PWA) et met en
 // cache les fichiers statiques pour un chargement plus rapide.
 // ============================================================
 
-const CACHE_NAME = 'noa-digit-trade-v2';
+const CACHE_NAME = 'faso-digit-trade-v3';
 
 const STATIC_ASSETS = [
   './index.html',
