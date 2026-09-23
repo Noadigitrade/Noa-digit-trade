@@ -1,6 +1,6 @@
 {
-  "name": "NOA DIGIT TRADE",
-  "short_name": "NOA DIGIT",
+  "name": "FASO DIGIT TRADE",
+  "short_name": "FASO DIGIT",
   "description": "Achat et vente de USDT au Burkina Faso",
   "start_url": "./index.html",
   "scope": "./",
