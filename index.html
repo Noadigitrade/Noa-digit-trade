@@ -502,6 +502,29 @@
       background: #f0f6ff;
     }
 
+    .network-select {
+      width: 100%;
+      margin-top: 10px;
+      padding: 14px 12px;
+      border: 2px solid #e0e6ef;
+      border-radius: 14px;
+      background: #fff;
+      color: #12203a;
+      font-size: 15px;
+      font-weight: 700;
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230757d9' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      background-size: 18px;
+    }
+
+    .network-select:focus {
+      outline: none;
+      border-color: #0757d9;
+    }
+
     .payment-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -2878,52 +2901,22 @@ a:hover{
               Réseau USDT
             </label>
 
-            <div class="network-grid">
+            <select
+              id="networkSelect"
+              class="network-select"
+            >
 
-              <button
-                type="button"
-                class="network-option active"
-                id="trc20Option"
-                data-network="trc20"
-              >
+              <option value="trc20">USDT TRC20</option>
+              <option value="bp20">USDT BEP20</option>
+              <option value="plasma">USDT Plasma (USDT0)</option>
+              <option value="uid">UID Binance</option>
+              <option value="id">ID (autre exchange)</option>
 
-                <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
-                  <img src="trc20-logo.jpg" alt="TRC20" style="width: 26px; height: 26px; border-radius: 50%; object-fit: cover; flex-shrink: 0;">
-                  <div class="network-name">
-                    USDT TRC20
-                  </div>
-                </div>
+            </select>
 
-                <div class="network-fee">
-                  Frais :
-                  <span id="trc20Fee">2</span> USDT
-                </div>
-
-              </button>
-
-
-              <button
-                type="button"
-                class="network-option"
-                id="bp20Option"
-                data-network="bp20"
-              >
-
-                <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
-                  <img src="bep20-logo.jpg" alt="BEP20" style="width: 26px; height: 26px; border-radius: 50%; object-fit: cover; flex-shrink: 0;">
-                  <div class="network-name">
-                    USDT BEP20
-                  </div>
-                </div>
-
-                <div class="network-fee">
-                  Frais :
-                  <span id="bp20Fee">0</span> USDT
-                </div>
-
-              </button>
-
-
+            <div class="small" style="margin-top: 6px; opacity: 0.85;">
+              Frais réseau :
+              <span id="networkFeeLabel">2 USDT</span>
             </div>
 
           </div>
